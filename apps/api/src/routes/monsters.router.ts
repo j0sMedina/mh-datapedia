@@ -1,3 +1,3 @@
-import { Router } from 'express';
-const router = Router();
+import { Router, IRouter } from 'express';
+const router: IRouter = Router();
 export default router;

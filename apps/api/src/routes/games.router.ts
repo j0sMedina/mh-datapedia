@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, IRouter } from 'express';
 
 const GAMES = [
   { id: 'MONSTER_HUNTER_WORLD', name: 'Monster Hunter: World', year: 2018, color: 'amber' },
@@ -8,7 +8,7 @@ const GAMES = [
   { id: 'MONSTER_HUNTER_WILDS', name: 'Monster Hunter Wilds', year: 2025, color: 'teal' },
 ];
 
-const router = Router();
+const router: IRouter = Router();
 
 /**
  * @openapi

@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Express } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -25,7 +25,7 @@ const swaggerSpec = swaggerJsdoc({
   apis: ['./src/routes/*.router.ts'],
 });
 
-export function createApp() {
+export function createApp(): Express {
   const app = express();
 
   app.use(helmet());
