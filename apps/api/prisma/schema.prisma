@@ -1,0 +1,193 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  username      String         @unique
+  passwordHash  String
+  role          Role           @default(USER)
+  favorites     Monster[]      @relation("UserFavorites")
+  strategies    Strategy[]
+  refreshTokens RefreshToken[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model Monster {
+  id              String            @id @default(cuid())
+  name            String            @unique
+  title           String
+  description     String            @db.Text
+  type            MonsterType
+  firstGame       MHGame
+  firstYear       Int
+  imageUrl        String?
+  iconUrl         String?
+  isBoss          Boolean           @default(false)
+  habitats        String[]
+  parentId        String?
+  parent          Monster?          @relation("Subspecies", fields: [parentId], references: [id])
+  subspecies      Monster[]         @relation("Subspecies")
+  gameAppearances GameAppearance[]
+  weaknesses      ElementWeakness[]
+  hitzones        Hitzone[]
+  strategies      Strategy[]
+  ailments        MonsterAilment[]
+  drops           MonsterDrop[]
+  favoritedBy     User[]            @relation("UserFavorites")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([name])
+  @@index([type])
+  @@index([firstGame])
+}
+
+model GameAppearance {
+  id        String  @id @default(cuid())
+  monsterId String
+  monster   Monster @relation(fields: [monsterId], references: [id], onDelete: Cascade)
+  game      MHGame
+  isNew     Boolean @default(false)
+
+  @@unique([monsterId, game])
+  @@index([game])
+}
+
+model ElementWeakness {
+  id        String  @id @default(cuid())
+  monsterId String
+  monster   Monster @relation(fields: [monsterId], references: [id], onDelete: Cascade)
+  element   Element
+  rating    Int
+  isImmune  Boolean @default(false)
+
+  @@unique([monsterId, element])
+}
+
+model Hitzone {
+  id        String  @id @default(cuid())
+  monsterId String
+  monster   Monster @relation(fields: [monsterId], references: [id], onDelete: Cascade)
+  part      String
+  cut       Int     @default(50)
+  blunt     Int     @default(50)
+  bullet    Int     @default(50)
+  fire      Int     @default(50)
+  water     Int     @default(50)
+  thunder   Int     @default(50)
+  ice       Int     @default(50)
+  dragon    Int     @default(50)
+
+  @@unique([monsterId, part])
+}
+
+model Strategy {
+  id         String     @id @default(cuid())
+  monsterId  String
+  monster    Monster    @relation(fields: [monsterId], references: [id], onDelete: Cascade)
+  title      String
+  content    String     @db.Text
+  difficulty Difficulty
+  game       MHGame
+  authorId   String
+  author     User       @relation(fields: [authorId], references: [id])
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model MonsterAilment {
+  id        String  @id @default(cuid())
+  monsterId String
+  monster   Monster @relation(fields: [monsterId], references: [id], onDelete: Cascade)
+  ailment   String
+}
+
+model MonsterDrop {
+  id        String     @id @default(cuid())
+  monsterId String
+  monster   Monster    @relation(fields: [monsterId], references: [id], onDelete: Cascade)
+  game      MHGame
+  rank      Rank
+  method    DropMethod
+  part      String?
+  itemName  String
+  quantity  Int        @default(1)
+  rate      Float
+
+  @@index([monsterId, game, rank])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum MonsterType {
+  Large
+  Small
+  ElderDragon
+  Apex
+  Afflicted
+  Tempered
+}
+
+enum MHGame {
+  MONSTER_HUNTER_WORLD
+  MONSTER_HUNTER_WORLD_ICEBORNE
+  MONSTER_HUNTER_RISE
+  MONSTER_HUNTER_RISE_SUNBREAK
+  MONSTER_HUNTER_WILDS
+}
+
+enum Element {
+  Fire
+  Water
+  Thunder
+  Ice
+  Dragon
+  Poison
+  Sleep
+  Paralysis
+  Blast
+  Stun
+}
+
+enum Difficulty {
+  Beginner
+  Intermediate
+  Advanced
+}
+
+enum Rank {
+  LowRank
+  HighRank
+  MasterRank
+}
+
+enum DropMethod {
+  BodyCarve
+  TailCarve
+  BreakReward
+  CaptureReward
+  QuestReward
+  ShinyDrop
+  WoundDrop
+  PalicoBoomerang
+}
