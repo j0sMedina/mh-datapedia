@@ -4,3 +4,5 @@ dist/
 .env.test
 *.tsbuildinfo
 .turbo/
+dev-output.txt
+dev-error.txt
