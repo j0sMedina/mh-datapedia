@@ -1,11 +1,11 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate';
 import { validate } from '../middleware/validate';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../lib/errors';
 
-const router = Router();
+const router: IRouter = Router();
 const MonsterIdParamSchema = z.object({ monsterId: z.string() });
 
 const wrap =

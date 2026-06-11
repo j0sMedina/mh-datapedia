@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
@@ -12,7 +12,7 @@ import {
 } from '@mh-datapedia/shared';
 import * as monsterService from '../services/monster.service';
 
-const router = Router();
+const router: IRouter = Router();
 const IdParamSchema = z.object({ id: z.string() });
 const DropQuerySchema = z.object({
   game: MHGameSchema.optional(),

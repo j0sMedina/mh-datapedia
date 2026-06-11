@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { authLimiter } from '../middleware/rateLimiter';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
@@ -6,7 +6,7 @@ import { AppError } from '../lib/errors';
 import { RegisterSchema, LoginSchema } from '@mh-datapedia/shared';
 import * as authService from '../services/auth.service';
 
-const router = Router();
+const router: IRouter = Router();
 const COOKIE = 'refresh_token';
 const COOKIE_OPTS = {
   httpOnly: true,
