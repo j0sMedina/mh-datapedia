@@ -5,6 +5,7 @@ import { useMonsters } from '../../hooks/useMonsters';
 import { MonsterFilters } from '../../components/monsters/MonsterFilters';
 import { MonsterGrid } from '../../components/monsters/MonsterGrid';
 import { Button } from '../../components/ui/Button';
+import { MonsterFormModal } from '../../components/admin/MonsterFormModal';
 import { useAuth } from '../../context/AuthContext';
 
 const monsterSearchSchema = z.object({
@@ -78,8 +79,7 @@ function MonstersPage() {
         </div>
       )}
 
-      {/* MonsterFormModal wired in Task 12 */}
-      {showAddModal && null}
+      <MonsterFormModal open={showAddModal} onClose={() => setShowAddModal(false)} />
     </div>
   );
 }

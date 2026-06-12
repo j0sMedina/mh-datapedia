@@ -8,6 +8,8 @@ import { HitzonesTab } from '../../components/monsters/detail/tabs/HitzonesTab';
 import { WeaknessesTab } from '../../components/monsters/detail/tabs/WeaknessesTab';
 import { DropsTab } from '../../components/monsters/detail/tabs/DropsTab';
 import { StrategiesTab } from '../../components/monsters/detail/tabs/StrategiesTab';
+import { MonsterFormModal } from '../../components/admin/MonsterFormModal';
+import { DeleteConfirmModal } from '../../components/admin/DeleteConfirmModal';
 import { Spinner } from '../../components/ui/Spinner';
 import { cn } from '../../lib/utils';
 
@@ -90,8 +92,17 @@ function MonsterDetailPage() {
         {tab === 'strategies' && <StrategiesTab monsterId={id} />}
       </div>
 
-      {/* Admin modals wired in Task 12 */}
-      {(editOpen || deleteOpen) && null}
+      <MonsterFormModal
+        open={editOpen}
+        onClose={() => setEditOpen(false)}
+        existing={monster}
+      />
+      <DeleteConfirmModal
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        monsterId={id}
+        monsterName={monster.name}
+      />
     </div>
   );
 }
