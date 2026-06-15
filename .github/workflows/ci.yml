@@ -27,6 +27,9 @@ jobs:
       - name: Build shared package
         run: pnpm --filter @mh-datapedia/shared build
 
+      - name: Generate Prisma client
+        run: pnpm --filter @mh-datapedia/api exec prisma generate
+
       - name: Typecheck API
         run: pnpm --filter @mh-datapedia/api typecheck
 
