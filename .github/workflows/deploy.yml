@@ -1,0 +1,31 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # TODO: add deploy steps here when a hosting provider is chosen.
+      #
+      # Option A — VPS with Docker:
+      #   - SSH into the server
+      #   - Pull the latest code
+      #   - docker compose -f docker-compose.prod.yml up -d --build
+      #
+      # Option B — Managed platform (Fly.io, Railway, Render):
+      #   - Install the platform CLI
+      #   - Run the platform's deploy command
+      #
+      # Option C — Registry + pull:
+      #   - Build and push images to GHCR or Docker Hub
+      #   - SSH into server and pull the new image
+
+      - name: Deploy placeholder
+        run: echo "Deploy not yet configured."
