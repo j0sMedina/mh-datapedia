@@ -20,7 +20,7 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 async function fetchWithAuth(path: string, init?: RequestInit): Promise<Response> {
   const headers = new Headers(init?.headers);

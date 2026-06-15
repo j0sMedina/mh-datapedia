@@ -23,14 +23,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [accessToken]);
 
   const silentRefresh = useCallback(async (): Promise<string | null> => {
+    console.log('[auth] silentRefresh start');
     try {
       const data = await apiPost<{ accessToken: string }>('/api/auth/refresh');
+      console.log('[auth] refresh success');
       setToken(data.accessToken);
       setAccessToken(data.accessToken);
       const me = await apiGet<{ user: User }>('/api/auth/me');
       setUser(me.user);
       return data.accessToken;
-    } catch {
+    } catch (e) {
+      console.log('[auth] refresh failed (expected if not logged in):', e);
       setToken(null);
       setUser(null);
       setAccessToken(null);
@@ -39,8 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    console.log('[auth] effect running, calling silentRefresh');
     setRefreshCallback(silentRefresh);
-    silentRefresh().finally(() => setIsLoading(false));
+    silentRefresh().finally(() => {
+      console.log('[auth] setIsLoading(false)');
+      setIsLoading(false);
+    });
   }, [silentRefresh]);
 
   async function login(email: string, password: string): Promise<void> {

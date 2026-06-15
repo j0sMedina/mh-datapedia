@@ -7,6 +7,11 @@ export default defineConfig({
     TanStackRouterVite(),
     react(),
   ],
+  server: {
+    proxy: {
+      '/api': 'http://localhost:3001',
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,
