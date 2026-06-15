@@ -1,0 +1,17 @@
+# Dependencies — Docker installs these fresh
+**/node_modules
+
+# Built outputs — Docker builds these fresh
+**/dist
+
+# Environment files — never bake secrets into images
+**/.env*
+
+# Git history not needed in the image
+.git
+
+# CI config not needed in the image
+.github
+
+# Turbo cache
+.turbo
