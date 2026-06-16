@@ -6,7 +6,7 @@ import { prisma } from './lib/prisma';
 
 const app = createApp();
 
-const server = app.listen(env.PORT, '0.0.0.0', () => {
+const server = app.listen(env.PORT, '::', () => {
   logger.info(`API running on port ${env.PORT} in ${env.NODE_ENV} mode`);
 });
 
