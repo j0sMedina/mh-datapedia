@@ -16,3 +16,17 @@ export const HitzoneSchema = z.object({
   dragon: hitzoneValue,
 });
 export type Hitzone = z.infer<typeof HitzoneSchema>;
+
+export const UpsertHitzoneItemSchema = z.object({
+  part: z.string().min(1),
+  cut: hitzoneValue,
+  blunt: hitzoneValue,
+  bullet: hitzoneValue,
+  fire: hitzoneValue,
+  water: hitzoneValue,
+  thunder: hitzoneValue,
+  ice: hitzoneValue,
+  dragon: hitzoneValue,
+});
+export const UpsertHitzonesSchema = z.array(UpsertHitzoneItemSchema);
+export type UpsertHitzones = z.infer<typeof UpsertHitzonesSchema>;
