@@ -40,6 +40,9 @@ RUN PRISMA_CLIENT_DIR=$(find node_modules/.pnpm -type d -name ".prisma" 2>/dev/n
 # ── Stage 2: Run ───────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
 
+# Prisma's migration engine requires OpenSSL — not included in Alpine by default
+RUN apk add --no-cache openssl
+
 WORKDIR /app
 
 # Copy the self-contained bundle from builder
