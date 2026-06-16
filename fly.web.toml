@@ -1,5 +1,5 @@
 app = "mh-datapedia-web"
-primary_region = "ams"
+primary_region = "mia"
 
 [build]
   dockerfile = "apps/web/Dockerfile"

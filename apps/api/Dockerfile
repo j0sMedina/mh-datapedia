@@ -51,6 +51,9 @@ COPY --from=builder /app/apps/api/prisma ./prisma
 ENV NODE_ENV=production
 EXPOSE 3001
 
+# Give node user ownership before switching — Prisma writes engine files at runtime
+RUN chown -R node:node /app
+
 # Run as non-root for security
 USER node
 
