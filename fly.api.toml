@@ -1,5 +1,5 @@
 app = "mh-datapedia-api"
-primary_region = "mia"
+primary_region = "dfw"
 
 [build]
   dockerfile = "apps/api/Dockerfile"
