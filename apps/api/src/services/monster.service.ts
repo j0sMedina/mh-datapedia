@@ -103,26 +103,20 @@ export async function deleteMonster(id: string) {
 
 export async function upsertWeaknesses(monsterId: string, items: UpsertWeaknesses) {
   await assertExists(monsterId);
-  return prisma.$transaction([
-    prisma.elementWeakness.deleteMany({ where: { monsterId } }),
-    prisma.elementWeakness.createMany({
-      data: items.map(i => ({ ...i, monsterId })),
-    }),
-  ]).then(async () =>
-    prisma.elementWeakness.findMany({ where: { monsterId } })
-  );
+  return prisma.$transaction(async (tx) => {
+    await tx.elementWeakness.deleteMany({ where: { monsterId } });
+    await tx.elementWeakness.createMany({ data: items.map(item => ({ ...item, monsterId })) });
+    return tx.elementWeakness.findMany({ where: { monsterId } });
+  });
 }
 
 export async function upsertHitzones(monsterId: string, items: UpsertHitzones) {
   await assertExists(monsterId);
-  return prisma.$transaction([
-    prisma.hitzone.deleteMany({ where: { monsterId } }),
-    prisma.hitzone.createMany({
-      data: items.map(i => ({ ...i, monsterId })),
-    }),
-  ]).then(async () =>
-    prisma.hitzone.findMany({ where: { monsterId } })
-  );
+  return prisma.$transaction(async (tx) => {
+    await tx.hitzone.deleteMany({ where: { monsterId } });
+    await tx.hitzone.createMany({ data: items.map(item => ({ ...item, monsterId })) });
+    return tx.hitzone.findMany({ where: { monsterId }, orderBy: { part: 'asc' } });
+  });
 }
 
 async function assertExists(id: string) {
