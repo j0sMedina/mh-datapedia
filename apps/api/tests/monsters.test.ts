@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { app, prisma, registerAndPromoteAdmin } from './helpers';
+import { app, prisma, registerAndPromoteAdmin, registerUser } from './helpers';
 
 let adminToken: string;
 let userToken: string;
@@ -18,7 +18,6 @@ const TEST_MONSTER = {
 
 beforeAll(async () => {
   adminToken = await registerAndPromoteAdmin('monstersadmin@example.com', 'monstersadmin');
-  const { registerUser } = await import('./helpers');
   userToken = await registerUser('regularuser@example.com', 'regularuser');
   const res = await request(app)
     .post('/api/monsters')
@@ -29,7 +28,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.monster.deleteMany({ where: { name: { contains: 'Test' } } });
-  await prisma.user.deleteMany({ where: { email: { in: ['monstersadmin@example.com', 'regularuser@example.com'] } } });
+  await prisma.user.deleteMany({ where: { email: { in: ['monstersadmin@example.com', 'regularuser@example.com', 'notadmin@example.com'] } } });
   await prisma.$disconnect();
 });
 
