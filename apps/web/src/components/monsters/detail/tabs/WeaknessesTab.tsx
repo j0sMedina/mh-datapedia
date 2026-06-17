@@ -49,6 +49,8 @@ function EditableStars({
           <button
             key={i}
             type="button"
+            aria-label={`Set ${element} weakness to ${i} star${i !== 1 ? 's' : ''}`}
+            aria-pressed={i === rating}
             disabled={isImmune}
             onClick={() => onStarClick(element, i)}
             className={cn(
@@ -125,8 +127,12 @@ export function WeaknessesTab({ monsterId }: { monsterId: string }) {
       rating: (draft[el]?.rating ?? 0) as 0 | 1 | 2 | 3,
       isImmune: draft[el]?.isImmune ?? false,
     }));
-    await updateWeaknesses.mutateAsync(payload);
-    setEditing(false);
+    try {
+      await updateWeaknesses.mutateAsync(payload);
+      setEditing(false);
+    } catch {
+      // updateWeaknesses.error is available for display
+    }
   }
 
   if (isLoading) {
@@ -172,6 +178,8 @@ export function WeaknessesTab({ monsterId }: { monsterId: string }) {
     );
   }
 
+  const weaknessMap = Object.fromEntries((weaknesses ?? []).map((w) => [w.element, w]));
+
   return (
     <div className="space-y-4">
       {isAdmin && (
@@ -185,26 +193,23 @@ export function WeaknessesTab({ monsterId }: { monsterId: string }) {
         <p className="text-stone-400 text-sm">No weakness data available.</p>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {(() => {
-            const weaknessMap = Object.fromEntries(weaknesses.map((w) => [w.element, w]));
-            return ALL_ELEMENTS.map((element) => {
-              const w = weaknessMap[element];
-              return (
-                <div key={element} className="bg-stone-900 border border-stone-800 rounded p-3 text-center">
-                  <div className={cn('font-medium text-sm mb-2', ELEMENT_COLORS[element] ?? 'text-stone-400')}>
-                    {element}
-                  </div>
-                  {!w ? (
-                    <Stars rating={0} />
-                  ) : w.isImmune ? (
-                    <Badge className="bg-red-500/10 text-red-400 border border-red-500/20">Immune</Badge>
-                  ) : (
-                    <Stars rating={w.rating} />
-                  )}
+          {ALL_ELEMENTS.map((element) => {
+            const w = weaknessMap[element];
+            return (
+              <div key={element} className="bg-stone-900 border border-stone-800 rounded p-3 text-center">
+                <div className={cn('font-medium text-sm mb-2', ELEMENT_COLORS[element] ?? 'text-stone-400')}>
+                  {element}
                 </div>
-              );
-            });
-          })()}
+                {!w ? (
+                  <Stars rating={0} />
+                ) : w.isImmune ? (
+                  <Badge className="bg-red-500/10 text-red-400 border border-red-500/20">Immune</Badge>
+                ) : (
+                  <Stars rating={w.rating} />
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

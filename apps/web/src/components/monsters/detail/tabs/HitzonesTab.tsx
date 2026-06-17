@@ -7,13 +7,11 @@ import { Button } from '../../../ui/Button';
 import { cn } from '../../../../lib/utils';
 import type { Hitzone } from '../../../../lib/types';
 
-type HitzoneRow = Omit<Hitzone, 'id' | 'monsterId'>;
+type HitzoneRow = Omit<Hitzone, 'id'>;
 
-const COLS: (keyof Omit<Hitzone, 'id' | 'part'>)[] = [
+const DAMAGE_COLS: (keyof Omit<HitzoneRow, 'part'>)[] = [
   'cut', 'blunt', 'bullet', 'fire', 'water', 'thunder', 'ice', 'dragon',
 ];
-
-const DAMAGE_COLS: (keyof HitzoneRow)[] = ['cut', 'blunt', 'bullet', 'fire', 'water', 'thunder', 'ice', 'dragon'];
 
 const COL_LABELS: Record<string, string> = {
   cut: 'Cut', blunt: 'Blunt', bullet: 'Bullet',
@@ -66,8 +64,12 @@ export function HitzonesTab({ monsterId }: { monsterId: string }) {
 
   async function handleSave() {
     const filtered = rows.filter((r) => r.part.trim() !== '');
-    await updateHitzones.mutateAsync(filtered);
-    setEditing(false);
+    try {
+      await updateHitzones.mutateAsync(filtered);
+      setEditing(false);
+    } catch {
+      // updateHitzones.error is available for display
+    }
   }
 
   if (isLoading) {
@@ -114,7 +116,7 @@ export function HitzonesTab({ monsterId }: { monsterId: string }) {
                         min={0}
                         max={100}
                         value={row[col] as number}
-                        onChange={(e) => updateRow(i, col, Number(e.target.value))}
+                        onChange={(e) => updateRow(i, col, Math.min(100, Math.max(0, Number(e.target.value))))}
                         className="bg-stone-800 border border-stone-700 rounded px-1 py-1 text-stone-50 w-14 text-center focus:outline-none focus:border-stone-500 text-sm"
                       />
                     </td>
@@ -174,7 +176,7 @@ export function HitzonesTab({ monsterId }: { monsterId: string }) {
                   <th className="text-left px-3 py-2 text-stone-400 font-normal border-b border-stone-800 whitespace-nowrap">
                     Part
                   </th>
-                  {COLS.map((col) => (
+                  {DAMAGE_COLS.map((col) => (
                     <th
                       key={col}
                       className="px-3 py-2 text-stone-400 font-normal border-b border-stone-800 text-center whitespace-nowrap"
@@ -188,7 +190,7 @@ export function HitzonesTab({ monsterId }: { monsterId: string }) {
                 {hitzones.map((hz) => (
                   <tr key={hz.id} className="border-b border-stone-800/50 last:border-0 hover:bg-stone-900/50">
                     <td className="px-3 py-2 text-stone-50 font-medium">{hz.part}</td>
-                    {COLS.map((col) => (
+                    {DAMAGE_COLS.map((col) => (
                       <td key={col} className="px-3 py-2 text-center">
                         <span className={cn('font-mono', valueColor(hz[col] as number))}>
                           {hz[col]}
