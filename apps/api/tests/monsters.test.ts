@@ -2,6 +2,7 @@ import request from 'supertest';
 import { app, prisma, registerAndPromoteAdmin } from './helpers';
 
 let adminToken: string;
+let userToken: string;
 let testMonsterId: string;
 
 const TEST_MONSTER = {
@@ -17,6 +18,8 @@ const TEST_MONSTER = {
 
 beforeAll(async () => {
   adminToken = await registerAndPromoteAdmin('monstersadmin@example.com', 'monstersadmin');
+  const { registerUser } = await import('./helpers');
+  userToken = await registerUser('regularuser@example.com', 'regularuser');
   const res = await request(app)
     .post('/api/monsters')
     .set('Authorization', `Bearer ${adminToken}`)
@@ -26,7 +29,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.monster.deleteMany({ where: { name: { contains: 'Test' } } });
-  await prisma.user.deleteMany({ where: { email: 'monstersadmin@example.com' } });
+  await prisma.user.deleteMany({ where: { email: { in: ['monstersadmin@example.com', 'regularuser@example.com'] } } });
   await prisma.$disconnect();
 });
 
@@ -95,5 +98,99 @@ describe('POST /api/monsters', () => {
       .send({ ...TEST_MONSTER, name: 'Admin Created Monster' });
     expect(res.status).toBe(201);
     expect(res.body.data.name).toBe('Admin Created Monster');
+  });
+});
+
+describe('PUT /api/monsters/:id/weaknesses', () => {
+  it('returns 401 without auth', async () => {
+    const res = await request(app)
+      .put(`/api/monsters/${testMonsterId}/weaknesses`)
+      .send([]);
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 403 for non-admin', async () => {
+    const res = await request(app)
+      .put(`/api/monsters/${testMonsterId}/weaknesses`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send([]);
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 200 with stored weaknesses for admin', async () => {
+    const payload = [
+      { element: 'Fire', rating: 3, isImmune: false },
+      { element: 'Water', rating: 0, isImmune: true },
+    ];
+    const res = await request(app)
+      .put(`/api/monsters/${testMonsterId}/weaknesses`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data).toHaveLength(2);
+    const fire = res.body.data.find((w: any) => w.element === 'Fire');
+    expect(fire.rating).toBe(3);
+    expect(fire.isImmune).toBe(false);
+    const water = res.body.data.find((w: any) => w.element === 'Water');
+    expect(water.isImmune).toBe(true);
+  });
+
+  it('replaces all on second call', async () => {
+    const payload = [{ element: 'Dragon', rating: 2, isImmune: false }];
+    const res = await request(app)
+      .put(`/api/monsters/${testMonsterId}/weaknesses`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].element).toBe('Dragon');
+  });
+});
+
+describe('PUT /api/monsters/:id/hitzones', () => {
+  it('returns 401 without auth', async () => {
+    const res = await request(app)
+      .put(`/api/monsters/${testMonsterId}/hitzones`)
+      .send([]);
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 403 for non-admin', async () => {
+    const res = await request(app)
+      .put(`/api/monsters/${testMonsterId}/hitzones`)
+      .set('Authorization', `Bearer ${userToken}`)
+      .send([]);
+    expect(res.status).toBe(403);
+  });
+
+  it('returns 200 with stored hitzones for admin', async () => {
+    const payload = [
+      { part: 'Head', cut: 70, blunt: 70, bullet: 60, fire: 0, water: 5, thunder: 15, ice: 5, dragon: 25 },
+      { part: 'Body', cut: 45, blunt: 45, bullet: 40, fire: 0, water: 5, thunder: 10, ice: 0, dragon: 15 },
+    ];
+    const res = await request(app)
+      .put(`/api/monsters/${testMonsterId}/hitzones`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload);
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body.data)).toBe(true);
+    expect(res.body.data).toHaveLength(2);
+    const head = res.body.data.find((h: any) => h.part === 'Head');
+    expect(head.cut).toBe(70);
+    expect(head.dragon).toBe(25);
+  });
+
+  it('replaces all on second call', async () => {
+    const payload = [
+      { part: 'Tail', cut: 80, blunt: 60, bullet: 55, fire: 0, water: 0, thunder: 5, ice: 5, dragon: 10 },
+    ];
+    const res = await request(app)
+      .put(`/api/monsters/${testMonsterId}/hitzones`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(payload);
+    expect(res.status).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.data[0].part).toBe('Tail');
   });
 });
