@@ -70,6 +70,15 @@ jobs:
       - name: Run database migrations
         run: pnpm --filter @mh-datapedia/api exec prisma migrate deploy
 
+      - name: Create test env file
+        run: |
+          printf 'DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mh_datapedia_test\n' > apps/api/.env.test
+          printf 'JWT_SECRET=${{ secrets.JWT_SECRET }}\n' >> apps/api/.env.test
+          printf 'JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}\n' >> apps/api/.env.test
+          printf 'NODE_ENV=test\n' >> apps/api/.env.test
+          printf 'PORT=3002\n' >> apps/api/.env.test
+          printf 'CORS_ORIGIN=http://localhost:5173\n' >> apps/api/.env.test
+
       - name: Typecheck
         run: pnpm typecheck
 
