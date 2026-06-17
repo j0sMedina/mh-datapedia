@@ -1,6 +1,6 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../lib/errors';
-import type { MonsterFilters, CreateMonster, UpdateMonster } from '@mh-datapedia/shared';
+import type { MonsterFilters, CreateMonster, UpdateMonster, UpsertWeaknesses, UpsertHitzones } from '@mh-datapedia/shared';
 import { MHGame, Rank } from '@prisma/client';
 
 const MONSTER_DETAIL_INCLUDE = {
@@ -99,6 +99,30 @@ export async function updateMonster(id: string, data: UpdateMonster) {
 export async function deleteMonster(id: string) {
   await assertExists(id);
   await prisma.monster.delete({ where: { id } });
+}
+
+export async function upsertWeaknesses(monsterId: string, items: UpsertWeaknesses) {
+  await assertExists(monsterId);
+  return prisma.$transaction([
+    prisma.elementWeakness.deleteMany({ where: { monsterId } }),
+    prisma.elementWeakness.createMany({
+      data: items.map(i => ({ ...i, monsterId })),
+    }),
+  ]).then(async () =>
+    prisma.elementWeakness.findMany({ where: { monsterId } })
+  );
+}
+
+export async function upsertHitzones(monsterId: string, items: UpsertHitzones) {
+  await assertExists(monsterId);
+  return prisma.$transaction([
+    prisma.hitzone.deleteMany({ where: { monsterId } }),
+    prisma.hitzone.createMany({
+      data: items.map(i => ({ ...i, monsterId })),
+    }),
+  ]).then(async () =>
+    prisma.hitzone.findMany({ where: { monsterId } })
+  );
 }
 
 async function assertExists(id: string) {

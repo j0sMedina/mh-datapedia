@@ -9,6 +9,8 @@ import {
   UpdateMonsterSchema,
   MHGameSchema,
   RankSchema,
+  UpsertWeaknessesSchema,
+  UpsertHitzonesSchema,
 } from '@mh-datapedia/shared';
 import * as monsterService from '../services/monster.service';
 
@@ -80,6 +82,30 @@ router.put(
   wrap(async (req, res) => {
     const monster = await monsterService.updateMonster(req.params.id, req.body);
     res.json({ data: monster });
+  }),
+);
+
+router.put(
+  '/:id/weaknesses',
+  authenticate,
+  authorize('ADMIN'),
+  validate(IdParamSchema, 'params'),
+  validate(UpsertWeaknessesSchema),
+  wrap(async (req, res) => {
+    const data = await monsterService.upsertWeaknesses(req.params.id, req.body);
+    res.json({ data });
+  }),
+);
+
+router.put(
+  '/:id/hitzones',
+  authenticate,
+  authorize('ADMIN'),
+  validate(IdParamSchema, 'params'),
+  validate(UpsertHitzonesSchema),
+  wrap(async (req, res) => {
+    const data = await monsterService.upsertHitzones(req.params.id, req.body);
+    res.json({ data });
   }),
 );
 
