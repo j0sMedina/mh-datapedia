@@ -1,5 +1,6 @@
 app = "mh-datapedia-web"
 primary_region = "dfw"
+# deployed via GitHub Actions CI/CD
 
 [build]
   dockerfile = "apps/web/Dockerfile"
