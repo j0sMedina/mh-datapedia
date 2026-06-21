@@ -9,9 +9,7 @@ const TEST_MONSTER = {
   name: 'Test Rathalos',
   title: 'King of the Skies',
   description: 'A fearsome flying wyvern that rules the skies.',
-  type: 'Large',
-  firstGame: 'MONSTER_HUNTER_WORLD',
-  firstYear: 2004,
+  type: 'FlyingWyvern',
   isBoss: true,
   habitats: ['Ancient Forest', 'Elder Recess'],
 };

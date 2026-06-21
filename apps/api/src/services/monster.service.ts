@@ -4,7 +4,6 @@ import type { MonsterFilters, CreateMonster, UpdateMonster, UpsertWeaknesses, Up
 import { MHGame, Rank } from '@prisma/client';
 
 const MONSTER_DETAIL_INCLUDE = {
-  gameAppearances: true,
   weaknesses: true,
   hitzones: true,
   strategies: {
@@ -20,10 +19,9 @@ const MONSTER_DETAIL_INCLUDE = {
 };
 
 export async function listMonsters(filters: MonsterFilters) {
-  const { game, type, search, page, limit } = filters;
+  const { type, search, page, limit } = filters;
   const where = {
     ...(type && { type }),
-    ...(game && { gameAppearances: { some: { game } } }),
     ...(search && { name: { contains: search, mode: 'insensitive' as const } }),
   };
   const [data, total] = await Promise.all([
@@ -31,7 +29,7 @@ export async function listMonsters(filters: MonsterFilters) {
       where,
       skip: (page - 1) * limit,
       take: limit,
-      include: { gameAppearances: true, weaknesses: true },
+      include: { weaknesses: true },
       orderBy: { name: 'asc' },
     }),
     prisma.monster.count({ where }),

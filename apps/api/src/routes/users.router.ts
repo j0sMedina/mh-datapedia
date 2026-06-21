@@ -20,7 +20,7 @@ router.get(
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
       include: {
-        favorites: { include: { gameAppearances: true, weaknesses: true } },
+        favorites: { include: { weaknesses: true } },
       },
     });
     if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
