@@ -31,44 +31,29 @@ model RefreshToken {
 }
 
 model Monster {
-  id              String            @id @default(cuid())
-  name            String            @unique
-  title           String
-  description     String            @db.Text
-  type            MonsterType
-  firstGame       MHGame
-  firstYear       Int
-  imageUrl        String?
-  iconUrl         String?
-  isBoss          Boolean           @default(false)
-  habitats        String[]
-  parentId        String?
-  parent          Monster?          @relation("Subspecies", fields: [parentId], references: [id])
-  subspecies      Monster[]         @relation("Subspecies")
-  gameAppearances GameAppearance[]
-  weaknesses      ElementWeakness[]
-  hitzones        Hitzone[]
-  strategies      Strategy[]
-  ailments        MonsterAilment[]
-  drops           MonsterDrop[]
-  favoritedBy     User[]            @relation("UserFavorites")
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  id          String            @id @default(cuid())
+  name        String            @unique
+  title       String
+  description String            @db.Text
+  type        MonsterType
+  imageUrl    String?
+  iconUrl     String?
+  isBoss      Boolean           @default(false)
+  habitats    String[]
+  parentId    String?
+  parent      Monster?          @relation("Subspecies", fields: [parentId], references: [id])
+  subspecies  Monster[]         @relation("Subspecies")
+  weaknesses  ElementWeakness[]
+  hitzones    Hitzone[]
+  strategies  Strategy[]
+  ailments    MonsterAilment[]
+  drops       MonsterDrop[]
+  favoritedBy User[]            @relation("UserFavorites")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   @@index([name])
   @@index([type])
-  @@index([firstGame])
-}
-
-model GameAppearance {
-  id        String  @id @default(cuid())
-  monsterId String
-  monster   Monster @relation(fields: [monsterId], references: [id], onDelete: Cascade)
-  game      MHGame
-  isNew     Boolean @default(false)
-
-  @@unique([monsterId, game])
-  @@index([game])
 }
 
 model ElementWeakness {
@@ -95,6 +80,7 @@ model Hitzone {
   thunder   Int     @default(50)
   ice       Int     @default(50)
   dragon    Int     @default(50)
+  stun      Int     @default(0)
 
   @@unique([monsterId, part])
 }
@@ -143,10 +129,17 @@ enum Role {
 enum MonsterType {
   Large
   Small
-  ElderDragon
   Apex
   Afflicted
   Tempered
+  ElderDragon
+  FlyingWyvern
+  BruteWyvern
+  FangedBeast
+  Temnoceran
+  BirdWyvern
+  Construct
+  DemiElderDragon
 }
 
 enum MHGame {
