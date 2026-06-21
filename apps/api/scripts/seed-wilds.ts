@@ -19,10 +19,6 @@ const SPECIES_MAP: Record<string, MonsterType> = {
   'construct':     'Construct',
   'demi-elder':    'DemiElderDragon',
   'elder-dragon':  'ElderDragon',
-  'leviathan':     'Large',            // Wilds: leviathan species (Balahara, Mizutsune, etc.)
-  'amphibian':     'Large',            // Wilds: amphibian species (Chatacabra)
-  'cephalopod':    'Large',            // Wilds: cephalopod species (Xu Wu, Nu Udra)
-  'machine':       'Large',            // Wilds: machine/automaton species (Omega Planetes)
 };
 
 // Maps the weakness/element string from the API to the Element enum in our DB.
@@ -66,6 +62,10 @@ const RANK_MAP: Record<string, Rank> = {
   'low':  'LowRank',
   'high': 'HighRank',
 };
+
+// Combat effects (not elements/statuses) that should be skipped when processing weaknesses.
+// "flash", "exhaust", "noise" are environmental or support effects, not stored element weaknesses.
+const KNOWN_SKIPPED_EFFECTS = new Set(['flash', 'exhaust', 'noise']);
 
 // Fetches the full list of monsters from the Wilds API.
 // Returns an array of objects with at least { id: number, name: string }.
@@ -165,8 +165,7 @@ async function main() {
         const element = key ? ELEMENT_MAP[key] : undefined;
         if (!element) {
           // Only warn if the key is something we might want to map (not known-skipped combat effects)
-          const knownSkipped = new Set(['flash', 'exhaust', 'noise']);
-          if (key && !knownSkipped.has(key)) {
+          if (key && !KNOWN_SKIPPED_EFFECTS.has(key)) {
             console.warn(`  WARN: unknown element/status/effect "${key}" for ${m.name} — skipped`);
           }
           continue;
