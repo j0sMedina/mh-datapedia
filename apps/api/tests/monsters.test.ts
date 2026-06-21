@@ -39,10 +39,10 @@ describe('GET /api/monsters', () => {
     expect(typeof res.body.meta.total).toBe('number');
   });
 
-  it('filters by type=Large', async () => {
-    const res = await request(app).get('/api/monsters?type=Large');
+  it('filters by type=FlyingWyvern', async () => {
+    const res = await request(app).get('/api/monsters?type=FlyingWyvern');
     expect(res.status).toBe(200);
-    res.body.data.forEach((m: any) => expect(m.type).toBe('Large'));
+    res.body.data.forEach((m: any) => expect(m.type).toBe('FlyingWyvern'));
   });
 
   it('filters by search', async () => {

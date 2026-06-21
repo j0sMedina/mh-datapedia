@@ -15,9 +15,7 @@ beforeAll(async () => {
       name: 'Favorites Test Monster',
       title: 'Test Title',
       description: 'A test monster.',
-      type: 'Large',
-      firstGame: 'MONSTER_HUNTER_WORLD',
-      firstYear: 2018,
+      type: 'FlyingWyvern',
     });
   monsterId = res.body.data.id;
 });
