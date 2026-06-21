@@ -10,13 +10,9 @@ import { useCreateMonster } from '../../hooks/useCreateMonster';
 import { useUpdateMonster } from '../../hooks/useUpdateMonster';
 import type { MonsterDetail } from '../../lib/types';
 
-const MONSTER_TYPES = ['Large', 'ElderDragon', 'Small', 'Apex', 'Afflicted', 'Tempered'];
-const GAME_IDS = [
-  'MONSTER_HUNTER_WORLD',
-  'MONSTER_HUNTER_WORLD_ICEBORNE',
-  'MONSTER_HUNTER_RISE',
-  'MONSTER_HUNTER_RISE_SUNBREAK',
-  'MONSTER_HUNTER_WILDS',
+const MONSTER_TYPES = [
+  'FlyingWyvern', 'BruteWyvern', 'FangedBeast', 'Temnoceran',
+  'BirdWyvern', 'Construct', 'DemiElderDragon', 'ElderDragon',
 ];
 
 interface MonsterFormModalProps {
@@ -42,15 +38,13 @@ export function MonsterFormModal({ open, onClose, existing }: MonsterFormModalPr
       reset(
         existing
           ? {
-              name: existing.name,
-              title: existing.title,
+              name:        existing.name,
+              title:       existing.title,
               description: existing.description,
-              type: existing.type as CreateMonster['type'],
-              firstGame: existing.firstGame as CreateMonster['firstGame'],
-              firstYear: existing.firstYear,
-              isBoss: existing.isBoss,
-              habitats: existing.habitats,
-              parentId: existing.parentId ?? null,
+              type:        existing.type as CreateMonster['type'],
+              isBoss:      existing.isBoss,
+              habitats:    existing.habitats,
+              parentId:    existing.parentId ?? null,
             }
           : undefined,
       );
@@ -82,40 +76,19 @@ export function MonsterFormModal({ open, onClose, existing }: MonsterFormModalPr
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-stone-300 text-sm mb-1">Type</label>
-            <select
-              className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-              {...register('type')}
-            >
-              {MONSTER_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-stone-300 text-sm mb-1">First Game</label>
-            <select
-              className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
-              {...register('firstGame')}
-            >
-              {GAME_IDS.map((g) => (
-                <option key={g} value={g}>
-                  {g.replace('MONSTER_HUNTER_', '').replace(/_/g, ' ')}
-                </option>
-              ))}
-            </select>
-          </div>
+        <div>
+          <label className="block text-stone-300 text-sm mb-1">Type</label>
+          <select
+            className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            {...register('type')}
+          >
+            {MONSTER_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
         </div>
 
         <Input
-          label="First Year (real-world debut)"
-          type="number"
-          error={errors.firstYear?.message}
-          {...register('firstYear', { valueAsNumber: true })}
-        />
-        <Input
           label="Habitats (comma-separated)"
-          placeholder="Ancient Forest, Elder Recess"
+          placeholder="Windward Plains, Scarlet Forest"
           {...register('habitats', {
             setValueAs: (v: unknown) =>
               typeof v === 'string'

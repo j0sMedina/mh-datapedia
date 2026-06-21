@@ -1,26 +1,26 @@
-import { GAME_ORDER, GAME_NAMES } from '../../lib/constants';
 import { cn } from '../../lib/utils';
 
-const MONSTER_TYPES = ['Large', 'ElderDragon', 'Small', 'Apex', 'Afflicted', 'Tempered'];
+const MONSTER_TYPES = [
+  'FlyingWyvern',
+  'BruteWyvern',
+  'FangedBeast',
+  'Temnoceran',
+  'BirdWyvern',
+  'Construct',
+  'DemiElderDragon',
+  'ElderDragon',
+];
 
 interface MonsterFiltersProps {
-  game: string | undefined;
   type: string | undefined;
   search: string | undefined;
-  onGameChange: (game: string | undefined) => void;
   onTypeChange: (type: string | undefined) => void;
   onSearchChange: (search: string | undefined) => void;
 }
 
-function shortGame(g: string): string {
-  return GAME_NAMES[g].replace('Monster Hunter: ', '').replace('Monster Hunter ', '');
-}
-
 export function MonsterFilters({
-  game,
   type,
   search,
-  onGameChange,
   onTypeChange,
   onSearchChange,
 }: MonsterFiltersProps) {
@@ -33,21 +33,6 @@ export function MonsterFilters({
         onChange={(e) => onSearchChange(e.target.value || undefined)}
         className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 placeholder-stone-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors duration-150"
       />
-
-      <div className="flex flex-wrap gap-2">
-        <Pill active={game === undefined} onClick={() => onGameChange(undefined)}>
-          All Games
-        </Pill>
-        {GAME_ORDER.map((g) => (
-          <Pill
-            key={g}
-            active={game === g}
-            onClick={() => onGameChange(game === g ? undefined : g)}
-          >
-            {shortGame(g)}
-          </Pill>
-        ))}
-      </div>
 
       <div className="flex flex-wrap gap-2">
         <Pill active={type === undefined} onClick={() => onTypeChange(undefined)}>

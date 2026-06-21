@@ -1,9 +1,3 @@
-export interface GameAppearance {
-  id: string;
-  game: string;
-  isNew: boolean;
-}
-
 export interface ElementWeakness {
   id: string;
   element: string;
@@ -22,6 +16,7 @@ export interface Hitzone {
   thunder: number;
   ice: number;
   dragon: number;
+  stun: number;
 }
 
 export interface MonsterDrop {
@@ -52,13 +47,10 @@ export interface MonsterListItem {
   name: string;
   title: string;
   type: string;
-  firstGame: string;
-  firstYear: number;
   imageUrl: string | null;
   iconUrl: string | null;
   isBoss: boolean;
   habitats: string[];
-  gameAppearances: GameAppearance[];
   weaknesses: ElementWeakness[];
 }
 

@@ -3,7 +3,6 @@ import { apiGet } from '../lib/api';
 import type { MonsterListItem, PaginatedResponse } from '../lib/types';
 
 export interface MonsterFiltersInput {
-  game?: string;
   type?: string;
   search?: string;
   page?: number;
@@ -12,7 +11,6 @@ export interface MonsterFiltersInput {
 
 export function useMonsters(filters: MonsterFiltersInput = {}) {
   const params = new URLSearchParams();
-  if (filters.game) params.set('game', filters.game);
   if (filters.type) params.set('type', filters.type);
   if (filters.search) params.set('search', filters.search);
   params.set('page', String(filters.page ?? 1));

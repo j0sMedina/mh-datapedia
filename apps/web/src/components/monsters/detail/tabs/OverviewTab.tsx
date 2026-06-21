@@ -1,7 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import type { MonsterDetail } from '../../../../lib/types';
 import { Badge } from '../../../ui/Badge';
-import { GAME_NAMES } from '../../../../lib/constants';
 import { cn } from '../../../../lib/utils';
 
 interface OverviewTabProps {
@@ -13,25 +12,24 @@ export function OverviewTab({ monster }: OverviewTabProps) {
     <div className="space-y-6 max-w-3xl">
       <p className="text-stone-300 leading-relaxed">{monster.description}</p>
 
-      <div>
-        <h3 className="text-stone-500 text-xs uppercase tracking-wider mb-3">Game Appearances</h3>
-        <div className="flex flex-wrap gap-2">
-          {monster.gameAppearances.map((ga) => (
-            <span
-              key={ga.id}
-              className={cn(
-                'px-3 py-1 rounded-full text-sm border',
-                ga.isNew
-                  ? 'bg-amber-500/10 text-amber-500 border-amber-500/30'
-                  : 'bg-stone-800 text-stone-400 border-stone-700',
-              )}
-            >
-              {GAME_NAMES[ga.game] ?? ga.game}
-              {ga.isNew && ' ★'}
-            </span>
-          ))}
+      {monster.habitats.length > 0 && (
+        <div>
+          <h3 className="text-stone-500 text-xs uppercase tracking-wider mb-3">Habitats</h3>
+          <div className="flex flex-wrap gap-2">
+            {monster.habitats.map((h) => (
+              <span
+                key={h}
+                className={cn(
+                  'px-3 py-1 rounded-full text-sm border',
+                  'bg-stone-800 text-stone-400 border-stone-700',
+                )}
+              >
+                {h}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {monster.ailments.length > 0 && (
         <div>

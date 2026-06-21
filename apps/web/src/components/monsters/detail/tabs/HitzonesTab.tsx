@@ -10,12 +10,12 @@ import type { Hitzone } from '../../../../lib/types';
 type HitzoneRow = Omit<Hitzone, 'id'>;
 
 const DAMAGE_COLS: (keyof Omit<HitzoneRow, 'part'>)[] = [
-  'cut', 'blunt', 'bullet', 'fire', 'water', 'thunder', 'ice', 'dragon',
+  'cut', 'blunt', 'bullet', 'fire', 'water', 'thunder', 'ice', 'dragon', 'stun',
 ];
 
 const COL_LABELS: Record<string, string> = {
   cut: 'Cut', blunt: 'Blunt', bullet: 'Bullet',
-  fire: 'Fire', water: 'Water', thunder: 'Thunder', ice: 'Ice', dragon: 'Dragon',
+  fire: 'Fire', water: 'Water', thunder: 'Thunder', ice: 'Ice', dragon: 'Dragon', stun: 'Stun',
 };
 
 function valueColor(v: number): string {
@@ -25,7 +25,7 @@ function valueColor(v: number): string {
 }
 
 function blankRow(): HitzoneRow {
-  return { part: '', cut: 50, blunt: 50, bullet: 50, fire: 0, water: 0, thunder: 0, ice: 0, dragon: 0 };
+  return { part: '', cut: 50, blunt: 50, bullet: 50, fire: 0, water: 0, thunder: 0, ice: 0, dragon: 0, stun: 0 };
 }
 
 export function HitzonesTab({ monsterId }: { monsterId: string }) {
@@ -39,8 +39,8 @@ export function HitzonesTab({ monsterId }: { monsterId: string }) {
 
   function enterEdit() {
     setRows(
-      (hitzones ?? []).map(({ part, cut, blunt, bullet, fire, water, thunder, ice, dragon }) => ({
-        part, cut, blunt, bullet, fire, water, thunder, ice, dragon,
+      (hitzones ?? []).map(({ part, cut, blunt, bullet, fire, water, thunder, ice, dragon, stun }) => ({
+        part, cut, blunt, bullet, fire, water, thunder, ice, dragon, stun,
       })),
     );
     setEditing(true);

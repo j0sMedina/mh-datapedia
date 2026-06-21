@@ -2,18 +2,11 @@ import { Link } from '@tanstack/react-router';
 import { Crown } from 'lucide-react';
 import type { MonsterListItem } from '../../lib/types';
 import { Badge } from '../ui/Badge';
-import { TYPE_BADGE_CLASSES, GAME_NAMES } from '../../lib/constants';
+import { TYPE_BADGE_CLASSES } from '../../lib/constants';
 import { cn } from '../../lib/utils';
 
 interface MonsterCardProps {
   monster: MonsterListItem;
-}
-
-function shortGameName(game: string): string {
-  return (GAME_NAMES[game] ?? game)
-    .replace('Monster Hunter: ', 'MH: ')
-    .replace('Monster Hunter ', 'MH ')
-    .replace('World: ', '');
 }
 
 export function MonsterCard({ monster }: MonsterCardProps) {
@@ -36,11 +29,6 @@ export function MonsterCard({ monster }: MonsterCardProps) {
         <Badge className={cn(TYPE_BADGE_CLASSES[monster.type] ?? 'bg-stone-700 text-stone-400')}>
           {monster.type}
         </Badge>
-        {monster.gameAppearances.map((ga) => (
-          <Badge key={ga.id} className="bg-stone-800 text-stone-500">
-            {shortGameName(ga.game)}
-          </Badge>
-        ))}
       </div>
     </Link>
   );

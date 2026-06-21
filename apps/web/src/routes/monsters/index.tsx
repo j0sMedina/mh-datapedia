@@ -9,10 +9,9 @@ import { MonsterFormModal } from '../../components/admin/MonsterFormModal';
 import { useAuth } from '../../context/AuthContext';
 
 const monsterSearchSchema = z.object({
-  game: z.string().optional(),
-  type: z.string().optional(),
+  type:   z.string().optional(),
   search: z.string().optional(),
-  page: z.coerce.number().int().min(1).default(1).catch(1),
+  page:   z.coerce.number().int().min(1).default(1).catch(1),
 });
 
 export const Route = createFileRoute('/monsters/')({
@@ -23,11 +22,11 @@ export const Route = createFileRoute('/monsters/')({
 function MonstersPage() {
   const { user } = useAuth();
   const navigate = useNavigate({ from: '/monsters/' });
-  const { game, type, search, page } = Route.useSearch();
-  const { data, isLoading } = useMonsters({ game, type, search, page });
+  const { type, search, page } = Route.useSearch();
+  const { data, isLoading } = useMonsters({ type, search, page });
   const [showAddModal, setShowAddModal] = useState(false);
 
-  const setFilter = (key: 'game' | 'type' | 'search', val: string | undefined) => {
+  const setFilter = (key: 'type' | 'search', val: string | undefined) => {
     navigate({ search: (prev) => ({ ...prev, [key]: val, page: 1 }) });
   };
 
@@ -44,10 +43,8 @@ function MonstersPage() {
 
       <div className="mb-6">
         <MonsterFilters
-          game={game}
           type={type}
           search={search}
-          onGameChange={(g) => setFilter('game', g)}
           onTypeChange={(t) => setFilter('type', t)}
           onSearchChange={(s) => setFilter('search', s)}
         />
