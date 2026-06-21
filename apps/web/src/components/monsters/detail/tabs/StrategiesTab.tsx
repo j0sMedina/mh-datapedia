@@ -19,10 +19,7 @@ import type { Strategy } from '../../../../lib/types';
 import { Pencil, Trash2 } from 'lucide-react';
 
 const DIFFICULTIES = ['Beginner', 'Intermediate', 'Advanced'] as const;
-const GAME_IDS = [
-  'MONSTER_HUNTER_WORLD', 'MONSTER_HUNTER_WORLD_ICEBORNE',
-  'MONSTER_HUNTER_RISE', 'MONSTER_HUNTER_RISE_SUNBREAK', 'MONSTER_HUNTER_WILDS',
-] as const;
+const GAME_IDS = ['MONSTER_HUNTER_WILDS'] as const;
 
 function StrategyForm({
   monsterId,
