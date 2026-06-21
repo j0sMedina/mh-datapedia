@@ -16,6 +16,13 @@ export const MonsterTypeSchema = z.enum([
   'Apex',
   'Afflicted',
   'Tempered',
+  'FlyingWyvern',
+  'BruteWyvern',
+  'FangedBeast',
+  'Temnoceran',
+  'BirdWyvern',
+  'Construct',
+  'DemiElderDragon',
 ]);
 export type MonsterType = z.infer<typeof MonsterTypeSchema>;
 

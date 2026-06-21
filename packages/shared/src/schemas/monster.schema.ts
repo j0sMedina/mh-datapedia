@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { MHGameSchema, MonsterTypeSchema } from './enums.schema';
-import { GameAppearanceSchema } from './game.schema';
+import { MonsterTypeSchema } from './enums.schema';
 import { ElementWeaknessSchema } from './weakness.schema';
 import { HitzoneSchema } from './hitzone.schema';
 import { StrategySchema } from './strategy.schema';
@@ -13,13 +12,10 @@ const BaseMonsterSchema = z.object({
   title: z.string(),
   description: z.string(),
   type: MonsterTypeSchema,
-  firstGame: MHGameSchema,
-  firstYear: z.number().int(),
   imageUrl: z.string().nullable(),
   iconUrl: z.string().nullable(),
   isBoss: z.boolean(),
   habitats: z.array(z.string()),
-  games: z.array(GameAppearanceSchema),
   weaknesses: z.array(ElementWeaknessSchema),
   hitzones: z.array(HitzoneSchema),
   strategies: z.array(StrategySchema),
@@ -44,8 +40,6 @@ export const CreateMonsterSchema = z.object({
   title: z.string().min(1).max(200),
   description: z.string().min(1),
   type: MonsterTypeSchema,
-  firstGame: MHGameSchema,
-  firstYear: z.number().int().min(1900).max(2100),
   imageUrl: z.string().url().nullable().optional(),
   iconUrl: z.string().url().nullable().optional(),
   isBoss: z.boolean().optional(),
@@ -58,7 +52,6 @@ export const UpdateMonsterSchema = CreateMonsterSchema.partial();
 export type UpdateMonster = z.infer<typeof UpdateMonsterSchema>;
 
 export const MonsterFiltersSchema = z.object({
-  game: MHGameSchema.optional(),
   type: MonsterTypeSchema.optional(),
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),

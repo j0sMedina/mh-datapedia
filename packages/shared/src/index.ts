@@ -1,5 +1,4 @@
 export * from './schemas/enums.schema';
-export * from './schemas/game.schema';
 export * from './schemas/weakness.schema';
 export * from './schemas/hitzone.schema';
 export * from './schemas/drop.schema';

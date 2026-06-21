@@ -14,6 +14,7 @@ export const HitzoneSchema = z.object({
   thunder: hitzoneValue,
   ice: hitzoneValue,
   dragon: hitzoneValue,
+  stun: hitzoneValue,
 });
 export type Hitzone = z.infer<typeof HitzoneSchema>;
 
@@ -27,6 +28,7 @@ export const UpsertHitzoneItemSchema = z.object({
   thunder: hitzoneValue,
   ice: hitzoneValue,
   dragon: hitzoneValue,
+  stun: hitzoneValue.default(0),
 });
 export const UpsertHitzonesSchema = z.array(UpsertHitzoneItemSchema);
 export type UpsertHitzones = z.infer<typeof UpsertHitzonesSchema>;
