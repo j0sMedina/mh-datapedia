@@ -12,7 +12,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:seed": "ts-node prisma/seed.ts",
-    "seed:wilds": "ts-node --transpile-only scripts/seed-wilds.ts"
+    "seed:wilds": "ts-node --transpile-only scripts/seed-wilds.ts",
+    "fix:elements": "ts-node --transpile-only scripts/fix-element-weaknesses.ts"
   },
   "dependencies": {
     "@mh-datapedia/shared": "workspace:*",
