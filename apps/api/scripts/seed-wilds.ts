@@ -100,14 +100,6 @@ async function main() {
   // A Set is like an array but with very fast "does this value exist?" lookups.
   const apiNames = new Set<string>(list.map((m: any) => m.name as string));
 
-  // Delete all monsters whose name is NOT in the Wilds API.
-  // onDelete: Cascade in the schema means all their weaknesses, hitzones, and drops
-  // are also deleted automatically.
-  const deleted = await prisma.monster.deleteMany({
-    where: { name: { notIn: Array.from(apiNames) } },
-  });
-  console.log(`  Deleted ${deleted.count} non-Wilds monsters from the DB`);
-
   let upserted = 0;
 
   for (const listItem of list) {
@@ -234,9 +226,10 @@ async function main() {
       // The API returns rewards as: [{ item: { name }, conditions: [{ kind, rank, quantity, chance, part }] }]
       // We expand each reward × each condition into one DB row.
       // "chance" is the drop chance percentage (e.g. 35 means 35%).
-      await tx.monsterDrop.deleteMany({ where: { monsterId: monster.id } });
-
-      const drops: any[] = [];
+      // Build the drops array FIRST so that if every condition is unknown we don't
+      // wipe existing data and commit zero rows — the delete only runs once we know
+      // what we are going to insert.
+      const drops: object[] = [];
 
       for (const reward of (m.rewards ?? [])) {
         for (const cond of (reward.conditions ?? [])) {
@@ -267,6 +260,8 @@ async function main() {
         }
       }
 
+      // Only replace existing drops now that we know what the new set looks like.
+      await tx.monsterDrop.deleteMany({ where: { monsterId: monster.id } });
       if (drops.length > 0) {
         await tx.monsterDrop.createMany({ data: drops });
       }
@@ -275,6 +270,15 @@ async function main() {
     upserted++;
     console.log(`  [${upserted}/${list.length}] ✓ ${m.name}`);
   }
+
+  // Delete all monsters whose name is NOT in the Wilds API.
+  // Runs AFTER the loop so the DB is never left in a torn state if a fetch fails mid-loop.
+  // onDelete: Cascade in the schema means all their weaknesses, hitzones, and drops
+  // are also deleted automatically.
+  const deleted = await prisma.monster.deleteMany({
+    where: { name: { notIn: Array.from(apiNames) } },
+  });
+  console.log(`  Deleted ${deleted.count} non-Wilds monsters from the DB`);
 
   console.log(`\nDone. ${upserted} monsters upserted, ${deleted.count} non-Wilds monsters deleted.`);
 }

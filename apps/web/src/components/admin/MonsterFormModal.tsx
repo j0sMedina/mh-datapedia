@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateMonsterSchema } from '@mh-datapedia/shared';
+import { CreateMonsterSchema, MonsterTypeSchema } from '@mh-datapedia/shared';
 import type { CreateMonster } from '@mh-datapedia/shared';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
@@ -9,11 +9,6 @@ import { Button } from '../ui/Button';
 import { useCreateMonster } from '../../hooks/useCreateMonster';
 import { useUpdateMonster } from '../../hooks/useUpdateMonster';
 import type { MonsterDetail } from '../../lib/types';
-
-const MONSTER_TYPES = [
-  'FlyingWyvern', 'BruteWyvern', 'FangedBeast', 'Temnoceran',
-  'BirdWyvern', 'Construct', 'DemiElderDragon', 'ElderDragon',
-];
 
 interface MonsterFormModalProps {
   open: boolean;
@@ -82,7 +77,7 @@ export function MonsterFormModal({ open, onClose, existing }: MonsterFormModalPr
             className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
             {...register('type')}
           >
-            {MONSTER_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            {MonsterTypeSchema.options.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
 

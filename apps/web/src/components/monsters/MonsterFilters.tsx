@@ -1,15 +1,5 @@
+import { MonsterTypeSchema } from '@mh-datapedia/shared';
 import { cn } from '../../lib/utils';
-
-const MONSTER_TYPES = [
-  'FlyingWyvern',
-  'BruteWyvern',
-  'FangedBeast',
-  'Temnoceran',
-  'BirdWyvern',
-  'Construct',
-  'DemiElderDragon',
-  'ElderDragon',
-];
 
 interface MonsterFiltersProps {
   type: string | undefined;
@@ -38,7 +28,7 @@ export function MonsterFilters({
         <Pill active={type === undefined} onClick={() => onTypeChange(undefined)}>
           All Types
         </Pill>
-        {MONSTER_TYPES.map((t) => (
+        {MonsterTypeSchema.options.map((t) => (
           <Pill
             key={t}
             active={type === t}
