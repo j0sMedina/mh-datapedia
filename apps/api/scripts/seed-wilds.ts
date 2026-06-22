@@ -127,19 +127,18 @@ async function main() {
         where: { name: m.name },
         create: {
           name:        m.name,
-          title:       '',         // admin fills later via the web form
-          description: '',         // admin fills later via the web form
+          title:       '',
+          description: m.description ?? '',
           type,
           isBoss:      m.kind === 'large',
-          imageUrl:    null,       // Wilds API has no images
+          imageUrl:    null,
           iconUrl:     null,
-          habitats:    [],         // admin fills later via the web form
+          habitats:    [],
         },
         update: {
           type,
-          isBoss: m.kind === 'large',
-          // We don't overwrite title/description/imageUrl/habitats on update
-          // so that admin edits made through the web UI are preserved.
+          isBoss:      m.kind === 'large',
+          description: m.description ?? '',
         },
         select: { id: true },
       });
@@ -160,7 +159,6 @@ async function main() {
         const key = getWeaknessKey(w);
         const element = key ? ELEMENT_MAP[key] : undefined;
         if (!element) {
-          // Only warn if the key is something we might want to map (not known-skipped combat effects)
           if (key && !KNOWN_SKIPPED_EFFECTS.has(key)) {
             console.warn(`  WARN: unknown element/status/effect "${key}" for ${m.name} — skipped`);
           }
@@ -171,8 +169,25 @@ async function main() {
           weaknessMap.set(element, {
             monsterId: monster.id,
             element,
-            rating:   w.level,   // 1 = one star, 2 = two stars, 3 = three stars
-            isImmune: false,     // Wilds API does not list immunities explicitly
+            rating:   w.level,
+            isImmune: false,
+          });
+        }
+      }
+
+      // Resistances = element immunities (e.g. Rathalos immune to Fire).
+      // Only element-kind resistances are stored — effect resistances (noise, flash, exhaust) are skipped.
+      for (const r of (m.resistances ?? [])) {
+        if (r.kind !== 'element') continue;
+        const element = r.element ? ELEMENT_MAP[r.element] : undefined;
+        if (!element) continue;
+        // Only add immunity if this element isn't already listed as a weakness
+        if (!weaknessMap.has(element)) {
+          weaknessMap.set(element, {
+            monsterId: monster.id,
+            element,
+            rating:   0,
+            isImmune: true,
           });
         }
       }
