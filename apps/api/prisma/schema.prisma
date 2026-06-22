@@ -140,6 +140,10 @@ enum MonsterType {
   BirdWyvern
   Construct
   DemiElderDragon
+  Leviathan
+  Amphibian
+  Cephalopod
+  Machine
 }
 
 enum MHGame {

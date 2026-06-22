@@ -19,6 +19,10 @@ const SPECIES_MAP: Record<string, MonsterType> = {
   'construct':     'Construct',
   'demi-elder':    'DemiElderDragon',
   'elder-dragon':  'ElderDragon',
+  'leviathan':     'Leviathan',
+  'amphibian':     'Amphibian',
+  'cephalopod':    'Cephalopod',
+  'machine':       'Machine',
 };
 
 // Maps the weakness/element string from the API to the Element enum in our DB.

@@ -18,6 +18,10 @@ export const TYPE_BADGE_CLASSES: Record<string, string> = {
   BirdWyvern:      'bg-lime-400/10 text-lime-400',
   Construct:       'bg-stone-400/10 text-stone-400',
   DemiElderDragon: 'bg-amber-600/10 text-amber-600',
+  Leviathan:       'bg-blue-400/10 text-blue-400',
+  Amphibian:       'bg-green-400/10 text-green-400',
+  Cephalopod:      'bg-violet-400/10 text-violet-400',
+  Machine:         'bg-zinc-400/10 text-zinc-400',
 };
 
 export const ELEMENT_COLORS: Record<string, string> = {
