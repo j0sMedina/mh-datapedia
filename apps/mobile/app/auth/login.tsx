@@ -33,6 +33,8 @@ export default function LoginScreen() {
     } catch (e) {
       if (e instanceof ApiError && e.status === 401) {
         setError('Invalid email or password.');
+      } else if (e instanceof ApiError && (e.body as { message?: string })?.message) {
+        setError((e.body as { message: string }).message);
       } else {
         setError('Something went wrong. Try again.');
       }

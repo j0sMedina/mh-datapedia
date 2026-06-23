@@ -47,6 +47,8 @@ export default function RegisterScreen() {
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
         setError('Email or username already taken.');
+      } else if (e instanceof ApiError && (e.body as { message?: string })?.message) {
+        setError((e.body as { message: string }).message);
       } else {
         setError('Something went wrong. Try again.');
       }
