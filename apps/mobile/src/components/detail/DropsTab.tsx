@@ -91,7 +91,7 @@ export function DropsTab({ drops }: { drops: Drop[] }) {
       </ScrollView>
 
       {/* Drop rows */}
-      {filtered.map((d) => (
+      {[...filtered].sort((a, b) => b.rate - a.rate).map((d) => (
         <View key={d.id} className="flex-row items-center px-4 py-3 border-b border-stone-800">
           <View className="flex-1">
             <Text className="text-stone-100 text-sm font-medium">{d.itemName}</Text>

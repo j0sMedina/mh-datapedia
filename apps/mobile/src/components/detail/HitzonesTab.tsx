@@ -36,7 +36,7 @@ export function HitzonesTab({ hitzones }: { hitzones: Hitzone[] }) {
 
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} nestedScrollEnabled>
         {/* Header row */}
         <View className="flex-row border-b border-stone-700 px-2 py-2">
           <Text className="text-stone-400 text-xs w-28 font-medium">Part</Text>

@@ -19,7 +19,7 @@ export default function MonsterDetailScreen() {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState(0);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['monster', id],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     queryFn: () => apiGet<{ data: any }>(`/api/monsters/${id}`).then((r) => r.data),
@@ -37,6 +37,14 @@ export default function MonsterDetailScreen() {
     return (
       <View className="flex-1 bg-stone-950 justify-center">
         <Spinner size="lg" />
+      </View>
+    );
+  }
+
+  if (isError) {
+    return (
+      <View className="flex-1 items-center justify-center bg-stone-950">
+        <Text className="text-stone-400 text-base">Failed to load monster.</Text>
       </View>
     );
   }
