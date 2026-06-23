@@ -55,8 +55,8 @@ export function DropsTab({ drops }: { drops: Drop[] }) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 10, alignItems: 'center' }}
+        style={{ borderBottomWidth: 1, borderBottomColor: '#292524', height: 44 }}
+        contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center', height: 44 }}
       >
         {games.map((g) => (
           <TypeFilterChip
@@ -72,8 +72,8 @@ export function DropsTab({ drops }: { drops: Drop[] }) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}
-        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8, alignItems: 'center' }}
+        style={{ borderBottomWidth: 1, borderBottomColor: '#292524', height: 44 }}
+        contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center', height: 44 }}
       >
         <TypeFilterChip
           label="All Ranks"
