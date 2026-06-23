@@ -49,7 +49,7 @@ export default function MonstersScreen() {
   const monsters = data?.data ?? [];
 
   return (
-    <View className="flex-1 bg-stone-950">
+    <View style={{ flex: 1, backgroundColor: '#0c0a09' }}>
       {/* Search bar */}
       <View className="px-4 pt-3 pb-2">
         <TextInput
@@ -66,8 +66,8 @@ export default function MonstersScreen() {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        className="border-b border-stone-800 py-2"
-        contentContainerStyle={{ paddingHorizontal: 16 }}
+        style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingVertical: 8, alignItems: 'center' }}
       >
         <TypeFilterChip
           label="All"

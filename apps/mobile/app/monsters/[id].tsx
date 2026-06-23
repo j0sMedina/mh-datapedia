@@ -50,7 +50,7 @@ export default function MonsterDetailScreen() {
   }
 
   return (
-    <View className="flex-1 bg-stone-950">
+    <View style={{ flex: 1, backgroundColor: '#0c0a09' }}>
       {/* Hero image */}
       {data.imageUrl ? (
         <Image
@@ -78,7 +78,7 @@ export default function MonsterDetailScreen() {
       <TabStrip tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
       {/* Tab content */}
-      <View className="flex-1">
+      <View style={{ flex: 1 }}>
         {activeTab === 0 && (
           <OverviewTab
             monster={{
