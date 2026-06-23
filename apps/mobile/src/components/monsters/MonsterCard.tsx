@@ -4,7 +4,7 @@ import { Badge } from '../ui/Badge';
 import type { Monster } from '@mh-datapedia/shared';
 
 interface MonsterCardProps {
-  monster: Pick<Monster, 'id' | 'name' | 'type' | 'iconUrl' | 'isBoss'>;
+  monster: Pick<Monster, 'id' | 'name' | 'type' | 'iconUrl'>;
 }
 
 export function MonsterCard({ monster }: MonsterCardProps) {

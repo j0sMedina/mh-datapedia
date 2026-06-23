@@ -86,15 +86,16 @@ export default function MonstersScreen() {
       {/* List */}
       {isLoading ? (
         <Spinner size="lg" />
-      ) : monsters.length === 0 ? (
-        <View className="flex-1 items-center justify-center">
-          <Text className="text-stone-500">No monsters found.</Text>
-        </View>
       ) : (
         <FlatList
           data={monsters}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <MonsterCard monster={item} />}
+          ListEmptyComponent={
+            <View className="flex-1 items-center justify-center py-16">
+              <Text className="text-stone-500">No monsters found.</Text>
+            </View>
+          }
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
