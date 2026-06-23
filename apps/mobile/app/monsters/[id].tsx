@@ -33,7 +33,7 @@ export default function MonsterDetailScreen() {
     }
   }, [data?.name, navigation]);
 
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
       <View className="flex-1 bg-stone-950 justify-center">
         <Spinner size="lg" />
@@ -41,7 +41,7 @@ export default function MonsterDetailScreen() {
     );
   }
 
-  if (isError) {
+  if (isError || !data) {
     return (
       <View className="flex-1 items-center justify-center bg-stone-950">
         <Text className="text-stone-400 text-base">Failed to load monster.</Text>
