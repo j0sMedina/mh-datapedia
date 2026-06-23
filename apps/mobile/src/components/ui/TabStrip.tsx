@@ -16,7 +16,7 @@ export function TabStrip({ tabs, active, onChange }: TabStripProps) {
     >
       {tabs.map((tab, i) => (
         <Pressable
-          key={tab}
+          key={i}
           onPress={() => onChange(i)}
           className="mr-6 py-3"
         >

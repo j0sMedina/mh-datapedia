@@ -29,7 +29,7 @@ export function Button({
       style={({ pressed }) => ({ opacity: pressed ? 0.75 : undefined })}
     >
       {loading ? (
-        <ActivityIndicator size="small" color={variant === 'primary' ? '#0c0a09' : '#a8a29e'} />
+        <ActivityIndicator size="small" color={variant === 'primary' ? '#0c0a09' : '#78716c'} />
       ) : (
         <Text
           className={`text-sm font-semibold ${
