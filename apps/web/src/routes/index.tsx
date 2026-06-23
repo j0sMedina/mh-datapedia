@@ -49,16 +49,17 @@ function LandingPage() {
     <div
       style={{
         backgroundImage: 'url(/frontpage.jpg)',
-        backgroundSize: 'contain',
-        backgroundPosition: 'center top',
-        backgroundRepeat: 'no-repeat',
-        backgroundColor: '#0c0a09',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center center',
         backgroundAttachment: 'fixed',
+        minHeight: 'calc(100vh - 3.5rem)',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
 
-      {/* HERO — text over the artwork */}
-      <div className="relative overflow-hidden px-4 text-center" style={{ paddingTop: 128, paddingBottom: 150 }}>
+      {/* HERO — fills remaining space, title + button vertically centred */}
+      <div className="relative flex-1 flex items-center justify-center overflow-hidden px-4 text-center">
         {/* radial scrim keeps title legible over bright vistas */}
         <div
           className="absolute inset-0 pointer-events-none"
@@ -95,7 +96,7 @@ function LandingPage() {
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 -20px 60px -40px rgba(0,0,0,0.7)',
         }}
       >
-        <div className="max-w-7xl mx-auto px-6 py-11">
+        <div className="max-w-7xl mx-auto px-6 py-7">
           <div className="mh-section-head text-xl whitespace-nowrap mb-6">Monster Hunter Wilds</div>
 
           {monsters.length > 0 && (
@@ -112,6 +113,21 @@ function LandingPage() {
           )}
         </div>
       </div>
+
+      {/* FOOTER — only visible on scroll */}
+      <footer
+        style={{
+          background: 'rgba(12,10,9,0.75)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderTop: '1px solid rgba(69,188,171,0.15)',
+        }}
+        className="py-5"
+      >
+        <div className="max-w-7xl mx-auto px-4 text-center text-stone-500 text-sm">
+          MH Datapedia — fan-made field guide for Monster Hunter Wilds
+        </div>
+      </footer>
     </div>
   );
 }

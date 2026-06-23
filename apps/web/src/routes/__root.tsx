@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import type { AuthState } from '../context/AuthContext';
 import { LoginModalProvider } from '../context/LoginModalContext';
 import { Navbar } from '../components/layout/Navbar';
-import { Footer } from '../components/layout/Footer';
 import { LoginModal } from '../components/auth/LoginModal';
 import { Spinner } from '../components/ui/Spinner';
 
@@ -30,7 +29,6 @@ function RootLayout() {
         <main className="flex-1">
           <Outlet />
         </main>
-        <Footer />
         {import.meta.env.DEV && <TanStackRouterDevtools />}
       </div>
       <LoginModal />
