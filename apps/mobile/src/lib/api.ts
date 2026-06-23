@@ -27,7 +27,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   if (res.status === 401) {
     await storage.clearToken();
-    router.replace('/auth/login');
+    if (!path.startsWith('/api/auth/')) {
+      router.replace('/auth/login');
+    }
     throw new ApiError(401, null);
   }
 

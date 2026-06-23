@@ -6,6 +6,7 @@ import {
   ScrollView,
   RefreshControl,
   Text,
+  Pressable,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '../../src/lib/api';
@@ -30,7 +31,7 @@ export default function MonstersScreen() {
   const [search, setSearch] = useState('');
   const [activeType, setActiveType] = useState<MonsterType | null>(null);
 
-  const { data, isLoading, refetch, isRefetching } = useQuery({
+  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['monsters', search, activeType],
     queryFn: () => {
       const params = new URLSearchParams({ limit: '100' });
@@ -85,7 +86,16 @@ export default function MonstersScreen() {
 
       {/* List */}
       {isLoading ? (
-        <Spinner size="lg" />
+        <View className="flex-1 bg-stone-950 items-center justify-center">
+          <Spinner size="lg" />
+        </View>
+      ) : isError ? (
+        <View className="flex-1 bg-stone-950 items-center justify-center">
+          <Text className="text-stone-400 text-base">Failed to load monsters.</Text>
+          <Pressable onPress={() => refetch()} className="mt-3">
+            <Text className="text-accent text-sm">Retry</Text>
+          </Pressable>
+        </View>
       ) : (
         <FlatList
           data={monsters}

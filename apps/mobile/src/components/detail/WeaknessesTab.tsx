@@ -33,7 +33,12 @@ export function WeaknessesTab({ weaknesses }: { weaknesses: Weakness[] }) {
           {w.isImmune ? (
             <Text className="text-stone-500 text-xs">Immune</Text>
           ) : (
-            <Text className="text-accent text-sm">{'★'.repeat(w.rating)}{'☆'.repeat(3 - w.rating)}</Text>
+            (() => {
+              const rating = Math.min(3, Math.max(0, w.rating));
+              const filled = '★'.repeat(rating);
+              const empty = '☆'.repeat(3 - rating);
+              return <Text className="text-accent text-sm">{filled}{empty}</Text>;
+            })()
           )}
         </View>
       ))}

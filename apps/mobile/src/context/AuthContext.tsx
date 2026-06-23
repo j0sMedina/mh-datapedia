@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { apiGet, apiPost } from '../lib/api';
+import { apiGet, apiPost, ApiError } from '../lib/api';
 import { storage } from '../lib/storage';
 import type { User } from '@mh-datapedia/shared';
 
@@ -31,10 +31,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAccessToken(token);
         const { user: me } = await apiGet<{ user: User }>('/api/auth/me');
         setUser(me);
-      } catch {
-        await storage.clearToken();
-        setAccessToken(null);
-        setUser(null);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 401) {
+          await storage.clearToken();
+          setAccessToken(null);
+          setUser(null);
+        }
+        // Network errors and 5xx: leave token intact (user may be temporarily offline)
+        // setUser remains null since we couldn't validate — user will see logged-out UI
+        // but their token survives for the next launch
       } finally {
         setIsLoading(false);
       }

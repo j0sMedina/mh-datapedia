@@ -91,10 +91,10 @@ export default function MonsterDetailScreen() {
             }}
           />
         )}
-        {activeTab === 1 && <HitzonesTab hitzones={data.hitzones} />}
-        {activeTab === 2 && <WeaknessesTab weaknesses={data.weaknesses} />}
-        {activeTab === 3 && <DropsTab drops={data.drops} />}
-        {activeTab === 4 && <StrategiesTab strategies={data.strategies} />}
+        {activeTab === 1 && <HitzonesTab hitzones={data.hitzones ?? []} />}
+        {activeTab === 2 && <WeaknessesTab weaknesses={data.weaknesses ?? []} />}
+        {activeTab === 3 && <DropsTab drops={data.drops ?? []} />}
+        {activeTab === 4 && <StrategiesTab strategies={data.strategies ?? []} />}
       </View>
     </View>
   );
