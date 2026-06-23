@@ -233,3 +233,30 @@
   .mh-ripple   { animation-duration: 200ms; }
   .mh-blackout { animation-duration: 200ms; }
 }
+
+/* ============================================================
+   .hero-bg — landing page full-bleed background
+   Pans left (toward the hunter) as the viewport narrows.
+   Multiple breakpoints give a progressive feel during resize.
+   background-attachment: fixed is desktop-only (broken on iOS).
+   ============================================================ */
+.hero-bg {
+  background-image: url(/frontpage.jpg);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: scroll;
+  background-position: left center;   /* mobile: show the hunter */
+  transition: background-position 0.5s ease;
+}
+@media (min-width: 480px) {
+  .hero-bg { background-position: 18% center; }
+}
+@media (min-width: 768px) {
+  .hero-bg {
+    background-position: 35% center;
+    background-attachment: fixed;
+  }
+}
+@media (min-width: 1024px) {
+  .hero-bg { background-position: center center; }
+}

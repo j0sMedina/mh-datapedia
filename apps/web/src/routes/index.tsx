@@ -47,11 +47,8 @@ function LandingPage() {
 
   return (
     <div
+      className="hero-bg"
       style={{
-        backgroundImage: 'url(/frontpage.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center center',
-        backgroundAttachment: 'fixed',
         minHeight: 'calc(100vh - 3.5rem)',
         display: 'flex',
         flexDirection: 'column',
