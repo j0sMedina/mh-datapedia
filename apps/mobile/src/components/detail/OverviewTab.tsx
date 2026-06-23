@@ -1,4 +1,4 @@
-import { ScrollView, View, Text } from 'react-native';
+import { View, Text } from 'react-native';
 import { router } from 'expo-router';
 import { Badge } from '../ui/Badge';
 import type { Monster } from '@mh-datapedia/shared';
@@ -15,7 +15,7 @@ interface Props {
 
 export function OverviewTab({ monster }: Props) {
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+    <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }}>
       {monster.isBoss && (
         <View className="mb-3">
           <Badge variant="red">Boss</Badge>
@@ -74,6 +74,6 @@ export function OverviewTab({ monster }: Props) {
           </View>
         </View>
       )}
-    </ScrollView>
+    </View>
   );
 }

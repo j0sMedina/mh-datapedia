@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, ScrollView } from 'react-native';
 import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '../../src/lib/api';
@@ -51,42 +51,48 @@ export default function MonsterDetailScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0c0a09' }}>
-      {/* Hero image */}
-      {data.imageUrl ? (
-        <Image
-          source={{ uri: data.imageUrl }}
-          className="w-full"
-          style={{ aspectRatio: 16 / 9 }}
-          resizeMode="cover"
-        />
-      ) : (
-        <View className="w-full bg-stone-900 items-center justify-center" style={{ aspectRatio: 16 / 9 }}>
-          <Text className="text-stone-600 text-lg">{data.name}</Text>
+      {/* Tab strip stays fixed at top */}
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        // Disable vertical scroll for Hitzones (it manages its own scroll)
+        scrollEnabled={activeTab !== 1}
+      >
+        {/* Hero image */}
+        {data.imageUrl ? (
+          <Image
+            source={{ uri: data.imageUrl }}
+            style={{ width: '100%', aspectRatio: 16 / 9 }}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#1c1917', alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ color: '#57534e', fontSize: 18 }}>{data.name}</Text>
+          </View>
+        )}
+
+        {/* Name + title + boss badge */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, flexDirection: 'row', alignItems: 'flex-start' }}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: '#fafaf9', fontSize: 20, fontWeight: 'bold' }}>{data.name}</Text>
+            <Text style={{ color: '#a8a29e', fontSize: 13 }}>{data.title}</Text>
+          </View>
+          {data.isBoss && <Badge variant="red">Boss</Badge>}
         </View>
-      )}
 
-      {/* Name + title + boss badge */}
-      <View className="px-4 pt-3 pb-2 flex-row items-start">
-        <View className="flex-1">
-          <Text className="text-stone-50 text-xl font-bold">{data.name}</Text>
-          <Text className="text-stone-400 text-sm">{data.title}</Text>
-        </View>
-        {data.isBoss && <Badge variant="red">Boss</Badge>}
-      </View>
+        {/* Tab strip */}
+        <TabStrip tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-      {/* Tab strip */}
-      <TabStrip tabs={TABS} active={activeTab} onChange={setActiveTab} />
-
-      {/* Tab content */}
-      <View style={{ flex: 1 }}>
+        {/* Tab content — plain views, outer ScrollView handles scrolling */}
         {activeTab === 0 && (
           <OverviewTab
             monster={{
               description: data.description,
-              habitats: data.habitats,
-              ailments: data.ailments,
+              habitats: data.habitats ?? [],
+              ailments: data.ailments ?? [],
               isBoss: data.isBoss,
-              subspecies: data.subspecies,
+              subspecies: data.subspecies ?? [],
               parent: data.parent,
             }}
           />
@@ -95,7 +101,7 @@ export default function MonsterDetailScreen() {
         {activeTab === 2 && <WeaknessesTab weaknesses={data.weaknesses ?? []} />}
         {activeTab === 3 && <DropsTab drops={data.drops ?? []} />}
         {activeTab === 4 && <StrategiesTab strategies={data.strategies ?? []} />}
-      </View>
+      </ScrollView>
     </View>
   );
 }

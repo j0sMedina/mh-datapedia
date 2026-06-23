@@ -1,4 +1,4 @@
-import { ScrollView, View, Text } from 'react-native';
+import { View, Text } from 'react-native';
 
 interface Weakness {
   id: string;
@@ -22,7 +22,7 @@ export function WeaknessesTab({ weaknesses }: { weaknesses: Weakness[] }) {
   }
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+    <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }}>
       {weaknesses.map((w) => (
         <View
           key={w.id}
@@ -42,6 +42,6 @@ export function WeaknessesTab({ weaknesses }: { weaknesses: Weakness[] }) {
           )}
         </View>
       ))}
-    </ScrollView>
+    </View>
   );
 }

@@ -1,4 +1,4 @@
-import { ScrollView, View, Text } from 'react-native';
+import { View, Text } from 'react-native';
 import { Badge } from '../ui/Badge';
 import type { Difficulty, MHGame } from '@mh-datapedia/shared';
 
@@ -37,7 +37,7 @@ export function StrategiesTab({ strategies }: { strategies: StrategyWithAuthor[]
   }
 
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
+    <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }}>
       {strategies.map((s) => (
         <View key={s.id} className="bg-stone-900 border border-stone-800 rounded-lg p-4 mb-4">
           <View className="flex-row items-center gap-2 mb-2 flex-wrap">
@@ -51,6 +51,6 @@ export function StrategiesTab({ strategies }: { strategies: StrategyWithAuthor[]
           <Text className="text-stone-300 text-sm leading-5">{s.content}</Text>
         </View>
       ))}
-    </ScrollView>
+    </View>
   );
 }

@@ -10,6 +10,7 @@ export function TypeFilterChip({ label, active, onPress }: TypeFilterChipProps) 
   return (
     <Pressable
       onPress={onPress}
+      style={{ alignSelf: 'flex-start' }}
       className={`mr-2 px-3 py-1.5 rounded-full border ${
         active
           ? 'bg-accent/20 border-accent'
