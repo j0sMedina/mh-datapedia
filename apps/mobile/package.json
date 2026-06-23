@@ -1,0 +1,32 @@
+{
+  "name": "@mh-datapedia/mobile",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "dependencies": {
+    "@expo-google-fonts/oswald": "^0.4.2",
+    "@mh-datapedia/shared": "workspace:*",
+    "@tanstack/react-query": "^5.51.0",
+    "expo": "~56.0.12",
+    "expo-constants": "~56.0.18",
+    "expo-font": "~56.0.7",
+    "expo-router": "~56.2.11",
+    "expo-secure-store": "~56.0.4",
+    "expo-status-bar": "~56.0.4",
+    "nativewind": "^4.2.6",
+    "react": "19.2.3",
+    "react-native": "0.85.3",
+    "tailwindcss": "^3.4.7"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "typescript": "~6.0.3"
+  },
+  "scripts": {
+    "dev": "expo start",
+    "start": "expo start",
+    "android": "expo start --android",
+    "build": "expo export",
+    "typecheck": "tsc --noEmit"
+  },
+  "private": true
+}
