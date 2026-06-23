@@ -1,4 +1,4 @@
-import { ScrollView, Pressable, Text } from 'react-native';
+import { ScrollView, Pressable, Text, View } from 'react-native';
 
 interface TabStripProps {
   tabs: string[];
@@ -18,17 +18,14 @@ export function TabStrip({ tabs, active, onChange }: TabStripProps) {
         <Pressable
           key={i}
           onPress={() => onChange(i)}
-          className="mr-6 py-3"
+          className="mr-6 pt-3 pb-0"
         >
-          <Text
-            className={`text-sm font-medium ${
-              active === i
-                ? 'text-stone-50 border-b-2 border-accent pb-2'
-                : 'text-stone-400'
-            }`}
-          >
+          <Text className={`text-sm font-medium pb-2 ${active === i ? 'text-stone-50' : 'text-stone-400'}`}>
             {tab}
           </Text>
+          {active === i && (
+            <View className="h-0.5 bg-accent rounded-full" />
+          )}
         </Pressable>
       ))}
     </ScrollView>
