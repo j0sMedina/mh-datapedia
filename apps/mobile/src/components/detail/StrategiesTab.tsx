@@ -37,7 +37,7 @@ export function StrategiesTab({ strategies }: { strategies: StrategyWithAuthor[]
   }
 
   return (
-    <ScrollView className="flex-1 px-4 py-4" showsVerticalScrollIndicator={false}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
       {strategies.map((s) => (
         <View key={s.id} className="bg-stone-900 border border-stone-800 rounded-lg p-4 mb-4">
           <View className="flex-row items-center gap-2 mb-2 flex-wrap">

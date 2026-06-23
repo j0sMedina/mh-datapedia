@@ -22,7 +22,7 @@ export function WeaknessesTab({ weaknesses }: { weaknesses: Weakness[] }) {
   }
 
   return (
-    <ScrollView className="flex-1 px-4 py-4" showsVerticalScrollIndicator={false}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
       {weaknesses.map((w) => (
         <View
           key={w.id}

@@ -51,14 +51,18 @@ export default function MonsterDetailScreen() {
 
   return (
     <View className="flex-1 bg-stone-950">
-      {/* Hero image — only shown when imageUrl exists */}
-      {data.imageUrl && (
+      {/* Hero image */}
+      {data.imageUrl ? (
         <Image
           source={{ uri: data.imageUrl }}
           className="w-full"
           style={{ aspectRatio: 16 / 9 }}
           resizeMode="cover"
         />
+      ) : (
+        <View className="w-full bg-stone-900 items-center justify-center" style={{ aspectRatio: 16 / 9 }}>
+          <Text className="text-stone-600 text-lg">{data.name}</Text>
+        </View>
       )}
 
       {/* Name + title + boss badge */}

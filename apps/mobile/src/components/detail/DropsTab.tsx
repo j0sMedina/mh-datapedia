@@ -50,7 +50,7 @@ export function DropsTab({ drops }: { drops: Drop[] }) {
   }
 
   return (
-    <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 24 }} showsVerticalScrollIndicator={false}>
       {/* Game filter */}
       <ScrollView
         horizontal
