@@ -1,5 +1,4 @@
 import '../global.css';
-import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -27,7 +26,7 @@ function HeaderRight() {
   if (user) {
     return (
       <View className="flex-row items-center gap-3 mr-1">
-        <Text className="text-stone-400 text-sm hidden">{user.username}</Text>
+        <Text className="text-stone-400 text-sm">{user.username}</Text>
         <Pressable
           onPress={logout}
           className="border border-stone-700 rounded px-3 py-1"
@@ -69,7 +68,7 @@ function RootStack() {
         options={{
           presentation: 'modal',
           headerTitle: 'Sign In',
-          headerRight: undefined,
+          headerRight: () => null,
         }}
       />
       <Stack.Screen
@@ -77,7 +76,7 @@ function RootStack() {
         options={{
           presentation: 'modal',
           headerTitle: 'Create Account',
-          headerRight: undefined,
+          headerRight: () => null,
         }}
       />
     </Stack>

@@ -24,7 +24,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       try {
         const token = await storage.getToken();
-        if (!token) return;
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
         setAccessToken(token);
         const { user: me } = await apiGet<{ user: User }>('/api/auth/me');
         setUser(me);
