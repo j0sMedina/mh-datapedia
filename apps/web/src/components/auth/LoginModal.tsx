@@ -1,13 +1,15 @@
 import { createPortal } from 'react-dom';
-import { Link } from '@tanstack/react-router';
 import { X } from 'lucide-react';
 import { useLoginModal } from '../../context/LoginModalContext';
 import { LoginForm } from './LoginForm';
+import { RegisterForm } from './RegisterForm';
 
 export function LoginModal() {
-  const { isOpen, close } = useLoginModal();
+  const { isOpen, mode, close, switchMode } = useLoginModal();
 
   if (!isOpen) return null;
+
+  const isLogin = mode === 'login';
 
   return createPortal(
     <div
@@ -19,7 +21,6 @@ export function LoginModal() {
       }}
       onClick={(e) => { if (e.target === e.currentTarget) close(); }}
     >
-      {/* Glassmorphism panel with MH beveled corners */}
       <div
         className="mh-panel mh-panel--accent mh-glass relative w-full"
         style={{ '--mh-cut': '18px', maxWidth: 400, padding: '30px 28px' } as React.CSSProperties}
@@ -32,20 +33,42 @@ export function LoginModal() {
           <X size={16} />
         </button>
 
-        <div className="mh-section-head text-sm mb-2" style={{ letterSpacing: '0.12em' }}>
-          Hunter Login
+        <div className="mh-section-head text-sm mb-2">
+          {isLogin ? 'Hunter Login' : 'Create Account'}
         </div>
         <p className="text-stone-400 text-sm mb-6">
-          Sign in to save favorites and write strategies.
+          {isLogin
+            ? 'Sign in to save favorites and write strategies.'
+            : 'Join to save favorites and contribute strategies.'}
         </p>
 
-        <LoginForm onSuccess={close} />
+        {isLogin
+          ? <LoginForm onSuccess={close} />
+          : <RegisterForm onSuccess={close} />
+        }
 
         <p className="mt-5 text-center text-stone-500 text-sm">
-          No account?{' '}
-          <Link to="/register" onClick={close} className="text-accent hover:text-accent-hover transition-colors">
-            Register
-          </Link>
+          {isLogin ? (
+            <>
+              No account?{' '}
+              <button
+                onClick={() => switchMode('register')}
+                className="text-accent hover:text-accent-hover transition-colors"
+              >
+                Register
+              </button>
+            </>
+          ) : (
+            <>
+              Already have an account?{' '}
+              <button
+                onClick={() => switchMode('login')}
+                className="text-accent hover:text-accent-hover transition-colors"
+              >
+                Sign in
+              </button>
+            </>
+          )}
         </p>
       </div>
     </div>,

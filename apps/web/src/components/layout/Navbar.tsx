@@ -6,7 +6,7 @@ import { Badge } from '../ui/Badge';
 
 export function Navbar() {
   const { user, logout } = useAuth();
-  const { open: openLogin } = useLoginModal();
+  const { open } = useLoginModal();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -58,10 +58,8 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Button variant="ghost" size="sm" onClick={openLogin}>Login</Button>
-                <Link to="/register">
-                  <Button variant="primary" size="sm">Register</Button>
-                </Link>
+                <Button variant="ghost" size="sm" onClick={() => open('login')}>Login</Button>
+                <Button variant="primary" size="sm" onClick={() => open('register')}>Register</Button>
               </>
             )}
           </div>

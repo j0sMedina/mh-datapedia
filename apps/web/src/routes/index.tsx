@@ -46,12 +46,14 @@ function LandingPage() {
   const monsters = data?.data ?? [];
 
   return (
-    <div className="relative">
-      {/* Fixed full-bleed Wilds key art — sits behind everything on the landing */}
-      <div
-        className="fixed inset-0 -z-10 bg-cover bg-center"
-        style={{ backgroundImage: 'url(/frontpage.jpg)', backgroundPosition: 'center 40%' }}
-      />
+    <div
+      style={{
+        backgroundImage: 'url(/frontpage.jpg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center 40%',
+        backgroundAttachment: 'fixed',
+      }}
+    >
 
       {/* HERO — text over the artwork */}
       <div className="relative overflow-hidden px-4 text-center" style={{ paddingTop: 128, paddingBottom: 120 }}>
