@@ -49,14 +49,16 @@ function LandingPage() {
     <div
       style={{
         backgroundImage: 'url(/frontpage.jpg)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center 40%',
+        backgroundSize: 'contain',
+        backgroundPosition: 'center top',
+        backgroundRepeat: 'no-repeat',
+        backgroundColor: '#0c0a09',
         backgroundAttachment: 'fixed',
       }}
     >
 
       {/* HERO — text over the artwork */}
-      <div className="relative overflow-hidden px-4 text-center" style={{ paddingTop: 128, paddingBottom: 120 }}>
+      <div className="relative overflow-hidden px-4 text-center" style={{ paddingTop: 128, paddingBottom: 150 }}>
         {/* radial scrim keeps title legible over bright vistas */}
         <div
           className="absolute inset-0 pointer-events-none"
