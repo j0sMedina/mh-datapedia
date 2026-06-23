@@ -52,7 +52,7 @@ function StrategyForm({
       <div>
         <label className="block text-stone-300 text-sm mb-1">Content</label>
         <textarea
-          className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm resize-none h-32 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+          className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm resize-none h-32 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
           {...register('content')}
         />
         {errors.content && <p className="mt-1 text-red-400 text-xs">{errors.content.message}</p>}
@@ -60,13 +60,13 @@ function StrategyForm({
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-stone-300 text-sm mb-1">Difficulty</label>
-          <select className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" {...register('difficulty')}>
+          <select className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent" {...register('difficulty')}>
             {DIFFICULTIES.map((d) => <option key={d} value={d}>{d}</option>)}
           </select>
         </div>
         <div>
           <label className="block text-stone-300 text-sm mb-1">Game</label>
-          <select className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500" {...register('game')}>
+          <select className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent" {...register('game')}>
             {GAME_IDS.map((g) => <option key={g} value={g}>{GAME_NAMES[g]}</option>)}
           </select>
         </div>
@@ -104,7 +104,7 @@ export function StrategiesTab({ monsterId }: { monsterId: string }) {
         {user && !writing && (
           <button
             onClick={() => setWriting(true)}
-            className="text-sm text-amber-500 hover:text-amber-400 transition-colors duration-150"
+            className="text-sm text-accent hover:text-accent-hover transition-colors duration-150"
           >
             + Write strategy
           </button>

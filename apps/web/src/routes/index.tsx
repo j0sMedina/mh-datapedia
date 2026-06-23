@@ -1,50 +1,112 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useRef, useState } from 'react';
 import { useMonsters } from '../hooks/useMonsters';
 import { MonsterCard } from '../components/monsters/MonsterCard';
-import { Button } from '../components/ui/Button';
 
 export const Route = createFileRoute('/')({ component: LandingPage });
 
-function LandingPage() {
-  const { data, isLoading } = useMonsters({ limit: 8 });
+/* Ripple click effect: three concentric rings expand from the click point,
+   then a blackout fades in before we navigate away. */
+function HeroCTA({ children, onArrive }: { children: React.ReactNode; onArrive: () => void }) {
+  const [fx, setFx] = useState<{ x: number; y: number; r: number } | null>(null);
+  const fired = useRef(false);
+
+  const handle = (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (fired.current) return;
+    fired.current = true;
+    const x = e.clientX, y = e.clientY;
+    const w = window.innerWidth, h = window.innerHeight;
+    const dx = Math.max(x, w - x), dy = Math.max(y, h - y);
+    const r = Math.ceil(Math.hypot(dx, dy) / 20) + 2;
+    setFx({ x, y, r });
+    setTimeout(onArrive, 1150);
+  };
 
   return (
-    <div>
-      <div className="border-b border-stone-800 bg-gradient-to-b from-stone-900 to-stone-950 py-20 px-4 text-center">
-        <h1 className="text-4xl sm:text-5xl font-bold text-stone-50 mb-4 tracking-tight">
-          MH <span className="text-amber-500">Datapedia</span>
-        </h1>
-        <p className="text-stone-400 text-lg max-w-xl mx-auto mb-8">
-          Hitzones, weaknesses, drop tables, and hunting strategies for every monster in
-          Monster Hunter Wilds.
-        </p>
-        <Link to="/monsters">
-          <Button size="lg">Browse All Monsters</Button>
-        </Link>
+    <>
+      <button type="button" className="mh-cta" onClick={handle}>{children}</button>
+      {fx && (
+        <div
+          className="mh-ripple-wrap"
+          style={{ '--mh-x': fx.x + 'px', '--mh-y': fx.y + 'px', '--mh-r': fx.r } as React.CSSProperties}
+        >
+          <span className="mh-ripple" />
+          <span className="mh-ripple mh-ripple--2" />
+          <span className="mh-ripple mh-ripple--3" />
+          <div className="mh-blackout" />
+        </div>
+      )}
+    </>
+  );
+}
+
+function LandingPage() {
+  const navigate = useNavigate();
+  const { data } = useMonsters({ limit: 50 });
+  const monsters = data?.data ?? [];
+
+  return (
+    <div className="relative">
+      {/* Fixed full-bleed Wilds key art — sits behind everything on the landing */}
+      <div
+        className="fixed inset-0 -z-10 bg-cover bg-center"
+        style={{ backgroundImage: 'url(/wilds-hero.png)', backgroundPosition: 'center 30%' }}
+      />
+
+      {/* HERO — text over the artwork */}
+      <div className="relative overflow-hidden px-4 text-center" style={{ paddingTop: 128, paddingBottom: 120 }}>
+        {/* radial scrim keeps title legible over bright vistas */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(120% 90% at 50% 42%, rgba(16,13,11,0.62) 0%, rgba(16,13,11,0.32) 45%, rgba(16,13,11,0.12) 100%)' }}
+        />
+        <div className="relative">
+          <h1
+            className="font-display font-bold text-5xl tracking-tight text-white mb-4"
+            style={{ textShadow: '0 2px 24px rgba(0,0,0,0.6)' }}
+          >
+            MH <span style={{ color: 'var(--accent-hover)' }}>Datapedia</span>
+          </h1>
+          <p
+            className="text-lg max-w-xl mx-auto mb-8"
+            style={{ color: 'rgba(255,255,255,0.88)', textShadow: '0 1px 12px rgba(0,0,0,0.7)' }}
+          >
+            Hitzones, weaknesses, drop tables, and hunting strategies for every monster in Monster Hunter Wilds.
+          </p>
+          <HeroCTA onArrive={() => navigate({ to: '/monsters' })}>
+            Browse All Monsters
+          </HeroCTA>
+        </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h2 className="text-stone-400 text-sm uppercase tracking-wider mb-8">
-          Monster Hunter Wilds
-        </h2>
-        {isLoading ? (
-          <div className="flex gap-4">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="w-52 h-28 bg-stone-900 border border-stone-800 rounded-lg animate-pulse shrink-0"
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {(data?.data ?? []).map((m) => (
-              <div key={m.id} className="w-52 shrink-0">
-                <MonsterCard monster={m} />
+      {/* GLASS BAND — frosted panel over the artwork with auto-scrolling marquee */}
+      <div
+        className="relative"
+        style={{
+          background: 'rgba(18,16,14,0.62)',
+          backdropFilter: 'blur(22px) saturate(1.3)',
+          WebkitBackdropFilter: 'blur(22px) saturate(1.3)',
+          borderTop: '1px solid rgba(69,188,171,0.28)',
+          borderBottom: '1px solid rgba(69,188,171,0.28)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.05), 0 -20px 60px -40px rgba(0,0,0,0.7)',
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-6 py-11">
+          <div className="mh-section-head text-xl whitespace-nowrap mb-6">Monster Hunter Wilds</div>
+
+          {monsters.length > 0 && (
+            <div className="mh-marquee">
+              <div className="mh-marquee-track">
+                {/* duplicate the list so the animation loops seamlessly */}
+                {[...monsters, ...monsters].map((m, i) => (
+                  <div key={m.id + '-' + i} className="w-52 shrink-0 mr-4">
+                    <MonsterCard monster={m} />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

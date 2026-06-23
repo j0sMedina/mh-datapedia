@@ -1,4 +1,4 @@
-import { Crown, MapPin, Pencil, Trash2, Heart } from 'lucide-react';
+import { MapPin, Pencil, Trash2, Heart } from 'lucide-react';
 import type { MonsterDetail } from '../../../lib/types';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
@@ -37,7 +37,7 @@ export function MonsterHeader({ monster, onEdit, onDelete }: MonsterHeaderProps)
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <h1 className="text-3xl font-bold text-stone-50">{monster.name}</h1>
-            {monster.isBoss && <Crown size={20} className="text-amber-500 shrink-0" />}
+            {monster.isBoss && <span className="text-accent shrink-0 text-xl" title="Boss">♛</span>}
           </div>
           <p className="text-stone-400 text-sm mb-3">{monster.title}</p>
           <div className="flex flex-wrap gap-2">

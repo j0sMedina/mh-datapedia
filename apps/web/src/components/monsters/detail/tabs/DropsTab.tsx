@@ -24,7 +24,7 @@ function Pill({
       onClick={onClick}
       className={cn(
         'px-3 py-1 rounded-full text-xs transition-colors duration-150',
-        active ? 'bg-amber-500 text-stone-950 font-medium' : 'bg-stone-800 text-stone-400 hover:bg-stone-700',
+        active ? 'bg-accent text-stone-950 font-medium' : 'bg-stone-800 text-stone-400 hover:bg-stone-700',
       )}
     >
       {children}
@@ -88,7 +88,7 @@ export function DropsTab({ monsterId }: { monsterId: string }) {
                       <td className="px-3 py-2 text-stone-500 text-xs hidden sm:table-cell">
                         {RANK_LABELS[drop.rank] ?? drop.rank}
                       </td>
-                      <td className="px-3 py-2 text-right text-amber-500">{drop.rate}%</td>
+                      <td className="px-3 py-2 text-right text-accent">{drop.rate}%</td>
                     </tr>
                   ))}
                 </tbody>

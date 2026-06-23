@@ -75,7 +75,7 @@ function MonsterDetailPage() {
             className={cn(
               'px-4 py-2.5 text-sm whitespace-nowrap transition-colors duration-150',
               tab === t
-                ? 'text-amber-500 border-b-2 border-amber-500 -mb-px'
+                ? 'text-accent border-b-2 border-accent -mb-px'
                 : 'text-stone-400 hover:text-stone-200',
             )}
           >

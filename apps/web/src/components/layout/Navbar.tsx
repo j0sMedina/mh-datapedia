@@ -17,13 +17,16 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14">
           <div className="flex items-center gap-6">
-            <Link to="/" className="text-amber-500 font-bold text-lg tracking-wide">
-              MH Datapedia
+            <Link
+              to="/"
+              className="font-display font-bold text-lg tracking-wide uppercase text-stone-50 hover:text-stone-50"
+            >
+              <span className="text-accent">MH</span> Datapedia
             </Link>
             <Link
               to="/monsters"
               className="text-stone-400 hover:text-stone-50 transition-colors duration-150 text-sm pb-0.5"
-              activeProps={{ className: 'text-stone-50 border-b border-amber-500 pb-0.5' }}
+              activeProps={{ className: 'text-stone-50 border-b border-accent pb-0.5' }}
             >
               Monsters
             </Link>
@@ -31,7 +34,7 @@ export function Navbar() {
               <Link
                 to="/favorites"
                 className="text-stone-400 hover:text-stone-50 transition-colors duration-150 text-sm pb-0.5"
-                activeProps={{ className: 'text-stone-50 border-b border-amber-500 pb-0.5' }}
+                activeProps={{ className: 'text-stone-50 border-b border-accent pb-0.5' }}
               >
                 Favorites
               </Link>
@@ -43,7 +46,9 @@ export function Navbar() {
               <>
                 <span className="text-stone-400 text-sm hidden sm:block">{user.username}</span>
                 {user.role === 'ADMIN' && (
-                  <Badge className="bg-amber-500/10 text-amber-500 hidden sm:inline-flex">Admin</Badge>
+                  <Badge className="bg-transparent text-accent border border-accent font-mono text-[11px] hidden sm:inline-flex">
+                    ADMIN
+                  </Badge>
                 )}
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   Logout

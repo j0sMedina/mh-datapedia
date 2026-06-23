@@ -22,7 +22,7 @@ function RegisterPage() {
           <RegisterForm onSuccess={() => navigate({ to: '/monsters' })} />
           <p className="mt-4 text-center text-stone-500 text-sm">
             Already have an account?{' '}
-            <Link to="/login" className="text-amber-500 hover:text-amber-400">
+            <Link to="/login" className="text-accent hover:text-accent-hover">
               Sign in
             </Link>
           </p>

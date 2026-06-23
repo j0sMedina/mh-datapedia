@@ -29,7 +29,7 @@ function LoginPage() {
           <LoginForm onSuccess={() => navigate({ to: redirectTo ?? '/monsters' })} />
           <p className="mt-4 text-center text-stone-500 text-sm">
             No account?{' '}
-            <Link to="/register" className="text-amber-500 hover:text-amber-400">
+            <Link to="/register" className="text-accent hover:text-accent-hover">
               Register
             </Link>
           </p>

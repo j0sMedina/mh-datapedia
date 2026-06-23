@@ -63,7 +63,7 @@ export function MonsterFormModal({ open, onClose, existing }: MonsterFormModalPr
         <div>
           <label className="block text-stone-300 text-sm mb-1">Description</label>
           <textarea
-            className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+            className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm resize-none h-24 focus:outline-none focus:ring-2 focus:ring-accent focus:border-accent"
             {...register('description')}
           />
           {errors.description && (
@@ -74,7 +74,7 @@ export function MonsterFormModal({ open, onClose, existing }: MonsterFormModalPr
         <div>
           <label className="block text-stone-300 text-sm mb-1">Type</label>
           <select
-            className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             {...register('type')}
           >
             {MonsterTypeSchema.options.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -93,7 +93,7 @@ export function MonsterFormModal({ open, onClose, existing }: MonsterFormModalPr
         />
 
         <div className="flex items-center gap-2">
-          <input type="checkbox" id="isBoss" {...register('isBoss')} className="accent-amber-500" />
+          <input type="checkbox" id="isBoss" {...register('isBoss')} className="accent-accent" />
           <label htmlFor="isBoss" className="text-stone-300 text-sm">Boss monster</label>
         </div>
 
