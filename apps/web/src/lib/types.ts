@@ -67,6 +67,15 @@ export interface MonsterDetail extends MonsterListItem {
   updatedAt: string;
 }
 
+export interface AdminUser {
+  id: string;
+  email: string;
+  username: string;
+  role: 'USER' | 'ADMIN';
+  banned: boolean;
+  createdAt: string;
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   meta: { page: number; limit: number; total: number; totalPages: number };

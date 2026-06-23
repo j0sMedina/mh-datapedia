@@ -15,6 +15,7 @@ import authRouter from './routes/auth.router';
 import monstersRouter from './routes/monsters.router';
 import usersRouter from './routes/users.router';
 import strategiesRouter from './routes/strategies.router';
+import adminRouter from './routes/admin.router';
 
 const swaggerSpec = swaggerJsdoc({
   definition: {
@@ -47,6 +48,7 @@ export function createApp(): Express {
   app.use('/api/monsters', monstersRouter);
   app.use('/api/users', usersRouter);
   app.use('/api/strategies', strategiesRouter);
+  app.use('/api/admin', adminRouter);
 
   app.use(errorHandler);
 

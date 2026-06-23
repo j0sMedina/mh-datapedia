@@ -41,6 +41,15 @@ export function Navbar() {
                 Favorites
               </Link>
             )}
+            {user?.role === 'ADMIN' && (
+              <Link
+                to="/admin"
+                className="text-stone-400 hover:text-stone-50 transition-colors duration-150 text-sm pb-0.5"
+                activeProps={{ className: 'text-stone-50 border-b border-accent pb-0.5' }}
+              >
+                Admin
+              </Link>
+            )}
           </div>
 
           <div className="flex items-center gap-3">

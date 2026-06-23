@@ -39,6 +39,7 @@ export async function login(data: Login) {
   if (!user) throw new AppError(401, 'Invalid credentials', 'INVALID_CREDENTIALS');
   const valid = await bcrypt.compare(data.password, user.passwordHash);
   if (!valid) throw new AppError(401, 'Invalid credentials', 'INVALID_CREDENTIALS');
+  if (user.banned) throw new AppError(403, 'Account is banned', 'BANNED');
   const accessToken = signAccessToken(user.id, user.role);
   const refreshToken = await createRefreshToken(user.id);
   return {
@@ -63,6 +64,10 @@ export async function refresh(token: string) {
   if (!stored || stored.expiresAt < new Date()) {
     if (stored) await prisma.refreshToken.delete({ where: { token } });
     throw new AppError(401, 'Invalid or expired refresh token', 'UNAUTHORIZED');
+  }
+  if (stored.user.banned) {
+    await prisma.refreshToken.deleteMany({ where: { userId: stored.userId } });
+    throw new AppError(403, 'Account is banned', 'BANNED');
   }
   await prisma.refreshToken.delete({ where: { token } });
   const newRefreshToken = await createRefreshToken(stored.userId);
