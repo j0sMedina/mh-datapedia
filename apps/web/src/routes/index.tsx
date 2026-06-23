@@ -50,7 +50,7 @@ function LandingPage() {
       {/* Fixed full-bleed Wilds key art — sits behind everything on the landing */}
       <div
         className="fixed inset-0 -z-10 bg-cover bg-center"
-        style={{ backgroundImage: 'url(/wilds-hero.png)', backgroundPosition: 'center 30%' }}
+        style={{ backgroundImage: 'url(/frontpage.jpg)', backgroundPosition: 'center 40%' }}
       />
 
       {/* HERO — text over the artwork */}

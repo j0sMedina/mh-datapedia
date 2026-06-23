@@ -119,7 +119,7 @@
 .mh-marquee-track {
   display: flex;
   width: max-content;
-  animation: mh-marquee 42s linear infinite;
+  animation: mh-marquee 80s linear infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .mh-marquee-track { animation: none; }

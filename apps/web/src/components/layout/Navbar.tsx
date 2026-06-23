@@ -1,15 +1,17 @@
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useAuth } from '../../context/AuthContext';
+import { useLoginModal } from '../../context/LoginModalContext';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 
 export function Navbar() {
   const { user, logout } = useAuth();
+  const { open: openLogin } = useLoginModal();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     await logout();
-    navigate({ to: '/monsters' });
+    navigate({ to: '/' });
   };
 
   return (
@@ -56,9 +58,7 @@ export function Navbar() {
               </>
             ) : (
               <>
-                <Link to="/login">
-                  <Button variant="ghost" size="sm">Login</Button>
-                </Link>
+                <Button variant="ghost" size="sm" onClick={openLogin}>Login</Button>
                 <Link to="/register">
                   <Button variant="primary" size="sm">Register</Button>
                 </Link>

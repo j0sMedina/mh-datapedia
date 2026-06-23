@@ -1,5 +1,5 @@
 import { MonsterTypeSchema } from '@mh-datapedia/shared';
-import { cn } from '../../lib/utils';
+import { cn, formatType } from '../../lib/utils';
 
 interface MonsterFiltersProps {
   type: string | undefined;
@@ -34,7 +34,7 @@ export function MonsterFilters({
             active={type === t}
             onClick={() => onTypeChange(type === t ? undefined : t)}
           >
-            {t}
+            {formatType(t)}
           </Pill>
         ))}
       </div>

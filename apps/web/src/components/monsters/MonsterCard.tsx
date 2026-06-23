@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import type { MonsterListItem } from '../../lib/types';
 import { Badge } from '../ui/Badge';
 import { TYPE_BADGE_CLASSES } from '../../lib/constants';
-import { cn } from '../../lib/utils';
+import { cn, formatType } from '../../lib/utils';
 
 interface MonsterCardProps {
   monster: MonsterListItem;
@@ -28,7 +28,7 @@ export function MonsterCard({ monster }: MonsterCardProps) {
 
       <div className="flex flex-wrap gap-1.5">
         <Badge className={cn(TYPE_BADGE_CLASSES[monster.type] ?? 'bg-stone-700 text-stone-400')}>
-          {monster.type}
+          {formatType(monster.type)}
         </Badge>
       </div>
     </Link>

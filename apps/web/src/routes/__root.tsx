@@ -2,8 +2,10 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import { TanStackRouterDevtools } from '@tanstack/router-devtools';
 import { useAuth } from '../context/AuthContext';
 import type { AuthState } from '../context/AuthContext';
+import { LoginModalProvider } from '../context/LoginModalContext';
 import { Navbar } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
+import { LoginModal } from '../components/auth/LoginModal';
 import { Spinner } from '../components/ui/Spinner';
 
 export const Route = createRootRouteWithContext<{ auth: AuthState }>()({
@@ -11,9 +13,6 @@ export const Route = createRootRouteWithContext<{ auth: AuthState }>()({
 });
 
 function RootLayout() {
-  // Read auth directly from React context so isLoading re-renders reactively.
-  // Route.useRouteContext() snapshots context at route-load time and may not
-  // update when auth state changes asynchronously.
   const auth = useAuth();
 
   if (auth.isLoading) {
@@ -25,13 +24,16 @@ function RootLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-950 text-stone-50 flex flex-col">
-      <Navbar />
-      <main className="flex-1">
-        <Outlet />
-      </main>
-      <Footer />
-      {import.meta.env.DEV && <TanStackRouterDevtools />}
-    </div>
+    <LoginModalProvider>
+      <div className="min-h-screen bg-stone-950 text-stone-50 flex flex-col">
+        <Navbar />
+        <main className="flex-1">
+          <Outlet />
+        </main>
+        <Footer />
+        {import.meta.env.DEV && <TanStackRouterDevtools />}
+      </div>
+      <LoginModal />
+    </LoginModalProvider>
   );
 }

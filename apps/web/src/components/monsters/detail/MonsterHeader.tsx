@@ -3,7 +3,7 @@ import type { MonsterDetail } from '../../../lib/types';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
 import { TYPE_BADGE_CLASSES } from '../../../lib/constants';
-import { cn } from '../../../lib/utils';
+import { cn, formatType } from '../../../lib/utils';
 import { useAuth } from '../../../context/AuthContext';
 import { useFavorites } from '../../../hooks/useFavorites';
 import { useAddFavorite } from '../../../hooks/useAddFavorite';
@@ -42,7 +42,7 @@ export function MonsterHeader({ monster, onEdit, onDelete }: MonsterHeaderProps)
           <p className="text-stone-400 text-sm mb-3">{monster.title}</p>
           <div className="flex flex-wrap gap-2">
             <Badge className={cn(TYPE_BADGE_CLASSES[monster.type] ?? 'bg-stone-700 text-stone-400')}>
-              {monster.type}
+              {formatType(monster.type)}
             </Badge>
             {monster.habitats.map((h) => (
               <span key={h} className="flex items-center gap-1 text-stone-500 text-xs">
