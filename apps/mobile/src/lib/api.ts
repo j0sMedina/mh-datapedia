@@ -13,6 +13,28 @@ export class ApiError extends Error {
   }
 }
 
+// Single in-flight refresh promise shared across all concurrent 401s.
+// All callers that 401 concurrently await the same promise, so we only
+// call /api/auth/refresh once.
+let refreshPromise: Promise<string> | null = null;
+
+async function refreshToken(): Promise<string> {
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    const res = await fetch(`${API_BASE}/api/auth/refresh`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('refresh failed');
+    const { accessToken } = (await res.json()) as { accessToken: string };
+    await storage.setToken(accessToken);
+    return accessToken;
+  })().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const token = await storage.getToken();
   const headers = new Headers(init?.headers);
@@ -26,11 +48,36 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (res.status === 401) {
-    await storage.clearToken();
-    if (!path.startsWith('/api/auth/')) {
-      router.replace('/auth/login');
+    // Never attempt refresh on auth endpoints — would loop.
+    if (path.startsWith('/api/auth/')) {
+      await storage.clearToken();
+      throw new ApiError(401, null);
     }
-    throw new ApiError(401, null);
+
+    try {
+      const newToken = await refreshToken();
+
+      // Retry the original request once with the new token.
+      const retryHeaders = new Headers(init?.headers);
+      retryHeaders.set('Content-Type', 'application/json');
+      retryHeaders.set('Authorization', `Bearer ${newToken}`);
+      const retryRes = await fetch(`${API_BASE}${path}`, {
+        ...init,
+        headers: retryHeaders,
+        credentials: 'include',
+      });
+      if (!retryRes.ok) {
+        const body = await retryRes.json().catch(() => null);
+        throw new ApiError(retryRes.status, body);
+      }
+      if (retryRes.status === 204) return undefined as T;
+      return retryRes.json() as Promise<T>;
+    } catch {
+      // Refresh failed — clear token and send user to login.
+      await storage.clearToken();
+      router.replace('/auth/login');
+      throw new ApiError(401, null);
+    }
   }
 
   if (!res.ok) {
