@@ -28,6 +28,7 @@ export default function AdminScreen() {
   });
 
   const isPending = roleMutation.isPending || banMutation.isPending;
+  const isMaster = currentUser?.email === 'silverkx@mh.com';
 
   function handleRoleChange(userId: string, role: 'USER' | 'ADMIN') {
     roleMutation.mutate({ userId, role }, { onSuccess: () => actionSheetRef.current?.dismiss() });
@@ -134,6 +135,7 @@ export default function AdminScreen() {
           <UserCard
             user={item}
             isSelf={item.id === currentUser?.id}
+            canAct={item.role === 'USER' || isMaster}
             onActionPress={() => {
               setSelectedUser(item);
               actionSheetRef.current?.present();

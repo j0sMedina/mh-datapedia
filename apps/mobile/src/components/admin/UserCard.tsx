@@ -5,6 +5,7 @@ import type { AdminUser } from '../../hooks/useAdminUsers';
 interface UserCardProps {
   user: AdminUser;
   isSelf: boolean;
+  canAct: boolean;
   onActionPress: () => void;
 }
 
@@ -14,7 +15,7 @@ function getInitials(username: string): string {
   return username.slice(0, 2).toUpperCase();
 }
 
-export function UserCard({ user, isSelf, onActionPress }: UserCardProps) {
+export function UserCard({ user, isSelf, canAct, onActionPress }: UserCardProps) {
   const isAdmin = user.role === 'ADMIN';
 
   return (
@@ -102,8 +103,8 @@ export function UserCard({ user, isSelf, onActionPress }: UserCardProps) {
         )}
       </View>
 
-      {/* 3-dot action button — hidden for self */}
-      {!isSelf && (
+      {/* 3-dot action button — only shown when caller permits action */}
+      {!isSelf && canAct && (
         <Pressable onPress={onActionPress} hitSlop={8}>
           <Ionicons name="ellipsis-vertical" size={20} color="#57534e" />
         </Pressable>
