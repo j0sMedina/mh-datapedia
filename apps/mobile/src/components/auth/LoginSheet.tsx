@@ -59,7 +59,7 @@ export const LoginSheet = forwardRef<BottomSheetModal, LoginSheetProps>(
     return (
       <BottomSheetModal
         ref={ref}
-        snapPoints={['52%']}
+        snapPoints={['44%']}
         enableDynamicSizing={false}
         backdropComponent={renderBackdrop}
         backgroundStyle={styles.sheetBg}
