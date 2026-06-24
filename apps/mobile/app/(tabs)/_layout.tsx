@@ -25,7 +25,7 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="list" color={color} size={size} />
           ),
-          headerTitle: () => <AppTitle />,
+          headerTitle: () => <AppTitle label="Monsters" />,
           headerRight: () => <HeaderRight />,
         }}
       />
@@ -40,7 +40,7 @@ export default function TabLayout() {
               size={size}
             />
           ),
-          headerTitle: () => <AppTitle />,
+          headerTitle: () => <AppTitle label="Favorites" />,
           headerRight: () => <HeaderRight />,
         }}
       />

@@ -2,11 +2,15 @@ import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
 
-export function AppTitle() {
+export function AppTitle({ label }: { label: string }) {
   return (
-    <View className="flex-row items-center">
-      <Text className="text-accent text-lg font-bold tracking-widest uppercase">MH </Text>
-      <Text className="text-stone-50 text-lg font-bold tracking-widest uppercase">Datapedia</Text>
+    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+      <Text style={{ color: '#2f9e8f', fontSize: 18, fontWeight: 'bold', letterSpacing: 2, textTransform: 'uppercase' }}>
+        MH{' '}
+      </Text>
+      <Text style={{ color: '#fafaf9', fontSize: 18, fontWeight: 'bold', letterSpacing: 2, textTransform: 'uppercase' }}>
+        {label}
+      </Text>
     </View>
   );
 }
