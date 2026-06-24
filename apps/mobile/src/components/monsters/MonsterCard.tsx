@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { Pressable, View, Text, Image } from 'react-native';
+import { Pressable, View, Text } from 'react-native';
 import { router } from 'expo-router';
 import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,7 +7,7 @@ import { Badge } from '../ui/Badge';
 import type { Monster } from '@mh-datapedia/shared';
 
 interface MonsterCardProps {
-  monster: Pick<Monster, 'id' | 'name' | 'type' | 'iconUrl'>;
+  monster: Pick<Monster, 'id' | 'name' | 'title' | 'type' | 'isBoss'>;
   isFavorited?: boolean;
   onFavoriteToggle?: () => void;
 }
@@ -28,6 +28,9 @@ export function MonsterCard({ monster, isFavorited, onFavoriteToggle }: MonsterC
           justifyContent: 'center',
           alignItems: 'center',
           backgroundColor: isFavorited ? '#ef4444' : '#2f9e8f',
+          borderRadius: 12,
+          marginVertical: 6,
+          marginRight: 12,
         }}
       >
         <Ionicons
@@ -45,30 +48,40 @@ export function MonsterCard({ monster, isFavorited, onFavoriteToggle }: MonsterC
   const card = (
     <Pressable
       onPress={() => router.push(`/monsters/${monster.id}`)}
-      className="flex-row items-center px-4 py-3 border-b border-stone-800 active:bg-stone-800/50"
+      style={{
+        backgroundColor: '#1c1917',
+        borderRadius: 12,
+        marginHorizontal: 12,
+        marginVertical: 6,
+        padding: 16,
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+      }}
     >
-      {monster.iconUrl ? (
-        <Image
-          source={{ uri: monster.iconUrl }}
-          className="w-10 h-10 rounded mr-3"
-          resizeMode="contain"
-        />
-      ) : (
-        <View className="w-10 h-10 rounded mr-3 bg-stone-800 items-center justify-center">
-          <Text className="text-stone-500 text-xs">?</Text>
+      <View style={{ flex: 1, gap: 4 }}>
+        <Text style={{ color: '#fafaf9', fontSize: 16, fontWeight: 'bold' }}>
+          {monster.name}
+        </Text>
+        <Text style={{ color: '#a8a29e', fontSize: 13 }}>{monster.title}</Text>
+        <View style={{ marginTop: 4 }}>
+          <Badge variant="accent">{monster.type}</Badge>
         </View>
-      )}
-      <View className="flex-1">
-        <Text className="text-stone-50 font-medium text-base">{monster.name}</Text>
       </View>
-      <Badge variant="accent">{monster.type}</Badge>
+      {monster.isBoss && (
+        <Ionicons name="shield" size={16} color="#2f9e8f" style={{ marginTop: 2 }} />
+      )}
     </Pressable>
   );
 
   if (!onFavoriteToggle) return card;
 
   return (
-    <Swipeable ref={swipeRef} renderRightActions={renderRightActions} rightThreshold={40}>
+    <Swipeable
+      ref={swipeRef}
+      renderRightActions={renderRightActions}
+      rightThreshold={40}
+    >
       {card}
     </Swipeable>
   );
