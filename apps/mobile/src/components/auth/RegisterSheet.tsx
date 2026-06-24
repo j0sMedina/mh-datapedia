@@ -74,7 +74,7 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
     return (
       <BottomSheetModal
         ref={ref}
-        snapPoints={['53%']}
+        snapPoints={['58%']}
         enableDynamicSizing={false}
         backdropComponent={renderBackdrop}
         backgroundStyle={styles.sheetBg}
