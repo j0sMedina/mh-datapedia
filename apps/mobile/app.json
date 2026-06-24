@@ -15,15 +15,7 @@
       "package": "com.j0smedina.mhdatapedia"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/splash.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#0c0a09"
-        }
-      ]
+      "expo-router"
     ],
     "experiments": {
       "typedRoutes": true
