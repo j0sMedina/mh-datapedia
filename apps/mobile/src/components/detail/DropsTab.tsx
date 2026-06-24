@@ -55,39 +55,43 @@ export function DropsTab({ drops }: { drops: Drop[] }) {
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ borderBottomWidth: 1, borderBottomColor: '#292524', height: 44 }}
-        contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center', height: 44 }}
+        style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
       >
-        {games.map((g) => (
-          <TypeFilterChip
-            key={g}
-            label={GAME_LABELS[g]}
-            active={activeGame === g}
-            onPress={() => { setActiveGame(g); setActiveRank(null); }}
-          />
-        ))}
+        <View style={{ flexDirection: 'row', alignItems: 'center', height: 44, gap: 8 }}>
+          {games.map((g) => (
+            <TypeFilterChip
+              key={g}
+              label={GAME_LABELS[g]}
+              active={activeGame === g}
+              onPress={() => { setActiveGame(g); setActiveRank(null); }}
+            />
+          ))}
+        </View>
       </ScrollView>
 
       {/* Rank filter */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
-        style={{ borderBottomWidth: 1, borderBottomColor: '#292524', height: 44 }}
-        contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center', height: 44 }}
+        style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
       >
-        <TypeFilterChip
-          label="All Ranks"
-          active={activeRank === null}
-          onPress={() => setActiveRank(null)}
-        />
-        {ranks.map((r) => (
+        <View style={{ flexDirection: 'row', alignItems: 'center', height: 44, gap: 8 }}>
           <TypeFilterChip
-            key={r}
-            label={RANK_LABELS[r]}
-            active={activeRank === r}
-            onPress={() => setActiveRank(r)}
+            label="All Ranks"
+            active={activeRank === null}
+            onPress={() => setActiveRank(null)}
           />
-        ))}
+          {ranks.map((r) => (
+            <TypeFilterChip
+              key={r}
+              label={RANK_LABELS[r]}
+              active={activeRank === r}
+              onPress={() => setActiveRank(r)}
+            />
+          ))}
+        </View>
       </ScrollView>
 
       {/* Drop rows */}
