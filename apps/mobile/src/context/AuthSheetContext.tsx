@@ -30,7 +30,7 @@ export function AuthSheetProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthSheetContext.Provider value={{ openLoginSheet, openRegisterSheet }}>
       {children}
-      <LoginSheet ref={loginRef} onSwitchToRegister={openRegisterSheet} />
+      <LoginSheet ref={loginRef} />
       <RegisterSheet ref={registerRef} onSwitchToLogin={openLoginSheet} />
     </AuthSheetContext.Provider>
   );

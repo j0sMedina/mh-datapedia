@@ -65,7 +65,7 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
           {...props}
           disappearsOnIndex={-1}
           appearsOnIndex={0}
-          opacity={0.7}
+          opacity={0.75}
         />
       ),
       [],
@@ -74,30 +74,34 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
     return (
       <BottomSheetModal
         ref={ref}
-        snapPoints={['80%']}
+        snapPoints={['78%']}
         enableDynamicSizing={false}
         backdropComponent={renderBackdrop}
-        backgroundStyle={{ backgroundColor: '#1c1917' }}
-        handleIndicatorStyle={{ backgroundColor: '#57534e' }}
-        onDismiss={() => { setError(''); setUsername(''); setEmail(''); setPassword(''); setConfirm(''); }}
+        backgroundStyle={styles.sheetBg}
+        handleIndicatorStyle={styles.handle}
+        onDismiss={() => {
+          setError('');
+          setUsername('');
+          setEmail('');
+          setPassword('');
+          setConfirm('');
+        }}
       >
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerDiamond}>◆</Text>
-            <Text style={styles.headerTitle}>Hunter Register</Text>
-            <View style={styles.headerLine} />
+            <Text style={styles.diamond}>◆</Text>
+            <Text style={styles.title}>Hunter Register</Text>
+            <View style={styles.line} />
           </View>
 
-          <Text style={styles.subtitle}>
-            Create an account to save favorites and submit strategies.
-          </Text>
+          <Text style={styles.subtitle}>Create an account to save favorites and submit strategies.</Text>
 
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          {error ? <Text style={styles.error}>{error}</Text> : null}
 
           <BottomSheetTextInput
             placeholder="Username"
-            placeholderTextColor="#57534e"
+            placeholderTextColor="rgba(255,255,255,0.25)"
             value={username}
             onChangeText={setUsername}
             autoCapitalize="none"
@@ -106,7 +110,7 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
           />
           <BottomSheetTextInput
             placeholder="Email"
-            placeholderTextColor="#57534e"
+            placeholderTextColor="rgba(255,255,255,0.25)"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -116,7 +120,7 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
           />
           <BottomSheetTextInput
             placeholder="Password"
-            placeholderTextColor="#57534e"
+            placeholderTextColor="rgba(255,255,255,0.25)"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -125,7 +129,7 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
           />
           <BottomSheetTextInput
             placeholder="Confirm Password"
-            placeholderTextColor="#57534e"
+            placeholderTextColor="rgba(255,255,255,0.25)"
             value={confirm}
             onChangeText={setConfirm}
             secureTextEntry
@@ -136,7 +140,7 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
 
           <Pressable onPress={onSwitchToLogin} style={styles.switchLink}>
             <Text style={styles.switchText}>
-              Already have an account?{' '}
+              Already a hunter?{' '}
               <Text style={styles.switchAccent}>Sign in</Text>
             </Text>
           </Pressable>
@@ -144,12 +148,12 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
           <Pressable
             onPress={handleRegister}
             disabled={loading}
-            style={[styles.button, loading && { opacity: 0.7 }]}
+            style={[styles.createBtn, loading && { opacity: 0.7 }]}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Create Account</Text>
+              <Text style={styles.createText}>Create Account</Text>
             )}
           </Pressable>
         </View>
@@ -159,32 +163,49 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 8, gap: 12 },
+  sheetBg: {
+    backgroundColor: 'rgba(10, 8, 7, 0.96)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.07)',
+  },
+  handle: { backgroundColor: 'rgba(255,255,255,0.15)', width: 40 },
+  container: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 8,
+    gap: 12,
+  },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headerDiamond: { color: '#2f9e8f', fontSize: 14 },
-  headerTitle: { color: '#fafaf9', fontSize: 15, fontWeight: 'bold', letterSpacing: 1, textTransform: 'uppercase' },
-  headerLine: { flex: 1, height: 1, backgroundColor: '#292524', marginLeft: 8 },
-  subtitle: { color: '#a8a29e', fontSize: 13 },
-  errorText: { color: '#ef4444', fontSize: 13 },
+  diamond: { color: '#2f9e8f', fontSize: 14 },
+  title: {
+    color: '#fafaf9',
+    fontSize: 15,
+    fontWeight: 'bold',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  line: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)', marginLeft: 8 },
+  subtitle: { color: 'rgba(255,255,255,0.4)', fontSize: 13 },
+  error: { color: '#ef4444', fontSize: 13 },
   input: {
-    backgroundColor: '#0c0a09',
+    backgroundColor: 'rgba(255,255,255,0.05)',
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 12,
     color: '#fafaf9',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: '#292524',
+    borderColor: 'rgba(255,255,255,0.09)',
   },
   switchLink: { alignItems: 'center' },
-  switchText: { color: '#57534e', fontSize: 13 },
+  switchText: { color: 'rgba(255,255,255,0.3)', fontSize: 13 },
   switchAccent: { color: '#2f9e8f' },
-  button: {
+  createBtn: {
     backgroundColor: '#2f9e8f',
     borderRadius: 8,
     paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 4,
+    marginTop: 2,
   },
-  buttonText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
+  createText: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
 });
