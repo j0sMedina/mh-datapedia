@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppTitle, HeaderRight } from '../../src/components/ui/AppHeader';
 
 export default function TabLayout() {
@@ -42,6 +43,17 @@ export default function TabLayout() {
             />
           ),
           headerTitle: () => <AppTitle label="Favorites" />,
+          headerRight: () => <HeaderRight />,
+        }}
+      />
+      <Tabs.Screen
+        name="admin"
+        options={{
+          title: 'Admin',
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="crown" color={color} size={size} />
+          ),
+          headerTitle: () => <AppTitle label="Admin" />,
           headerRight: () => <HeaderRight />,
         }}
       />
