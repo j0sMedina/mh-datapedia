@@ -1,23 +1,53 @@
-# Final Fix Report — MH Datapedia Wilds Migration
+# Fix Report: StrategyFormSheet Import & FAB Float
 
-Date: 2026-06-22
+**Date:** 2026-06-23
+**Status:** Complete — TypeScript clean (0 errors)
 
-## Changes Applied
+---
 
-### Fix 1 — `apps/api/package.json`: Prisma seed hook (already correct)
-The `"prisma"."seed"` block was already pointing to `ts-node --transpile-only scripts/seed-wilds.ts`. No change required.
+## Fix 1: Named Import for StrategyFormSheet
 
-### Fix 2 — `apps/api/scripts/seed-wilds.ts`: deleteMany moved after loop
-`prisma.monster.deleteMany` (non-Wilds monsters) was moved from before the per-monster fetch-and-upsert loop to after it. This ensures the DB is never left in a torn state if any `fetchMonsterDetail` call throws mid-loop.
+**File:** `apps/mobile/src/components/detail/StrategiesTab.tsx`
 
-### Fix 3 — `apps/api/scripts/seed-wilds.ts`: drops array built before deleteMany
-Inside the per-monster transaction, the `drops` array is now built before `tx.monsterDrop.deleteMany` is called. The delete only executes once the array is fully populated, preventing silent data loss when all `cond.kind` or `cond.rank` values are unknown. Changed type from `any[]` to `object[]`.
+**Problem:** `StrategyFormSheet` uses `export const StrategyFormSheet = forwardRef(...)` — a named export only, no default export. The previous `import StrategyFormSheet from './StrategyFormSheet'` was a default import, causing a TypeScript compile error and runtime crash (the import resolves to `undefined`).
 
-### Fix 4 — `MonsterFormModal.tsx` and `MonsterFilters.tsx`: full MonsterType options
-Removed hardcoded `MONSTER_TYPES` arrays (8 values, missing `Large`, `Small`, `Apex`, `Afflicted`, `Tempered`). Added `import { MonsterTypeSchema } from '@mh-datapedia/shared'` to both files. Replaced all `MONSTER_TYPES` usages with `MonsterTypeSchema.options` (13 values, all types covered).
+**Change:** Removed the incorrect default import entirely. `StrategyFormSheet` is no longer used in `StrategiesTab.tsx` after Fix 2 — it was moved to `[id].tsx` where it is imported correctly as `import { StrategyFormSheet } from '../../src/components/detail/StrategyFormSheet'`.
 
-## Verification Results
+---
 
-**Typecheck:** 0 errors (turbo typecheck across all 3 packages — shared, api, web)
+## Fix 2: FAB Moved Outside ScrollView
 
-**Tests:** 33 passing, 0 failing (5 test suites — health, authenticate, auth, monsters, drops)
+**Files changed:**
+- `apps/mobile/src/components/detail/StrategiesTab.tsx` (removed FAB + sheet)
+- `apps/mobile/app/monsters/[id].tsx` (added FAB + sheet outside ScrollView)
+
+**Problem:** The FAB `Pressable` was rendered inside `StrategiesTab`, which itself was rendered as a child of `[id].tsx`'s `ScrollView`. A `position: absolute` element inside `ScrollView` content does not float above the screen — it scrolls with the content. The FAB was therefore not fixed/floating as intended.
+
+**Root cause:** `ScrollView` in React Native establishes its own layout context; absolute children are positioned relative to the scroll content, not the viewport.
+
+**Fix:**
+1. Removed from `StrategiesTab.tsx`: FAB `Pressable`, `StrategyFormSheet` render, `useRef`, `BottomSheetModal`, `StrategyFormSheet` import, `useAuth` import, `Pressable` from react-native imports, and `monsterId` from the component's prop interface (it was only passed to `StrategyFormSheet`).
+2. Added to `[id].tsx` (outside `</ScrollView>`, inside the outer `<View style={{ flex: 1 }}`):
+   - `useRef` added to React import
+   - `BottomSheetModal` imported from `@gorhom/bottom-sheet`
+   - `StrategyFormSheet` imported as named export
+   - `const sheetRef = useRef<BottomSheetModal>(null)` declared in component
+   - FAB rendered after `</ScrollView>`, conditionally on `activeTab === 4 && user`
+   - `<StrategyFormSheet ref={sheetRef} monsterId={id} />` rendered unconditionally after FAB (so the ref persists across tab switches)
+
+The outer container in `[id].tsx` was already `<View style={{ flex: 1, backgroundColor: '#0c0a09' }}>`, so absolute positioning works correctly relative to the full screen.
+
+---
+
+## TypeScript Result
+
+```
+npx tsc --noEmit  →  0 errors (no output)
+```
+
+---
+
+## Files Changed
+
+- `apps/mobile/src/components/detail/StrategiesTab.tsx`
+- `apps/mobile/app/monsters/[id].tsx`

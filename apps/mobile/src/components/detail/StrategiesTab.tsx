@@ -1,9 +1,5 @@
-import { useRef } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
+import { View, Text } from 'react-native';
 import { Badge } from '../ui/Badge';
-import StrategyFormSheet from './StrategyFormSheet';
-import { useAuth } from '../../context/AuthContext';
 import type { Difficulty, MHGame } from '@mh-datapedia/shared';
 
 interface StrategyWithAuthor {
@@ -33,14 +29,9 @@ const GAME_SHORT: Record<MHGame, string> = {
 
 export function StrategiesTab({
   strategies,
-  monsterId,
 }: {
   strategies: StrategyWithAuthor[];
-  monsterId: string;
 }) {
-  const { user } = useAuth();
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
-
   return (
     <View style={{ flex: 1 }}>
       {strategies.length === 0 ? (
@@ -67,29 +58,6 @@ export function StrategiesTab({
           ))}
         </View>
       )}
-
-      {/* FAB and sheet rendered once, outside the conditional */}
-      {user && (
-        <Pressable
-          onPress={() => bottomSheetRef.current?.present()}
-          style={{
-            position: 'absolute',
-            bottom: 16,
-            right: 16,
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: '#2f9e8f',
-            alignItems: 'center',
-            justifyContent: 'center',
-            elevation: 4,
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 28, lineHeight: 56, textAlign: 'center' }}>+</Text>
-        </Pressable>
-      )}
-
-      <StrategyFormSheet ref={bottomSheetRef} monsterId={monsterId} />
     </View>
   );
 }
