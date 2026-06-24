@@ -29,7 +29,11 @@ const RANK_LABELS: Record<Rank, string> = {
 };
 
 export function DropsTab({ drops }: { drops: Drop[] }) {
-  const games = [...new Set(drops.map((d) => d.game))] as MHGame[];
+  const games = [...new Set(drops.map((d) => d.game))].sort((a, b) => {
+    if (a === 'MONSTER_HUNTER_WILDS') return -1;
+    if (b === 'MONSTER_HUNTER_WILDS') return 1;
+    return 0;
+  }) as MHGame[];
   const [activeGame, setActiveGame] = useState<MHGame | null>(games[0] ?? null);
   const [activeRank, setActiveRank] = useState<Rank | null>(null);
 
@@ -43,7 +47,7 @@ export function DropsTab({ drops }: { drops: Drop[] }) {
 
   if (drops.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <View style={{ paddingVertical: 48, alignItems: 'center' }}>
         <Text className="text-stone-500">No drop data.</Text>
       </View>
     );
@@ -51,14 +55,14 @@ export function DropsTab({ drops }: { drops: Drop[] }) {
 
   return (
     <View style={{ paddingBottom: 24 }}>
-      {/* Game filter */}
+      {/* Combined game + rank filter row */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}
         contentContainerStyle={{ paddingHorizontal: 16 }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', height: 44, gap: 8 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', height: 44, gap: 6 }}>
           {games.map((g) => (
             <TypeFilterChip
               key={g}
@@ -67,19 +71,11 @@ export function DropsTab({ drops }: { drops: Drop[] }) {
               onPress={() => { setActiveGame(g); setActiveRank(null); }}
             />
           ))}
-        </View>
-      </ScrollView>
 
-      {/* Rank filter */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', height: 44, gap: 8 }}>
+          <View style={{ width: 1, height: 20, backgroundColor: '#292524', marginHorizontal: 4 }} />
+
           <TypeFilterChip
-            label="All Ranks"
+            label="All"
             active={activeRank === null}
             onPress={() => setActiveRank(null)}
           />
