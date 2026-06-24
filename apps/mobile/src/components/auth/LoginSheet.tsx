@@ -36,6 +36,8 @@ export const LoginSheet = forwardRef<BottomSheetModal, LoginSheetProps>(
       } catch (e) {
         if (e instanceof ApiError && e.status === 401) {
           setError('Invalid email or password.');
+        } else if (e instanceof ApiError && (e.body as { message?: string })?.message) {
+          setError((e.body as { message: string }).message);
         } else {
           setError('Something went wrong. Try again.');
         }
@@ -63,6 +65,7 @@ export const LoginSheet = forwardRef<BottomSheetModal, LoginSheetProps>(
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: '#1c1917' }}
         handleIndicatorStyle={{ backgroundColor: '#57534e' }}
+        onDismiss={() => { setError(''); setEmail(''); setPassword(''); }}
       >
         <View style={styles.container}>
           {/* Header */}

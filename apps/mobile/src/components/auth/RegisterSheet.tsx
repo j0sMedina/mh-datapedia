@@ -78,6 +78,7 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: '#1c1917' }}
         handleIndicatorStyle={{ backgroundColor: '#57534e' }}
+        onDismiss={() => { setError(''); setUsername(''); setEmail(''); setPassword(''); setConfirm(''); }}
       >
         <View style={styles.container}>
           {/* Header */}
