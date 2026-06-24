@@ -72,9 +72,9 @@ export default function MonstersScreen() {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}
-        contentContainerStyle={{ flexDirection: 'column', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 8 }}
+        contentContainerStyle={{ flexDirection: 'column', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 }}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', height: 36, gap: 6 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', height: 32, gap: 6 }}>
           <TypeFilterChip
             label="All"
             active={activeType === null}
@@ -89,7 +89,7 @@ export default function MonstersScreen() {
             />
           ))}
         </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', height: 36, gap: 6 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', height: 32, gap: 6 }}>
           {ROW2_TYPES.map((type) => (
             <TypeFilterChip
               key={type}
