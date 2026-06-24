@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, Image, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
+import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { apiGet } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFavorites } from '../../src/hooks/useFavorites';
@@ -14,6 +15,7 @@ import { HitzonesTab } from '../../src/components/detail/HitzonesTab';
 import { WeaknessesTab } from '../../src/components/detail/WeaknessesTab';
 import { DropsTab } from '../../src/components/detail/DropsTab';
 import { StrategiesTab } from '../../src/components/detail/StrategiesTab';
+import { StrategyFormSheet } from '../../src/components/detail/StrategyFormSheet';
 
 const TABS = ['Overview', 'Hitzones', 'Weaknesses', 'Drops', 'Strategies'];
 
@@ -23,6 +25,7 @@ export default function MonsterDetailScreen() {
   const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuth();
   const { isFavorited, toggle } = useFavorites();
+  const sheetRef = useRef<BottomSheetModal>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['monster', id],
@@ -31,7 +34,6 @@ export default function MonsterDetailScreen() {
     enabled: !!id,
   });
 
-  // Set header title once we have the monster name
   useEffect(() => {
     if (data?.name) {
       navigation.setOptions({ headerTitle: data.name });
@@ -56,12 +58,10 @@ export default function MonsterDetailScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0c0a09' }}>
-      {/* Tab strip stays fixed at top */}
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
-        // Disable vertical scroll for Hitzones (it manages its own scroll)
         scrollEnabled={activeTab !== 1}
       >
         {/* Hero image */}
@@ -77,7 +77,7 @@ export default function MonsterDetailScreen() {
           </View>
         )}
 
-        {/* Name + title + boss badge */}
+        {/* Name + title + boss badge + heart */}
         <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, flexDirection: 'row', alignItems: 'flex-start' }}>
           <View style={{ flex: 1 }}>
             <Text style={{ color: '#fafaf9', fontSize: 20, fontWeight: 'bold' }}>{data.name}</Text>
@@ -107,7 +107,7 @@ export default function MonsterDetailScreen() {
         {/* Tab strip */}
         <TabStrip tabs={TABS} active={activeTab} onChange={setActiveTab} />
 
-        {/* Tab content — plain views, outer ScrollView handles scrolling */}
+        {/* Tab content */}
         {activeTab === 0 && (
           <OverviewTab
             monster={{
@@ -123,8 +123,34 @@ export default function MonsterDetailScreen() {
         {activeTab === 1 && <HitzonesTab hitzones={data.hitzones ?? []} />}
         {activeTab === 2 && <WeaknessesTab weaknesses={data.weaknesses ?? []} />}
         {activeTab === 3 && <DropsTab drops={data.drops ?? []} />}
-        {activeTab === 4 && <StrategiesTab strategies={data.strategies ?? []} />}
+        {activeTab === 4 && (
+          <StrategiesTab strategies={data.strategies ?? []} monsterId={id} />
+        )}
       </ScrollView>
+
+      {/* FAB — floats above scroll content, visible only on Strategies tab when logged in */}
+      {activeTab === 4 && user && (
+        <Pressable
+          onPress={() => sheetRef.current?.present()}
+          style={{
+            position: 'absolute',
+            bottom: 24,
+            right: 24,
+            width: 56,
+            height: 56,
+            borderRadius: 28,
+            backgroundColor: '#2f9e8f',
+            alignItems: 'center',
+            justifyContent: 'center',
+            elevation: 4,
+          }}
+        >
+          <Text style={{ color: '#fff', fontSize: 28, lineHeight: 32 }}>+</Text>
+        </Pressable>
+      )}
+
+      {/* Strategy submission sheet */}
+      <StrategyFormSheet ref={sheetRef} monsterId={id} />
     </View>
   );
 }

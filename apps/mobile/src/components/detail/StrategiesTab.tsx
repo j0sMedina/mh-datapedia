@@ -27,19 +27,28 @@ const GAME_SHORT: Record<MHGame, string> = {
   MONSTER_HUNTER_WILDS: 'Wilds',
 };
 
-export function StrategiesTab({ strategies }: { strategies: StrategyWithAuthor[] }) {
+export function StrategiesTab({
+  strategies,
+  monsterId: _monsterId,
+}: {
+  strategies: StrategyWithAuthor[];
+  monsterId: string;
+}) {
   if (strategies.length === 0) {
     return (
-      <View className="flex-1 items-center justify-center py-16">
-        <Text className="text-stone-500">No strategies yet.</Text>
+      <View style={{ paddingHorizontal: 16, paddingTop: 64, paddingBottom: 100, alignItems: 'center' }}>
+        <Text style={{ color: '#57534e' }}>No strategies yet.</Text>
       </View>
     );
   }
 
   return (
-    <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }}>
+    <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 }}>
       {strategies.map((s) => (
-        <View key={s.id} className="bg-stone-900 border border-stone-800 rounded-lg p-4 mb-4">
+        <View
+          key={s.id}
+          className="bg-stone-900 border border-stone-800 rounded-lg p-4 mb-4"
+        >
           <View className="flex-row items-center gap-2 mb-2 flex-wrap">
             <Text className="text-stone-50 font-semibold text-base flex-1">{s.title}</Text>
             <Badge variant={DIFFICULTY_VARIANT[s.difficulty]}>{s.difficulty}</Badge>
