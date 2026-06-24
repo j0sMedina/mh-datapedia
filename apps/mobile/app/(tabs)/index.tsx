@@ -18,11 +18,12 @@ import { useFavorites } from '../../src/hooks/useFavorites';
 import { useAuth } from '../../src/context/AuthContext';
 import type { Monster, MonsterType } from '@mh-datapedia/shared';
 
-const MONSTER_TYPES: MonsterType[] = [
-  'Large', 'Small', 'ElderDragon', 'FlyingWyvern', 'BruteWyvern',
-  'FangedBeast', 'BirdWyvern', 'Leviathan', 'Amphibian', 'Temnoceran',
-  'Apex', 'Afflicted', 'Tempered', 'Construct', 'DemiElderDragon',
-  'Cephalopod', 'Machine',
+const ROW1_TYPES: MonsterType[] = [
+  'Large', 'Small', 'Apex', 'Afflicted', 'Tempered', 'ElderDragon', 'DemiElderDragon',
+];
+const ROW2_TYPES: MonsterType[] = [
+  'FlyingWyvern', 'BruteWyvern', 'FangedBeast', 'Temnoceran', 'BirdWyvern',
+  'Construct', 'Leviathan', 'Amphibian', 'Cephalopod', 'Machine',
 ];
 
 interface ListResponse {
@@ -66,26 +67,43 @@ export default function MonstersScreen() {
         />
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ borderBottomWidth: 1, borderBottomColor: '#292524', height: 44 }}
-        contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center', height: 44 }}
-      >
-        <TypeFilterChip
-          label="All"
-          active={activeType === null}
-          onPress={() => setActiveType(null)}
-        />
-        {MONSTER_TYPES.map((type) => (
+      <View style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ height: 44 }}
+          contentContainerStyle={{ height: 44, alignItems: 'center', paddingHorizontal: 16, gap: 8 }}
+        >
           <TypeFilterChip
-            key={type}
-            label={type}
-            active={activeType === type}
-            onPress={() => handleTypePress(type)}
+            label="All"
+            active={activeType === null}
+            onPress={() => setActiveType(null)}
           />
-        ))}
-      </ScrollView>
+          {ROW1_TYPES.map((type) => (
+            <TypeFilterChip
+              key={type}
+              label={type}
+              active={activeType === type}
+              onPress={() => handleTypePress(type)}
+            />
+          ))}
+        </ScrollView>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ height: 44 }}
+          contentContainerStyle={{ height: 44, alignItems: 'center', paddingHorizontal: 16, gap: 8 }}
+        >
+          {ROW2_TYPES.map((type) => (
+            <TypeFilterChip
+              key={type}
+              label={type}
+              active={activeType === type}
+              onPress={() => handleTypePress(type)}
+            />
+          ))}
+        </ScrollView>
+      </View>
 
       {isLoading ? (
         <View className="flex-1 bg-stone-950 items-center justify-center">
