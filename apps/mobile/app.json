@@ -16,11 +16,20 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0c0a09"
-      }
+      },
+      "package": "com.j0smedina.mhdatapedia"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router"
+    ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b852115e-7545-4eae-b432-d328c070111a"
+      }
     }
   }
 }
