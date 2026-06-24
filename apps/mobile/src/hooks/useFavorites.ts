@@ -7,7 +7,7 @@ export function useFavorites() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: favorites = [], isLoading } = useQuery({
+  const { data: favorites = [], isLoading, refetch, isRefetching } = useQuery({
     queryKey: ['favorites'],
     queryFn: () =>
       apiGet<{ data: Monster[] }>('/api/users/me/favorites').then((r) => r.data),
@@ -70,5 +70,5 @@ export function useFavorites() {
     }
   }
 
-  return { favorites, isFavorited, toggle, isLoading };
+  return { favorites, isFavorited, toggle, isLoading, isRefetching, refetch };
 }

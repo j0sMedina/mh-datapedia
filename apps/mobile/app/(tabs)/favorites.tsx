@@ -8,7 +8,7 @@ import { Button } from '../../src/components/ui/Button';
 
 export default function FavoritesScreen() {
   const { user } = useAuth();
-  const { favorites, isFavorited, toggle, isLoading } = useFavorites();
+  const { favorites, isFavorited, toggle, isLoading, isRefetching, refetch } = useFavorites();
 
   if (!user) {
     return (
@@ -47,7 +47,7 @@ export default function FavoritesScreen() {
           </View>
         }
         refreshControl={
-          <RefreshControl refreshing={isLoading} tintColor="#2f9e8f" />
+          <RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor="#2f9e8f" />
         }
       />
     </View>

@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import { Pressable, View, Text, Image } from 'react-native';
 import { router } from 'expo-router';
 import Swipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
@@ -13,8 +12,6 @@ interface MonsterCardProps {
 }
 
 export function MonsterCard({ monster, isFavorited, onFavoriteToggle }: MonsterCardProps) {
-  const swipeRef = useRef<SwipeableMethods>(null);
-
   function renderRightActions(_progress: unknown, _translation: unknown, swipeableMethods: SwipeableMethods) {
     if (!onFavoriteToggle) return null;
     return (
@@ -68,7 +65,7 @@ export function MonsterCard({ monster, isFavorited, onFavoriteToggle }: MonsterC
   if (!onFavoriteToggle) return card;
 
   return (
-    <Swipeable ref={swipeRef} renderRightActions={renderRightActions} rightThreshold={40}>
+    <Swipeable renderRightActions={renderRightActions} rightThreshold={40}>
       {card}
     </Swipeable>
   );
