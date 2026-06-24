@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, Image, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { apiGet } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
 import { useFavorites } from '../../src/hooks/useFavorites';
@@ -15,7 +14,6 @@ import { HitzonesTab } from '../../src/components/detail/HitzonesTab';
 import { WeaknessesTab } from '../../src/components/detail/WeaknessesTab';
 import { DropsTab } from '../../src/components/detail/DropsTab';
 import { StrategiesTab } from '../../src/components/detail/StrategiesTab';
-import { StrategyFormSheet } from '../../src/components/detail/StrategyFormSheet';
 
 const TABS = ['Overview', 'Hitzones', 'Weaknesses', 'Drops', 'Strategies'];
 
@@ -25,7 +23,6 @@ export default function MonsterDetailScreen() {
   const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuth();
   const { isFavorited, toggle } = useFavorites();
-  const sheetRef = useRef<BottomSheetModal>(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['monster', id],
@@ -127,30 +124,6 @@ export default function MonsterDetailScreen() {
           <StrategiesTab strategies={data.strategies ?? []} monsterId={id} />
         )}
       </ScrollView>
-
-      {/* FAB — floats above scroll content, visible only on Strategies tab when logged in */}
-      {activeTab === 4 && user && (
-        <Pressable
-          onPress={() => sheetRef.current?.present()}
-          style={{
-            position: 'absolute',
-            bottom: 24,
-            right: 24,
-            width: 56,
-            height: 56,
-            borderRadius: 28,
-            backgroundColor: '#2f9e8f',
-            alignItems: 'center',
-            justifyContent: 'center',
-            elevation: 4,
-          }}
-        >
-          <Text style={{ color: '#fff', fontSize: 28, lineHeight: 32 }}>+</Text>
-        </Pressable>
-      )}
-
-      {/* Strategy submission sheet */}
-      <StrategyFormSheet ref={sheetRef} monsterId={id} />
     </View>
   );
 }
