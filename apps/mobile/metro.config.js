@@ -13,4 +13,14 @@ config.resolver.nodeModulesPaths = [
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === '@mh-datapedia/shared') {
+    return {
+      filePath: path.resolve(monorepoRoot, 'packages/shared/src/index.ts'),
+      type: 'sourceFile',
+    };
+  }
+  return context.resolveRequest(context, moduleName, platform);
+};
+
 module.exports = withNativeWind(config, { input: './global.css' });
