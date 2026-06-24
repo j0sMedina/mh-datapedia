@@ -8,7 +8,6 @@ import {
   Text,
   Pressable,
 } from 'react-native';
-import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '../../src/lib/api';
 import { MonsterCard } from '../../src/components/monsters/MonsterCard';
@@ -16,6 +15,7 @@ import { TypeFilterChip } from '../../src/components/monsters/TypeFilterChip';
 import { Spinner } from '../../src/components/ui/Spinner';
 import { useFavorites } from '../../src/hooks/useFavorites';
 import { useAuth } from '../../src/context/AuthContext';
+import { useAuthSheet } from '../../src/context/AuthSheetContext';
 import type { Monster, MonsterType } from '@mh-datapedia/shared';
 
 const ROW1_TYPES: MonsterType[] = [
@@ -35,6 +35,7 @@ export default function MonstersScreen() {
   const [search, setSearch] = useState('');
   const [activeType, setActiveType] = useState<MonsterType | null>(null);
   const { user } = useAuth();
+  const { openLoginSheet } = useAuthSheet();
   const { isFavorited, toggle } = useFavorites();
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
@@ -127,7 +128,7 @@ export default function MonstersScreen() {
               onFavoriteToggle={
                 user
                   ? () => toggle(item.id)
-                  : () => router.push('/auth/login')
+                  : openLoginSheet
               }
             />
           )}

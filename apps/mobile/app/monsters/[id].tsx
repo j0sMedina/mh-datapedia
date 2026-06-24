@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { apiGet } from '../../src/lib/api';
 import { useAuth } from '../../src/context/AuthContext';
+import { useAuthSheet } from '../../src/context/AuthSheetContext';
 import { useFavorites } from '../../src/hooks/useFavorites';
 import { TabStrip } from '../../src/components/ui/TabStrip';
 import { Spinner } from '../../src/components/ui/Spinner';
@@ -23,6 +24,7 @@ export default function MonsterDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuth();
+  const { openLoginSheet } = useAuthSheet();
   const { isFavorited, toggle } = useFavorites();
   const sheetRef = useRef<BottomSheetModal>(null);
 
@@ -77,7 +79,7 @@ export default function MonsterDetailScreen() {
             <Pressable
               onPress={() => {
                 if (!user) {
-                  router.push('/auth/login');
+                  openLoginSheet();
                   return;
                 }
                 toggle(id);

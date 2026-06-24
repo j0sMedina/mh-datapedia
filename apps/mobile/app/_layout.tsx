@@ -10,6 +10,7 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { AuthProvider } from '../src/context/AuthContext';
+import { AuthSheetProvider } from '../src/context/AuthSheetContext';
 
 const queryClient = new QueryClient();
 
@@ -25,22 +26,6 @@ function RootStack() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="monsters/[id]" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="auth/login"
-        options={{
-          presentation: 'modal',
-          headerTitle: 'Sign In',
-          headerRight: () => null,
-        }}
-      />
-      <Stack.Screen
-        name="auth/register"
-        options={{
-          presentation: 'modal',
-          headerTitle: 'Create Account',
-          headerRight: () => null,
-        }}
-      />
     </Stack>
   );
 }
@@ -54,8 +39,10 @@ export default function RootLayout() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BottomSheetModalProvider>
-            <StatusBar style="light" />
-            <RootStack />
+            <AuthSheetProvider>
+              <StatusBar style="light" />
+              <RootStack />
+            </AuthSheetProvider>
           </BottomSheetModalProvider>
         </AuthProvider>
       </QueryClientProvider>

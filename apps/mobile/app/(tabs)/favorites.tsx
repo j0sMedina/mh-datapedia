@@ -1,6 +1,6 @@
 import { View, Text, FlatList, RefreshControl } from 'react-native';
-import { router } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
+import { useAuthSheet } from '../../src/context/AuthSheetContext';
 import { useFavorites } from '../../src/hooks/useFavorites';
 import { MonsterCard } from '../../src/components/monsters/MonsterCard';
 import { Spinner } from '../../src/components/ui/Spinner';
@@ -8,6 +8,7 @@ import { Button } from '../../src/components/ui/Button';
 
 export default function FavoritesScreen() {
   const { user } = useAuth();
+  const { openLoginSheet } = useAuthSheet();
   const { favorites, isFavorited, toggle, isLoading, isRefetching, refetch } = useFavorites();
 
   if (!user) {
@@ -16,7 +17,7 @@ export default function FavoritesScreen() {
         <Text style={{ color: '#a8a29e', fontSize: 16, marginBottom: 20, textAlign: 'center' }}>
           Sign in to save your favorite monsters
         </Text>
-        <Button onPress={() => router.push('/auth/login')}>Sign In</Button>
+        <Button onPress={openLoginSheet}>Sign In</Button>
       </View>
     );
   }

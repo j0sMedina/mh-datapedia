@@ -1,6 +1,6 @@
 import { Pressable, Text, View } from 'react-native';
-import { router } from 'expo-router';
 import { useAuth } from '../../context/AuthContext';
+import { useAuthSheet } from '../../context/AuthSheetContext';
 
 export function AppTitle({ label }: { label: string }) {
   return (
@@ -17,6 +17,7 @@ export function AppTitle({ label }: { label: string }) {
 
 export function HeaderRight() {
   const { user, logout } = useAuth();
+  const { openLoginSheet } = useAuthSheet();
   if (user) {
     return (
       <View className="flex-row items-center gap-3 mr-1">
@@ -33,7 +34,7 @@ export function HeaderRight() {
   return (
     <View className="flex-row items-center gap-2 mr-1">
       <Pressable
-        onPress={() => router.push('/auth/login')}
+        onPress={openLoginSheet}
         className="border border-stone-700 rounded px-3 py-1"
       >
         <Text className="text-stone-400 text-sm">Login</Text>
