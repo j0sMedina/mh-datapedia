@@ -37,7 +37,13 @@ export function MonsterHeader({ monster, onEdit, onDelete }: MonsterHeaderProps)
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap mb-1">
             <h1 className="text-3xl font-bold text-stone-50">{monster.name}</h1>
-            {monster.isBoss && <span className="text-accent shrink-0 text-xl" title="Boss">♛</span>}
+            {monster.isBoss && (
+              <span className="text-accent shrink-0" title="Boss">
+                <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+                  <path d="M5 16L3 5l5.5 5L12 2l3.5 8L21 5l-2 11H5m14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
+                </svg>
+              </span>
+            )}
           </div>
           <p className="text-stone-400 text-sm mb-3">{monster.title}</p>
           <div className="flex flex-wrap gap-2">

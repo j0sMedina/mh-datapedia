@@ -20,7 +20,11 @@ export function MonsterCard({ monster }: MonsterCardProps) {
           {monster.name}
         </h3>
         {monster.isBoss && (
-          <span className="text-accent shrink-0 mt-0.5 text-[13px]" title="Boss">♛</span>
+          <span className="text-accent shrink-0 mt-0.5" title="Boss">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
+              <path d="M5 16L3 5l5.5 5L12 2l3.5 8L21 5l-2 11H5m14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
+            </svg>
+          </span>
         )}
       </div>
 
