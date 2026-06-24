@@ -68,38 +68,39 @@ export default function MonstersScreen() {
         />
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}
-        contentContainerStyle={{ flexDirection: 'column', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 }}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', height: 32, gap: 6 }}>
-          <TypeFilterChip
-            label="All"
-            active={activeType === null}
-            onPress={() => setActiveType(null)}
-          />
-          {ROW1_TYPES.map((type) => (
+      <View style={{ height: 80, borderBottomWidth: 1, borderBottomColor: '#292524' }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={{ flexDirection: 'column', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 }}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', height: 32, gap: 6 }}>
             <TypeFilterChip
-              key={type}
-              label={type}
-              active={activeType === type}
-              onPress={() => handleTypePress(type)}
+              label="All"
+              active={activeType === null}
+              onPress={() => setActiveType(null)}
             />
-          ))}
-        </View>
-        <View style={{ flexDirection: 'row', alignItems: 'center', height: 32, gap: 6 }}>
-          {ROW2_TYPES.map((type) => (
-            <TypeFilterChip
-              key={type}
-              label={type}
-              active={activeType === type}
-              onPress={() => handleTypePress(type)}
-            />
-          ))}
-        </View>
-      </ScrollView>
+            {ROW1_TYPES.map((type) => (
+              <TypeFilterChip
+                key={type}
+                label={type}
+                active={activeType === type}
+                onPress={() => handleTypePress(type)}
+              />
+            ))}
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', height: 32, gap: 6 }}>
+            {ROW2_TYPES.map((type) => (
+              <TypeFilterChip
+                key={type}
+                label={type}
+                active={activeType === type}
+                onPress={() => handleTypePress(type)}
+              />
+            ))}
+          </View>
+        </ScrollView>
+      </View>
 
       {isLoading ? (
         <View className="flex-1 bg-stone-950 items-center justify-center">
