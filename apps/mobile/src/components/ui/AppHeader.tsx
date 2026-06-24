@@ -20,7 +20,7 @@ export function HeaderRight() {
   const { openLoginSheet } = useAuthSheet();
   if (user) {
     return (
-      <View className="flex-row items-center gap-3 mr-1">
+      <View className="flex-row items-center gap-3">
         <Text className="text-stone-400 text-sm">{user.username}</Text>
         <Pressable
           onPress={logout}
@@ -32,7 +32,7 @@ export function HeaderRight() {
     );
   }
   return (
-    <View className="flex-row items-center gap-2 mr-1">
+    <View className="flex-row items-center gap-2">
       <Pressable
         onPress={openLoginSheet}
         className="border border-stone-700 rounded px-3 py-1"

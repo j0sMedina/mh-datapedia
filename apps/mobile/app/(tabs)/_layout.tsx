@@ -9,6 +9,7 @@ export default function TabLayout() {
         headerStyle: { backgroundColor: '#0c0a09' },
         headerTintColor: '#fafaf9',
         headerShadowVisible: false,
+        headerRightContainerStyle: { paddingRight: 16 },
         tabBarStyle: {
           backgroundColor: '#1c1917',
           borderTopColor: '#292524',
