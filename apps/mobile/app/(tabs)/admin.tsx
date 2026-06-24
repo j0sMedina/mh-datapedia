@@ -1,5 +1,6 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator } from 'react-native';
+import { router } from 'expo-router';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../../src/context/AuthContext';
@@ -29,6 +30,12 @@ export default function AdminScreen() {
 
   const isPending = roleMutation.isPending || banMutation.isPending;
   const isMaster = currentUser?.email === 'silverkx@mh.com';
+
+  useEffect(() => {
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      router.replace('/');
+    }
+  }, [currentUser]);
 
   function handleRoleChange(userId: string, role: 'USER' | 'ADMIN') {
     roleMutation.mutate({ userId, role }, { onSuccess: () => actionSheetRef.current?.dismiss() });
