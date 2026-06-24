@@ -65,7 +65,7 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
           {...props}
           disappearsOnIndex={-1}
           appearsOnIndex={0}
-          opacity={0.75}
+          opacity={0.6}
         />
       ),
       [],
@@ -164,7 +164,7 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
 
 const styles = StyleSheet.create({
   sheetBg: {
-    backgroundColor: 'rgba(10, 8, 7, 0.96)',
+    backgroundColor: 'rgba(10, 8, 7, 0.70)',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.07)',
   },
