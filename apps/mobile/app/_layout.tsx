@@ -7,6 +7,8 @@ import {
   Oswald_400Regular,
   Oswald_700Bold,
 } from '@expo-google-fonts/oswald';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { AuthProvider } from '../src/context/AuthContext';
 
 const queryClient = new QueryClient();
@@ -48,11 +50,15 @@ export default function RootLayout() {
   if (!fontsLoaded) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <StatusBar style="light" />
-        <RootStack />
-      </AuthProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <BottomSheetModalProvider>
+            <StatusBar style="light" />
+            <RootStack />
+          </BottomSheetModalProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }

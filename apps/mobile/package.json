@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo-google-fonts/oswald": "^0.4.2",
     "@expo/vector-icons": "^15.1.1",
+    "@gorhom/bottom-sheet": "^5",
     "@mh-datapedia/shared": "workspace:*",
     "@tanstack/react-query": "^5.51.0",
     "expo": "~56.0.12",
