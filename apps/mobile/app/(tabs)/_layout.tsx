@@ -2,8 +2,11 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppTitle, HeaderRight } from '../../src/components/ui/AppHeader';
+import { useAuth } from '../../src/context/AuthContext';
 
 export default function TabLayout() {
+  const { user } = useAuth();
+
   return (
     <Tabs
       screenOptions={{
@@ -50,6 +53,7 @@ export default function TabLayout() {
         name="admin"
         options={{
           title: 'Admin',
+          href: user?.role === 'ADMIN' ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="crown" color={color} size={size} />
           ),
