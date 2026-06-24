@@ -57,7 +57,7 @@ export default function MonstersScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0c0a09' }}>
-      <View className="px-4 pt-2 pb-2">
+      <View className="px-4 pt-4 pb-2">
         <TextInput
           className="bg-stone-900 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm placeholder:text-stone-500"
           placeholder="Search monsters…"
@@ -72,7 +72,7 @@ export default function MonstersScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ flexDirection: 'column', paddingHorizontal: 16, paddingTop: 4, paddingBottom: 12 }}
+          contentContainerStyle={{ flexDirection: 'column', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}
         >
           <View style={{ flexDirection: 'row', alignItems: 'center', height: 32, gap: 6 }}>
             <TypeFilterChip
