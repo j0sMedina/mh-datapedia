@@ -1,8 +1,11 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Image, ScrollView } from 'react-native';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { View, Text, Image, ScrollView, Pressable } from 'react-native';
+import { useLocalSearchParams, useNavigation, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { apiGet } from '../../src/lib/api';
+import { useAuth } from '../../src/context/AuthContext';
+import { useFavorites } from '../../src/hooks/useFavorites';
 import { TabStrip } from '../../src/components/ui/TabStrip';
 import { Spinner } from '../../src/components/ui/Spinner';
 import { Badge } from '../../src/components/ui/Badge';
@@ -18,6 +21,8 @@ export default function MonsterDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState(0);
+  const { user } = useAuth();
+  const { isFavorited, toggle } = useFavorites();
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['monster', id],
@@ -78,7 +83,25 @@ export default function MonsterDetailScreen() {
             <Text style={{ color: '#fafaf9', fontSize: 20, fontWeight: 'bold' }}>{data.name}</Text>
             <Text style={{ color: '#a8a29e', fontSize: 13 }}>{data.title}</Text>
           </View>
-          {data.isBoss && <Badge variant="red">Boss</Badge>}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            {data.isBoss && <Badge variant="red">Boss</Badge>}
+            <Pressable
+              onPress={() => {
+                if (!user) {
+                  router.push('/auth/login');
+                  return;
+                }
+                toggle(id);
+              }}
+              hitSlop={8}
+            >
+              <Ionicons
+                name={user && isFavorited(id) ? 'heart' : 'heart-outline'}
+                size={24}
+                color={user && isFavorited(id) ? '#ef4444' : '#57534e'}
+              />
+            </Pressable>
+          </View>
         </View>
 
         {/* Tab strip */}
