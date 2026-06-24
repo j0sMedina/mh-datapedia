@@ -12,8 +12,6 @@ interface MonsterSeed {
   title: string;
   description: string;
   type: MonsterType;
-  firstGame: MHGame;
-  firstYear: number;
   isBoss: boolean;
   habitats: string[];
   parentName?: string;
@@ -795,8 +793,6 @@ async function main() {
         title: m.title,
         description: m.description,
         type: m.type,
-        firstGame: m.firstGame,
-        firstYear: m.firstYear,
         isBoss: m.isBoss,
         habitats: m.habitats,
       },
@@ -813,14 +809,6 @@ async function main() {
       if (parentId) {
         await prisma.monster.update({ where: { id: monsterId }, data: { parentId } });
       }
-    }
-
-    for (const g of m.games) {
-      await prisma.gameAppearance.upsert({
-        where: { monsterId_game: { monsterId, game: g.game } },
-        update: {},
-        create: { monsterId, game: g.game, isNew: g.isNew },
-      });
     }
 
     for (const w of m.weaknesses) {
