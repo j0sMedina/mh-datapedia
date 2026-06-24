@@ -24,7 +24,7 @@ function RootStack() {
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="monsters/[id]" options={{ title: '' }} />
+      <Stack.Screen name="monsters/[id]" options={{ headerShown: false }} />
       <Stack.Screen
         name="auth/login"
         options={{

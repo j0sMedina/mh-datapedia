@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { View, Text, Image, ScrollView, Pressable } from 'react-native';
-import { useLocalSearchParams, useNavigation, router } from 'expo-router';
+import { useState, useRef } from 'react';
+import { View, Text, ScrollView, Pressable } from 'react-native';
+import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
@@ -21,7 +21,6 @@ const TABS = ['Overview', 'Hitzones', 'Weaknesses', 'Drops', 'Strategies'];
 
 export default function MonsterDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState(0);
   const { user } = useAuth();
   const { isFavorited, toggle } = useFavorites();
@@ -33,12 +32,6 @@ export default function MonsterDetailScreen() {
     queryFn: () => apiGet<{ data: any }>(`/api/monsters/${id}`).then((r) => r.data),
     enabled: !!id,
   });
-
-  useEffect(() => {
-    if (data?.name) {
-      navigation.setOptions({ headerTitle: data.name });
-    }
-  }, [data?.name, navigation]);
 
   if (isLoading) {
     return (
@@ -64,18 +57,14 @@ export default function MonsterDetailScreen() {
         showsVerticalScrollIndicator={false}
         scrollEnabled={activeTab !== 1}
       >
-        {/* Hero image */}
-        {data.imageUrl ? (
-          <Image
-            source={{ uri: data.imageUrl }}
-            style={{ width: '100%', aspectRatio: 16 / 9 }}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={{ width: '100%', aspectRatio: 16 / 9, backgroundColor: '#1c1917', alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: '#57534e', fontSize: 18 }}>{data.name}</Text>
-          </View>
-        )}
+        {/* Back navigation */}
+        <Pressable
+          onPress={() => router.back()}
+          style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}
+        >
+          <Ionicons name="arrow-back" size={16} color="#a8a29e" />
+          <Text style={{ color: '#a8a29e', fontSize: 14, marginLeft: 6 }}>Monsters</Text>
+        </Pressable>
 
         {/* Name + title + boss badge + heart */}
         <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, flexDirection: 'row', alignItems: 'flex-start' }}>
