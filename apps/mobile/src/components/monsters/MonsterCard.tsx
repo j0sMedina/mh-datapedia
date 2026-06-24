@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { Pressable, View, Text } from 'react-native';
 import { router } from 'expo-router';
 import { Swipeable } from 'react-native-gesture-handler';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Badge } from '../ui/Badge';
 import type { Monster } from '@mh-datapedia/shared';
 
@@ -69,7 +69,7 @@ export function MonsterCard({ monster, isFavorited, onFavoriteToggle }: MonsterC
         </View>
       </View>
       {monster.isBoss && (
-        <Ionicons name="shield" size={16} color="#2f9e8f" style={{ marginTop: 2 }} />
+        <MaterialCommunityIcons name="crown" size={16} color="#2f9e8f" style={{ marginTop: 2 }} />
       )}
     </Pressable>
   );
