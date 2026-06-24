@@ -1,14 +1,48 @@
+import { useRef } from 'react';
 import { Pressable, View, Text, Image } from 'react-native';
 import { router } from 'expo-router';
+import Swipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { Ionicons } from '@expo/vector-icons';
 import { Badge } from '../ui/Badge';
 import type { Monster } from '@mh-datapedia/shared';
 
 interface MonsterCardProps {
   monster: Pick<Monster, 'id' | 'name' | 'type' | 'iconUrl'>;
+  isFavorited?: boolean;
+  onFavoriteToggle?: () => void;
 }
 
-export function MonsterCard({ monster }: MonsterCardProps) {
-  return (
+export function MonsterCard({ monster, isFavorited, onFavoriteToggle }: MonsterCardProps) {
+  const swipeRef = useRef<SwipeableMethods>(null);
+
+  function renderRightActions(_progress: unknown, _translation: unknown, swipeableMethods: SwipeableMethods) {
+    if (!onFavoriteToggle) return null;
+    return (
+      <Pressable
+        onPress={() => {
+          swipeableMethods.close();
+          onFavoriteToggle();
+        }}
+        style={{
+          width: 72,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: isFavorited ? '#ef4444' : '#2f9e8f',
+        }}
+      >
+        <Ionicons
+          name={isFavorited ? 'heart' : 'heart-outline'}
+          size={24}
+          color="#fff"
+        />
+        <Text style={{ color: '#fff', fontSize: 11, marginTop: 2 }}>
+          {isFavorited ? 'Remove' : 'Save'}
+        </Text>
+      </Pressable>
+    );
+  }
+
+  const card = (
     <Pressable
       onPress={() => router.push(`/monsters/${monster.id}`)}
       className="flex-row items-center px-4 py-3 border-b border-stone-800 active:bg-stone-800/50"
@@ -29,5 +63,13 @@ export function MonsterCard({ monster }: MonsterCardProps) {
       </View>
       <Badge variant="accent">{monster.type}</Badge>
     </Pressable>
+  );
+
+  if (!onFavoriteToggle) return card;
+
+  return (
+    <Swipeable ref={swipeRef} renderRightActions={renderRightActions} rightThreshold={40}>
+      {card}
+    </Swipeable>
   );
 }

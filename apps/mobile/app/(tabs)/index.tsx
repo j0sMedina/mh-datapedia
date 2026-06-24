@@ -8,11 +8,14 @@ import {
   Text,
   Pressable,
 } from 'react-native';
+import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { apiGet } from '../../src/lib/api';
 import { MonsterCard } from '../../src/components/monsters/MonsterCard';
 import { TypeFilterChip } from '../../src/components/monsters/TypeFilterChip';
 import { Spinner } from '../../src/components/ui/Spinner';
+import { useFavorites } from '../../src/hooks/useFavorites';
+import { useAuth } from '../../src/context/AuthContext';
 import type { Monster, MonsterType } from '@mh-datapedia/shared';
 
 const MONSTER_TYPES: MonsterType[] = [
@@ -30,6 +33,8 @@ interface ListResponse {
 export default function MonstersScreen() {
   const [search, setSearch] = useState('');
   const [activeType, setActiveType] = useState<MonsterType | null>(null);
+  const { user } = useAuth();
+  const { isFavorited, toggle } = useFavorites();
 
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['monsters', search, activeType],
@@ -97,7 +102,17 @@ export default function MonstersScreen() {
         <FlatList
           data={monsters}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <MonsterCard monster={item} />}
+          renderItem={({ item }) => (
+            <MonsterCard
+              monster={item}
+              isFavorited={user ? isFavorited(item.id) : undefined}
+              onFavoriteToggle={
+                user
+                  ? () => toggle(item.id)
+                  : () => router.push('/auth/login')
+              }
+            />
+          )}
           ListEmptyComponent={
             <View className="flex-1 items-center justify-center py-16">
               <Text className="text-stone-500">No monsters found.</Text>
