@@ -138,13 +138,6 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
             style={styles.input}
           />
 
-          <Pressable onPress={onSwitchToLogin} style={styles.switchLink}>
-            <Text style={styles.switchText}>
-              Already a hunter?{' '}
-              <Text style={styles.switchAccent}>Sign in</Text>
-            </Text>
-          </Pressable>
-
           <Pressable
             onPress={handleRegister}
             disabled={loading}
@@ -155,6 +148,13 @@ export const RegisterSheet = forwardRef<BottomSheetModal, RegisterSheetProps>(
             ) : (
               <Text style={styles.createText}>Create Account</Text>
             )}
+          </Pressable>
+
+          <Pressable onPress={onSwitchToLogin} style={styles.switchLink}>
+            <Text style={styles.switchText}>
+              Already a hunter?{' '}
+              <Text style={styles.switchAccent}>Sign in</Text>
+            </Text>
           </Pressable>
         </View>
       </BottomSheetModal>
@@ -184,18 +184,18 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
-  line: { flex: 1, height: 1, backgroundColor: 'rgba(255,255,255,0.08)', marginLeft: 8 },
+  line: { flex: 1, height: 1, backgroundColor: '#2f9e8f', marginLeft: 8 },
   subtitle: { color: 'rgba(255,255,255,0.4)', fontSize: 13 },
   error: { color: '#ef4444', fontSize: 13 },
   input: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: '#1a1614',
     borderRadius: 8,
     paddingHorizontal: 14,
     paddingVertical: 12,
     color: '#fafaf9',
     fontSize: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.09)',
+    borderColor: '#2a2220',
   },
   switchLink: { alignItems: 'center' },
   switchText: { color: 'rgba(255,255,255,0.3)', fontSize: 13 },
