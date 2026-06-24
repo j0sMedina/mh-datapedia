@@ -36,7 +36,7 @@ export function UserCard({ user, isSelf, onActionPress }: UserCardProps) {
           width: 40,
           height: 40,
           borderRadius: 20,
-          backgroundColor: isAdmin ? '#2f9e8f' : '#292524',
+          backgroundColor: user.banned ? '#ef4444' : isAdmin ? '#2f9e8f' : '#292524',
           alignItems: 'center',
           justifyContent: 'center',
         }}
