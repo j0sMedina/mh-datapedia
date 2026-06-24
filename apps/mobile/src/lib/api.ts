@@ -48,36 +48,34 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   });
 
   if (res.status === 401) {
-    // Never attempt refresh on auth endpoints — would loop.
     if (path.startsWith('/api/auth/')) {
       await storage.clearToken();
       throw new ApiError(401, null);
     }
 
+    let newToken: string;
     try {
-      const newToken = await refreshToken();
-
-      // Retry the original request once with the new token.
-      const retryHeaders = new Headers(init?.headers);
-      retryHeaders.set('Content-Type', 'application/json');
-      retryHeaders.set('Authorization', `Bearer ${newToken}`);
-      const retryRes = await fetch(`${API_BASE}${path}`, {
-        ...init,
-        headers: retryHeaders,
-        credentials: 'include',
-      });
-      if (!retryRes.ok) {
-        const body = await retryRes.json().catch(() => null);
-        throw new ApiError(retryRes.status, body);
-      }
-      if (retryRes.status === 204) return undefined as T;
-      return retryRes.json() as Promise<T>;
+      newToken = await refreshToken();
     } catch {
-      // Refresh failed — clear token and send user to login.
       await storage.clearToken();
       router.replace('/auth/login');
       throw new ApiError(401, null);
     }
+
+    const retryHeaders = new Headers(init?.headers);
+    retryHeaders.set('Content-Type', 'application/json');
+    retryHeaders.set('Authorization', `Bearer ${newToken}`);
+    const retryRes = await fetch(`${API_BASE}${path}`, {
+      ...init,
+      headers: retryHeaders,
+      credentials: 'include',
+    });
+    if (!retryRes.ok) {
+      const body = await retryRes.json().catch(() => null);
+      throw new ApiError(retryRes.status, body);
+    }
+    if (retryRes.status === 204) return undefined as T;
+    return retryRes.json() as Promise<T>;
   }
 
   if (!res.ok) {
