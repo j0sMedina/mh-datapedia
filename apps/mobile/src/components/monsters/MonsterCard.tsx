@@ -1,6 +1,7 @@
+import { useRef } from 'react';
 import { Pressable, View, Text, Image } from 'react-native';
 import { router } from 'expo-router';
-import Swipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { Swipeable } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { Badge } from '../ui/Badge';
 import type { Monster } from '@mh-datapedia/shared';
@@ -12,12 +13,14 @@ interface MonsterCardProps {
 }
 
 export function MonsterCard({ monster, isFavorited, onFavoriteToggle }: MonsterCardProps) {
-  function renderRightActions(_progress: unknown, _translation: unknown, swipeableMethods: SwipeableMethods) {
+  const swipeRef = useRef<Swipeable>(null);
+
+  function renderRightActions() {
     if (!onFavoriteToggle) return null;
     return (
       <Pressable
         onPress={() => {
-          swipeableMethods.close();
+          swipeRef.current?.close();
           onFavoriteToggle();
         }}
         style={{
@@ -65,7 +68,7 @@ export function MonsterCard({ monster, isFavorited, onFavoriteToggle }: MonsterC
   if (!onFavoriteToggle) return card;
 
   return (
-    <Swipeable renderRightActions={renderRightActions} rightThreshold={40}>
+    <Swipeable ref={swipeRef} renderRightActions={renderRightActions} rightThreshold={40}>
       {card}
     </Swipeable>
   );
