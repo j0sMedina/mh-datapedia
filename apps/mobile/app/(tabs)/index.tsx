@@ -50,7 +50,6 @@ export default function MonstersScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: '#0c0a09' }}>
-      {/* Search bar */}
       <View className="px-4 pt-3 pb-2">
         <TextInput
           className="bg-stone-900 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm placeholder:text-stone-500"
@@ -62,7 +61,6 @@ export default function MonstersScreen() {
         />
       </View>
 
-      {/* Type filter chips */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -84,7 +82,6 @@ export default function MonstersScreen() {
         ))}
       </ScrollView>
 
-      {/* List */}
       {isLoading ? (
         <View className="flex-1 bg-stone-950 items-center justify-center">
           <Spinner size="lg" />
