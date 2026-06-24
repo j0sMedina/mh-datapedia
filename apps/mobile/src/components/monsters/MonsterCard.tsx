@@ -64,7 +64,7 @@ export function MonsterCard({ monster, isFavorited, onFavoriteToggle }: MonsterC
           {monster.name}
         </Text>
         <Text style={{ color: '#a8a29e', fontSize: 13 }}>{monster.title}</Text>
-        <View style={{ marginTop: 4 }}>
+        <View style={{ marginTop: 4, alignSelf: 'flex-start' }}>
           <Badge variant="accent">{monster.type}</Badge>
         </View>
       </View>

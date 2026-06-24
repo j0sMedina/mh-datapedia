@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { View, Text, ScrollView, Pressable } from 'react-native';
+import { View, Text, ScrollView, Pressable, StatusBar } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,6 +23,7 @@ const TABS = ['Overview', 'Hitzones', 'Weaknesses', 'Drops', 'Strategies'];
 export default function MonsterDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [activeTab, setActiveTab] = useState(0);
+  const statusBarHeight = StatusBar.currentHeight ?? 0;
   const { user } = useAuth();
   const { openLoginSheet } = useAuthSheet();
   const { isFavorited, toggle } = useFavorites();
@@ -52,17 +53,17 @@ export default function MonsterDetailScreen() {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#0c0a09' }}>
+    <View style={{ flex: 1, backgroundColor: '#0c0a09', paddingTop: statusBarHeight }}>
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
         scrollEnabled={activeTab !== 1}
       >
         {/* Back navigation */}
         <Pressable
           onPress={() => router.back()}
-          style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 }}
+          style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 4 }}
         >
           <Ionicons name="arrow-back" size={16} color="#a8a29e" />
           <Text style={{ color: '#a8a29e', fontSize: 14, marginLeft: 6 }}>Monsters</Text>

@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { storage } from './storage';
 
 export const API_BASE = 'https://mh-datapedia-web.fly.dev';
@@ -58,7 +57,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       newToken = await refreshToken();
     } catch {
       await storage.clearToken();
-      router.replace('/auth/login');
       throw new ApiError(401, null);
     }
 

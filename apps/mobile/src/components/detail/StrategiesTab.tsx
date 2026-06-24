@@ -33,9 +33,9 @@ export function StrategiesTab({
   strategies: StrategyWithAuthor[];
 }) {
   return (
-    <View style={{ flex: 1 }}>
+    <View>
       {strategies.length === 0 ? (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={{ paddingVertical: 48, alignItems: 'center' }}>
           <Text style={{ color: '#57534e' }}>No strategies yet.</Text>
         </View>
       ) : (

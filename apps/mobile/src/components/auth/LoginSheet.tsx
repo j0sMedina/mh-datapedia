@@ -62,6 +62,7 @@ export const LoginSheet = forwardRef<BottomSheetModal, LoginSheetProps>(
       <BottomSheetModal
         ref={ref}
         snapPoints={['62%']}
+        enableDynamicSizing={false}
         backdropComponent={renderBackdrop}
         backgroundStyle={{ backgroundColor: '#1c1917' }}
         handleIndicatorStyle={{ backgroundColor: '#57534e' }}

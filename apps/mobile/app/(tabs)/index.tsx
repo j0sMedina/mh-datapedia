@@ -68,13 +68,13 @@ export default function MonstersScreen() {
         />
       </View>
 
-      <View style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ height: 44 }}
-          contentContainerStyle={{ height: 44, alignItems: 'center', paddingHorizontal: 16, gap: 8 }}
-        >
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={{ borderBottomWidth: 1, borderBottomColor: '#292524' }}
+        contentContainerStyle={{ flexDirection: 'column', paddingHorizontal: 16 }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', height: 44, gap: 8 }}>
           <TypeFilterChip
             label="All"
             active={activeType === null}
@@ -88,13 +88,8 @@ export default function MonstersScreen() {
               onPress={() => handleTypePress(type)}
             />
           ))}
-        </ScrollView>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ height: 44 }}
-          contentContainerStyle={{ height: 44, alignItems: 'center', paddingHorizontal: 16, gap: 8 }}
-        >
+        </View>
+        <View style={{ flexDirection: 'row', alignItems: 'center', height: 44, gap: 8 }}>
           {ROW2_TYPES.map((type) => (
             <TypeFilterChip
               key={type}
@@ -103,8 +98,8 @@ export default function MonstersScreen() {
               onPress={() => handleTypePress(type)}
             />
           ))}
-        </ScrollView>
-      </View>
+        </View>
+      </ScrollView>
 
       {isLoading ? (
         <View className="flex-1 bg-stone-950 items-center justify-center">
