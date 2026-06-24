@@ -106,7 +106,6 @@ export default function MonsterDetailScreen() {
               description: data.description,
               habitats: data.habitats ?? [],
               ailments: data.ailments ?? [],
-              isBoss: data.isBoss,
               subspecies: data.subspecies ?? [],
               parent: data.parent,
             }}

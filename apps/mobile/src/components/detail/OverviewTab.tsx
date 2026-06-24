@@ -7,7 +7,7 @@ type SubspeciesRef = { id: string; name: string };
 type ParentRef = { id: string; name: string } | null;
 
 interface Props {
-  monster: Pick<Monster, 'description' | 'habitats' | 'ailments' | 'isBoss'> & {
+  monster: Pick<Monster, 'description' | 'habitats' | 'ailments'> & {
     subspecies: SubspeciesRef[];
     parent: ParentRef;
   };
@@ -16,12 +16,6 @@ interface Props {
 export function OverviewTab({ monster }: Props) {
   return (
     <View style={{ paddingHorizontal: 16, paddingTop: 16, paddingBottom: 24 }}>
-      {monster.isBoss && (
-        <View className="mb-3">
-          <Badge variant="red">Boss</Badge>
-        </View>
-      )}
-
       <Text className="text-stone-50 text-base leading-6 mb-4">{monster.description}</Text>
 
       {monster.habitats.length > 0 && (
