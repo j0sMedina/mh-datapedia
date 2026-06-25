@@ -33,8 +33,7 @@ function MonstersPage() {
 
   useEffect(() => {
     navigate({ search: (prev) => ({ ...prev, search: debouncedSearch || undefined, page: 1 }) });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedSearch]);
+  }, [debouncedSearch, navigate]);
 
   const setFilter = (key: 'type' | 'search', val: string | undefined) => {
     if (key === 'search') {
@@ -48,7 +47,7 @@ function MonstersPage() {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-stone-50">Monsters</h1>
-        {user?.role === 'ADMIN' && (
+        {(['HELPER', 'ADMIN', 'MASTER'] as const).includes(user?.role as 'HELPER' | 'ADMIN' | 'MASTER') && (
           <Button size="sm" onClick={() => setShowAddModal(true)}>
             + Add Monster
           </Button>

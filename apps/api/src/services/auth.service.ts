@@ -139,7 +139,13 @@ export async function refresh(token: string) {
         data: { banned: false, bannedReason: null, bannedAt: null, bannedUntil: null },
       });
     } else {
-      await prisma.refreshToken.deleteMany({ where: { userId: stored.userId } });
+      const bannedTokenHash = hashToken(stored.token);
+      await prisma.$transaction([
+        prisma.refreshToken.deleteMany({ where: { userId: stored.userId } }),
+        prisma.revokedToken.create({
+          data: { tokenHash: bannedTokenHash, userId: stored.userId, expiresAt: stored.expiresAt },
+        }),
+      ]);
       throw new AppError(403, 'Account is banned', 'BANNED', {
         bannedReason: currentUser.bannedReason,
         bannedAt: currentUser.bannedAt?.toISOString() ?? null,

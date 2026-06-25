@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
 import { validate } from '../middleware/validate';
-import { adminLimiter } from '../middleware/rateLimiter';
+import { adminLimiter, searchLimiter } from '../middleware/rateLimiter';
 import * as adminService from '../services/admin.service';
 
 const router: IRouter = Router();
@@ -29,6 +29,7 @@ router.get(
   '/users',
   authenticate,
   authorize('HELPER'),
+  searchLimiter,
   wrap(async (req, res) => {
     const search = typeof req.query.search === 'string' ? req.query.search : undefined;
     const users = await adminService.listUsers(search);

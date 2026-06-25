@@ -4,15 +4,19 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPatch } from '../lib/api';
 import type { AdminUser, AuditEntry } from '../lib/types';
 import { Spinner } from '../components/ui/Spinner';
+import { Badge } from '../components/ui/Badge';
 import { useAuth } from '../context/AuthContext';
 import { useDebounce } from '../hooks/useDebounce';
 import type { Role } from '@mh-datapedia/shared';
+
+const ROLE_RANK: Record<Role, number> = { USER: 0, HELPER: 1, ADMIN: 2, MASTER: 3 };
+const MS_PER_DAY = 86_400_000;
 
 export const Route = createFileRoute('/admin')({
   beforeLoad: ({ context }) => {
     if (!context.auth.user) throw redirect({ to: '/' });
     const role = context.auth.user.role as Role;
-    if (!(['HELPER', 'ADMIN', 'MASTER'] as Role[]).includes(role)) throw redirect({ to: '/' });
+    if (ROLE_RANK[role] < ROLE_RANK['HELPER']) throw redirect({ to: '/' });
   },
   component: AdminPage,
 });
@@ -52,9 +56,9 @@ const ROLE_BADGE: Record<string, string> = {
 
 function RoleBadge({ role }: { role: string }) {
   return (
-    <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${ROLE_BADGE[role] ?? ROLE_BADGE.USER}`}>
+    <Badge className={`font-semibold ${ROLE_BADGE[role] ?? ROLE_BADGE.USER}`}>
       {role}
-    </span>
+    </Badge>
   );
 }
 
@@ -86,14 +90,10 @@ function BanModal({
   const isCustom = durationKey === DURATION_OPTIONS.length; // past the last fixed option
 
   function computeBannedUntil(): string | null {
-    if (isCustom) {
-      const days = parseInt(customDays);
-      if (!days || days < 1) return null;
-      return new Date(Date.now() + days * 86400000).toISOString();
-    }
     const opt = DURATION_OPTIONS[durationKey];
-    if (!opt || !('days' in opt)) return null; // Permanent
-    return new Date(Date.now() + opt.days * 86400000).toISOString();
+    const days = isCustom ? parseInt(customDays) : 'days' in (opt ?? {}) ? (opt as { days: number }).days : null;
+    if (!days || days < 1) return null;
+    return new Date(Date.now() + days * MS_PER_DAY).toISOString();
   }
 
   const canSubmit = reason.trim().length >= 10 && (!isCustom || parseInt(customDays) > 0);
@@ -241,9 +241,7 @@ function UsersTab({ viewerRole }: { viewerRole: Role }) {
     (unbanMutation.isPending && (unbanMutation.variables as { id: string } | undefined)?.id === id);
 
   function canManage(targetRole: Role): boolean {
-    if (viewerRole === 'MASTER') return true;
-    if (viewerRole === 'ADMIN') return targetRole === 'USER' || targetRole === 'HELPER';
-    return false;
+    return ROLE_RANK[viewerRole] > ROLE_RANK[targetRole];
   }
 
   function roleControls(u: AdminUser) {
@@ -395,7 +393,7 @@ function UsersTab({ viewerRole }: { viewerRole: Role }) {
               ))}
               {users?.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-10 text-center text-stone-500">
+                  <td colSpan={viewerRole !== 'HELPER' ? 6 : 5} className="px-4 py-10 text-center text-stone-500">
                     No users found.
                   </td>
                 </tr>
@@ -423,80 +421,76 @@ function AuditLogTab() {
   const [page, setPage] = useState(1);
   const { data, isLoading } = useAuditLog(page);
 
-  return (
+  return isLoading ? (
+    <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+  ) : (
     <>
-      {isLoading ? (
-        <div className="flex justify-center py-16"><Spinner size="lg" /></div>
-      ) : (
-        <>
-          <div className="mh-panel overflow-hidden" style={{ '--mh-cut': '16px' } as React.CSSProperties}>
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-stone-700 text-stone-400 uppercase text-xs tracking-wider">
-                  <th className="text-left px-4 py-3">Actor</th>
-                  <th className="text-left px-4 py-3">Action</th>
-                  <th className="text-left px-4 py-3">Target</th>
-                  <th className="text-left px-4 py-3">Details</th>
-                  <th className="text-left px-4 py-3">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data?.entries.map((e) => (
-                  <tr key={e.id} className="border-b border-stone-800 last:border-0 hover:bg-stone-800/40 transition-colors">
-                    <td className="px-4 py-3 font-medium text-stone-100">{e.actorUsername}</td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
-                        e.action === 'BAN'
-                          ? 'bg-red-900/40 text-red-400 border border-red-800/50'
-                          : e.action === 'UNBAN'
-                          ? 'bg-stone-700 text-stone-300'
-                          : 'bg-blue-900/40 text-blue-400 border border-blue-800/50'
-                      }`}>
-                        {e.action.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-stone-400">{e.targetUsername ?? '—'}</td>
-                    <td className="px-4 py-3 text-stone-500 text-xs max-w-xs truncate">
-                      {formatAction(e)}
-                    </td>
-                    <td className="px-4 py-3 text-stone-500 whitespace-nowrap text-xs">
-                      {new Date(e.createdAt).toLocaleString()}
-                    </td>
-                  </tr>
-                ))}
-                {data?.entries.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-stone-500">
-                      No audit entries yet.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+      <div className="mh-panel overflow-hidden" style={{ '--mh-cut': '16px' } as React.CSSProperties}>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-stone-700 text-stone-400 uppercase text-xs tracking-wider">
+              <th className="text-left px-4 py-3">Actor</th>
+              <th className="text-left px-4 py-3">Action</th>
+              <th className="text-left px-4 py-3">Target</th>
+              <th className="text-left px-4 py-3">Details</th>
+              <th className="text-left px-4 py-3">Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data?.entries.map((e) => (
+              <tr key={e.id} className="border-b border-stone-800 last:border-0 hover:bg-stone-800/40 transition-colors">
+                <td className="px-4 py-3 font-medium text-stone-100">{e.actorUsername}</td>
+                <td className="px-4 py-3">
+                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-semibold ${
+                    e.action === 'BAN'
+                      ? 'bg-red-900/40 text-red-400 border border-red-800/50'
+                      : e.action === 'UNBAN'
+                      ? 'bg-stone-700 text-stone-300'
+                      : 'bg-blue-900/40 text-blue-400 border border-blue-800/50'
+                  }`}>
+                    {e.action.replace('_', ' ')}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-stone-400">{e.targetUsername ?? '—'}</td>
+                <td className="px-4 py-3 text-stone-500 text-xs max-w-xs truncate">
+                  {formatAction(e)}
+                </td>
+                <td className="px-4 py-3 text-stone-500 whitespace-nowrap text-xs">
+                  {new Date(e.createdAt).toLocaleString()}
+                </td>
+              </tr>
+            ))}
+            {data?.entries.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-10 text-center text-stone-500">
+                  No audit entries yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
-          {data && data.meta.totalPages > 1 && (
-            <div className="flex justify-center gap-2 mt-4">
-              <button
-                disabled={page === 1}
-                onClick={() => setPage((p) => p - 1)}
-                className="px-3 py-1 text-sm border border-stone-700 text-stone-400 rounded hover:border-stone-500 disabled:opacity-40 transition-colors"
-              >
-                Previous
-              </button>
-              <span className="px-3 py-1 text-sm text-stone-500">
-                {page} / {data.meta.totalPages}
-              </span>
-              <button
-                disabled={page === data.meta.totalPages}
-                onClick={() => setPage((p) => p + 1)}
-                className="px-3 py-1 text-sm border border-stone-700 text-stone-400 rounded hover:border-stone-500 disabled:opacity-40 transition-colors"
-              >
-                Next
-              </button>
-            </div>
-          )}
-        </>
+      {data && data.meta.totalPages > 1 && (
+        <div className="flex justify-center gap-2 mt-4">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage((p) => p - 1)}
+            className="px-3 py-1 text-sm border border-stone-700 text-stone-400 rounded hover:border-stone-500 disabled:opacity-40 transition-colors"
+          >
+            Previous
+          </button>
+          <span className="px-3 py-1 text-sm text-stone-500">
+            {page} / {data.meta.totalPages}
+          </span>
+          <button
+            disabled={page === data.meta.totalPages}
+            onClick={() => setPage((p) => p + 1)}
+            className="px-3 py-1 text-sm border border-stone-700 text-stone-400 rounded hover:border-stone-500 disabled:opacity-40 transition-colors"
+          >
+            Next
+          </button>
+        </div>
       )}
     </>
   );
@@ -516,10 +510,7 @@ function AdminPage() {
     { key: 'audit', label: 'Audit Log', minRole: 'ADMIN' },
   ];
 
-  const visibleTabs = tabs.filter((t) => {
-    const rank: Record<Role, number> = { USER: 0, HELPER: 1, ADMIN: 2, MASTER: 3 };
-    return rank[viewerRole] >= rank[t.minRole];
-  });
+  const visibleTabs = tabs.filter((t) => ROLE_RANK[viewerRole] >= ROLE_RANK[t.minRole]);
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-10">

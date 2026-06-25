@@ -82,7 +82,9 @@ export async function setBanned(
   if (id === requesterId) throw new AppError(400, 'Cannot ban yourself', 'SELF_ACTION');
 
   return prisma.$transaction(async (tx) => {
-    await tx.refreshToken.deleteMany({ where: { userId: id } });
+    if (banned) {
+      await tx.refreshToken.deleteMany({ where: { userId: id } });
+    }
 
     const roleDowngrade = banned && (['HELPER', 'ADMIN'] as Role[]).includes(target.role as Role);
 
