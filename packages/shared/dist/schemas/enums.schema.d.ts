@@ -1,0 +1,20 @@
+import { z } from 'zod';
+export declare const MHGameSchema: z.ZodEnum<["MONSTER_HUNTER_WORLD", "MONSTER_HUNTER_WORLD_ICEBORNE", "MONSTER_HUNTER_RISE", "MONSTER_HUNTER_RISE_SUNBREAK", "MONSTER_HUNTER_WILDS"]>;
+export type MHGame = z.infer<typeof MHGameSchema>;
+export declare const MonsterTypeSchema: z.ZodEnum<["Large", "Small", "ElderDragon", "Apex", "Afflicted", "Tempered", "FlyingWyvern", "BruteWyvern", "FangedBeast", "Temnoceran", "BirdWyvern", "Construct", "DemiElderDragon", "Leviathan", "Amphibian", "Cephalopod", "Machine"]>;
+export type MonsterType = z.infer<typeof MonsterTypeSchema>;
+export declare const ElementSchema: z.ZodEnum<["Fire", "Water", "Thunder", "Ice", "Dragon", "Poison", "Sleep", "Paralysis", "Blast", "Stun"]>;
+export type Element = z.infer<typeof ElementSchema>;
+export declare const WeaknessRatingSchema: z.ZodUnion<[z.ZodLiteral<0>, z.ZodLiteral<1>, z.ZodLiteral<2>, z.ZodLiteral<3>]>;
+export type WeaknessRating = z.infer<typeof WeaknessRatingSchema>;
+export declare const DifficultySchema: z.ZodEnum<["Beginner", "Intermediate", "Advanced"]>;
+export type Difficulty = z.infer<typeof DifficultySchema>;
+export declare const RankSchema: z.ZodEnum<["LowRank", "HighRank", "MasterRank"]>;
+export type Rank = z.infer<typeof RankSchema>;
+export declare const DropMethodSchema: z.ZodEnum<["BodyCarve", "TailCarve", "BreakReward", "CaptureReward", "QuestReward", "ShinyDrop", "WoundDrop", "PalicoBoomerang"]>;
+export type DropMethod = z.infer<typeof DropMethodSchema>;
+export declare const RoleSchema: z.ZodEnum<["USER", "HELPER", "ADMIN", "MASTER"]>;
+export type Role = z.infer<typeof RoleSchema>;
+export declare const AuditActionSchema: z.ZodEnum<["ROLE_CHANGE", "BAN", "UNBAN"]>;
+export type AuditAction = z.infer<typeof AuditActionSchema>;
+//# sourceMappingURL=enums.schema.d.ts.map

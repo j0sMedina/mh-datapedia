@@ -1,0 +1,1 @@
+{"version":3,"file":"game.schema.js","sourceRoot":"","sources":["../../src/schemas/game.schema.ts"],"names":[],"mappings":";;;AAAA,6BAAwB;AACxB,iDAA8C;AAEjC,QAAA,oBAAoB,GAAG,OAAC,CAAC,MAAM,CAAC;IAC3C,EAAE,EAAE,OAAC,CAAC,MAAM,EAAE;IACd,SAAS,EAAE,OAAC,CAAC,MAAM,EAAE;IACrB,IAAI,EAAE,2BAAY;IAClB,KAAK,EAAE,OAAC,CAAC,OAAO,EAAE;CACnB,CAAC,CAAC"}

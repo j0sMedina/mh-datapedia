@@ -59,5 +59,8 @@ export const DropMethodSchema = z.enum([
 ]);
 export type DropMethod = z.infer<typeof DropMethodSchema>;
 
-export const RoleSchema = z.enum(['USER', 'ADMIN']);
+export const RoleSchema = z.enum(['USER', 'HELPER', 'ADMIN', 'MASTER']);
 export type Role = z.infer<typeof RoleSchema>;
+
+export const AuditActionSchema = z.enum(['ROLE_CHANGE', 'BAN', 'UNBAN']);
+export type AuditAction = z.infer<typeof AuditActionSchema>;

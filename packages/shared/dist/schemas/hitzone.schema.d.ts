@@ -1,0 +1,112 @@
+import { z } from 'zod';
+export declare const HitzoneSchema: z.ZodObject<{
+    id: z.ZodString;
+    monsterId: z.ZodString;
+    part: z.ZodString;
+    cut: z.ZodNumber;
+    blunt: z.ZodNumber;
+    bullet: z.ZodNumber;
+    fire: z.ZodNumber;
+    water: z.ZodNumber;
+    thunder: z.ZodNumber;
+    ice: z.ZodNumber;
+    dragon: z.ZodNumber;
+    stun: z.ZodNumber;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    monsterId: string;
+    part: string;
+    cut: number;
+    blunt: number;
+    bullet: number;
+    fire: number;
+    water: number;
+    thunder: number;
+    ice: number;
+    dragon: number;
+    stun: number;
+}, {
+    id: string;
+    monsterId: string;
+    part: string;
+    cut: number;
+    blunt: number;
+    bullet: number;
+    fire: number;
+    water: number;
+    thunder: number;
+    ice: number;
+    dragon: number;
+    stun: number;
+}>;
+export type Hitzone = z.infer<typeof HitzoneSchema>;
+export declare const UpsertHitzoneItemSchema: z.ZodObject<{
+    part: z.ZodString;
+    cut: z.ZodNumber;
+    blunt: z.ZodNumber;
+    bullet: z.ZodNumber;
+    fire: z.ZodNumber;
+    water: z.ZodNumber;
+    thunder: z.ZodNumber;
+    ice: z.ZodNumber;
+    dragon: z.ZodNumber;
+    stun: z.ZodDefault<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    part: string;
+    cut: number;
+    blunt: number;
+    bullet: number;
+    fire: number;
+    water: number;
+    thunder: number;
+    ice: number;
+    dragon: number;
+    stun: number;
+}, {
+    part: string;
+    cut: number;
+    blunt: number;
+    bullet: number;
+    fire: number;
+    water: number;
+    thunder: number;
+    ice: number;
+    dragon: number;
+    stun?: number | undefined;
+}>;
+export declare const UpsertHitzonesSchema: z.ZodArray<z.ZodObject<{
+    part: z.ZodString;
+    cut: z.ZodNumber;
+    blunt: z.ZodNumber;
+    bullet: z.ZodNumber;
+    fire: z.ZodNumber;
+    water: z.ZodNumber;
+    thunder: z.ZodNumber;
+    ice: z.ZodNumber;
+    dragon: z.ZodNumber;
+    stun: z.ZodDefault<z.ZodNumber>;
+}, "strip", z.ZodTypeAny, {
+    part: string;
+    cut: number;
+    blunt: number;
+    bullet: number;
+    fire: number;
+    water: number;
+    thunder: number;
+    ice: number;
+    dragon: number;
+    stun: number;
+}, {
+    part: string;
+    cut: number;
+    blunt: number;
+    bullet: number;
+    fire: number;
+    water: number;
+    thunder: number;
+    ice: number;
+    dragon: number;
+    stun?: number | undefined;
+}>, "many">;
+export type UpsertHitzones = z.infer<typeof UpsertHitzonesSchema>;
+//# sourceMappingURL=hitzone.schema.d.ts.map
