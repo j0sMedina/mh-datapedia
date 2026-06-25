@@ -32,7 +32,7 @@ export function HitzonesTab({ monsterId }: { monsterId: string }) {
   const { data: hitzones, isLoading } = useHitzones(monsterId);
   const updateHitzones = useUpdateHitzones(monsterId);
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = ['HELPER', 'ADMIN', 'MASTER'].includes(user?.role ?? '');
 
   const [editing, setEditing] = useState(false);
   const [rows, setRows] = useState<HitzoneRow[]>([]);

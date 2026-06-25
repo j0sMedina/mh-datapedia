@@ -120,10 +120,19 @@ export async function setBanned(
   });
 }
 
-export async function listAuditLog(page: number, limit: number) {
+export async function listAuditLog(page: number, limit: number, search?: string) {
   const skip = (page - 1) * limit;
+  const where = search
+    ? {
+        OR: [
+          { actor: { username: { contains: search, mode: 'insensitive' as const } } },
+          { targetUser: { username: { contains: search, mode: 'insensitive' as const } } },
+        ],
+      }
+    : undefined;
   const [entries, total] = await prisma.$transaction([
     prisma.adminAction.findMany({
+      where,
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
@@ -132,7 +141,7 @@ export async function listAuditLog(page: number, limit: number) {
         targetUser: { select: { username: true } },
       },
     }),
-    prisma.adminAction.count(),
+    prisma.adminAction.count({ where }),
   ]);
   return {
     entries: entries.map((e) => ({

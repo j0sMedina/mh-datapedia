@@ -17,7 +17,7 @@ interface MonsterHeaderProps {
 
 export function MonsterHeader({ monster, onEdit, onDelete }: MonsterHeaderProps) {
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = ['HELPER', 'ADMIN', 'MASTER'].includes(user?.role ?? '');
   const { data: favorites } = useFavorites(!!user);
   const isFavorited = favorites?.some((f) => f.id === monster.id) ?? false;
   const addFavorite = useAddFavorite();

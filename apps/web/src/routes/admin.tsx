@@ -34,14 +34,14 @@ function useAdminUsers(search: string) {
   });
 }
 
-function useAuditLog(page: number) {
+function useAuditLog(page: number, search: string) {
   return useQuery({
-    queryKey: ['admin', 'audit', page],
+    queryKey: ['admin', 'audit', page, search],
     queryFn: () =>
       apiGet<{
         entries: AuditEntry[];
         meta: { page: number; limit: number; total: number; totalPages: number };
-      }>(`/api/admin/audit?page=${page}&limit=20`),
+      }>(`/api/admin/audit?page=${page}&limit=20${search ? `&search=${encodeURIComponent(search)}` : ''}`),
   });
 }
 
@@ -248,6 +248,21 @@ function UsersTab({ viewerRole }: { viewerRole: Role }) {
     if (viewerRole === 'HELPER') return null;
     if (!canManage(u.role as Role)) return null;
 
+    if (u.banned) {
+      return (
+        <div className="flex gap-2 justify-end">
+          <button
+            key="unban"
+            disabled={busy(u.id)}
+            onClick={() => unbanMutation.mutate({ id: u.id })}
+            className="px-3 py-1 rounded text-xs font-semibold border border-stone-600 text-stone-400 hover:border-accent/50 hover:text-accent transition-colors disabled:opacity-40"
+          >
+            Unban
+          </button>
+        </div>
+      );
+    }
+
     const controls: React.ReactElement[] = [];
 
     if (viewerRole === 'ADMIN') {
@@ -312,30 +327,17 @@ function UsersTab({ viewerRole }: { viewerRole: Role }) {
       }
     }
 
-    // Ban / unban
-    if (!u.banned) {
-      controls.push(
-        <button
-          key="ban"
-          disabled={busy(u.id)}
-          onClick={() => setBanTarget({ id: u.id, username: u.username })}
-          className="px-3 py-1 rounded text-xs font-semibold border border-red-800/60 text-red-400 hover:bg-red-900/20 transition-colors disabled:opacity-40"
-        >
-          Ban
-        </button>,
-      );
-    } else {
-      controls.push(
-        <button
-          key="unban"
-          disabled={busy(u.id)}
-          onClick={() => unbanMutation.mutate({ id: u.id })}
-          className="px-3 py-1 rounded text-xs font-semibold border border-stone-600 text-stone-400 hover:border-accent/50 hover:text-accent transition-colors disabled:opacity-40"
-        >
-          Unban
-        </button>,
-      );
-    }
+    // Ban (only shown when user is not banned)
+    controls.push(
+      <button
+        key="ban"
+        disabled={busy(u.id)}
+        onClick={() => setBanTarget({ id: u.id, username: u.username })}
+        className="px-3 py-1 rounded text-xs font-semibold border border-red-800/60 text-red-400 hover:bg-red-900/20 transition-colors disabled:opacity-40"
+      >
+        Ban
+      </button>,
+    );
 
     return <div className="flex gap-2 justify-end">{controls}</div>;
   }
@@ -417,14 +419,66 @@ function UsersTab({ viewerRole }: { viewerRole: Role }) {
 
 // ── Audit Log tab ─────────────────────────────────────────────────────────────
 
+type AuditFilter = 'all' | 'role-change' | 'bans' | 'unbans';
+
+const AUDIT_FILTERS: { key: AuditFilter; label: string }[] = [
+  { key: 'all', label: 'All' },
+  { key: 'role-change', label: 'Role change' },
+  { key: 'bans', label: 'Bans' },
+  { key: 'unbans', label: 'Unbans' },
+];
+
+const AUDIT_ACTION_MAP: Record<AuditFilter, string | null> = {
+  all: null,
+  'role-change': 'ROLE_CHANGE',
+  bans: 'BAN',
+  unbans: 'UNBAN',
+};
+
 function AuditLogTab() {
   const [page, setPage] = useState(1);
-  const { data, isLoading } = useAuditLog(page);
+  const [filter, setFilter] = useState<AuditFilter>('all');
+  const [searchInput, setSearchInput] = useState('');
+  const search = useDebounce(searchInput, 400);
+  const { data, isLoading } = useAuditLog(page, search);
 
-  return isLoading ? (
-    <div className="flex justify-center py-16"><Spinner size="lg" /></div>
-  ) : (
+  const entries = (data?.entries ?? []).filter((e) => {
+    const action = AUDIT_ACTION_MAP[filter];
+    return action === null || e.action === action;
+  });
+
+  return (
     <>
+      {/* Filter navbar */}
+      <div className="flex gap-1 mb-6 border-b border-stone-700">
+        {AUDIT_FILTERS.map((f) => (
+          <button
+            key={f.key}
+            onClick={() => { setFilter(f.key); setPage(1); }}
+            className={`px-4 py-2 text-xs font-semibold uppercase tracking-wider transition-colors ${
+              filter === f.key
+                ? 'text-accent border-b-2 border-accent -mb-px'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="mb-6">
+        <input
+          className="w-full bg-stone-900 border border-stone-700 rounded px-3 py-2 text-sm text-stone-50 placeholder-stone-500 focus:outline-none focus:border-accent"
+          placeholder="Search by actor or target username…"
+          value={searchInput}
+          onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
+        />
+      </div>
+
+      {isLoading ? (
+      <div className="flex justify-center py-16"><Spinner size="lg" /></div>
+    ) : (
+      <>
       <div className="mh-panel overflow-hidden" style={{ '--mh-cut': '16px' } as React.CSSProperties}>
         <table className="w-full text-sm">
           <thead>
@@ -437,7 +491,7 @@ function AuditLogTab() {
             </tr>
           </thead>
           <tbody>
-            {data?.entries.map((e) => (
+            {entries.map((e) => (
               <tr key={e.id} className="border-b border-stone-800 last:border-0 hover:bg-stone-800/40 transition-colors">
                 <td className="px-4 py-3 font-medium text-stone-100">{e.actorUsername}</td>
                 <td className="px-4 py-3">
@@ -460,7 +514,7 @@ function AuditLogTab() {
                 </td>
               </tr>
             ))}
-            {data?.entries.length === 0 && (
+            {entries.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-10 text-center text-stone-500">
                   No audit entries yet.
@@ -492,6 +546,8 @@ function AuditLogTab() {
           </button>
         </div>
       )}
+      </>
+    )}
     </>
   );
 }

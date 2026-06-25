@@ -83,7 +83,7 @@ export function WeaknessesTab({ monsterId }: { monsterId: string }) {
   const { data: weaknesses, isLoading } = useWeaknesses(monsterId);
   const updateWeaknesses = useUpdateWeaknesses(monsterId);
   const { user } = useAuth();
-  const isAdmin = user?.role === 'ADMIN';
+  const isAdmin = ['HELPER', 'ADMIN', 'MASTER'].includes(user?.role ?? '');
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Draft>({});

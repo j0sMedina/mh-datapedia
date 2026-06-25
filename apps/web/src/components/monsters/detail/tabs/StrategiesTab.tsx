@@ -95,7 +95,7 @@ export function StrategiesTab({ monsterId }: { monsterId: string }) {
   if (isLoading) return <div className="flex justify-center py-8"><Spinner /></div>;
 
   const canManage = (s: Strategy) =>
-    user && (user.role === 'ADMIN' || user.id === s.authorId);
+    user && (['ADMIN', 'MASTER'].includes(user.role) || user.id === s.authorId);
 
   return (
     <div className="space-y-4">

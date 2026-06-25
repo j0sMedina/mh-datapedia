@@ -41,7 +41,7 @@ export function Navbar() {
                 Favorites
               </Link>
             )}
-            {user?.role === 'ADMIN' && (
+            {user && ['HELPER', 'ADMIN', 'MASTER'].includes(user.role) && (
               <Link
                 to="/admin"
                 className="text-stone-400 hover:text-stone-50 transition-colors duration-150 text-sm pb-0.5"
@@ -56,9 +56,19 @@ export function Navbar() {
             {user ? (
               <>
                 <span className="text-stone-400 text-sm hidden sm:block">{user.username}</span>
+                {user.role === 'HELPER' && (
+                  <Badge className="bg-transparent text-blue-400 border border-blue-800 font-mono text-[11px] hidden sm:inline-flex">
+                    HELPER
+                  </Badge>
+                )}
                 {user.role === 'ADMIN' && (
                   <Badge className="bg-transparent text-accent border border-accent font-mono text-[11px] hidden sm:inline-flex">
                     ADMIN
+                  </Badge>
+                )}
+                {user.role === 'MASTER' && (
+                  <Badge className="bg-transparent text-yellow-400 border border-yellow-700 font-mono text-[11px] hidden sm:inline-flex">
+                    MASTER
                   </Badge>
                 )}
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
