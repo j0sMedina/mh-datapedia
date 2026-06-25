@@ -15,9 +15,14 @@ model User {
   passwordHash  String
   role          Role           @default(USER)
   banned        Boolean        @default(false)
+  bannedReason  String?
+  bannedAt      DateTime?
+  bannedUntil   DateTime?
   favorites     Monster[]      @relation("UserFavorites")
   strategies    Strategy[]
   refreshTokens RefreshToken[]
+  actorActions  AdminAction[]  @relation("ActorActions")
+  targetActions AdminAction[]  @relation("TargetActions")
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -122,9 +127,50 @@ model MonsterDrop {
   @@index([monsterId, game, rank])
 }
 
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  email     String
+  createdAt DateTime @default(now())
+
+  @@index([email, createdAt])
+}
+
+model RevokedToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model AdminAction {
+  id           String      @id @default(cuid())
+  actorId      String
+  actor        User        @relation("ActorActions", fields: [actorId], references: [id])
+  action       AuditAction
+  targetUserId String?
+  targetUser   User?       @relation("TargetActions", fields: [targetUserId], references: [id])
+  metadata     Json
+  createdAt    DateTime    @default(now())
+
+  @@index([actorId])
+  @@index([createdAt])
+}
+
 enum Role {
   USER
+  HELPER
   ADMIN
+  MASTER
+}
+
+enum AuditAction {
+  ROLE_CHANGE
+  BAN
+  UNBAN
 }
 
 enum MonsterType {
