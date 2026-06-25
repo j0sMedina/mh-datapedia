@@ -10,7 +10,7 @@ describe('authorize middleware hierarchy', () => {
   it('allows MASTER through authorize("ADMIN")', async () => {
     const token = makeToken('MASTER');
     const res = await request(app)
-      .get('/api/admin/users')
+      .get('/api/admin/audit')
       .set('Authorization', `Bearer ${token}`);
     // MASTER should get through authorize('ADMIN') — 200, not 403
     expect(res.status).not.toBe(403);
@@ -27,7 +27,7 @@ describe('authorize middleware hierarchy', () => {
   it('blocks USER from authorize("ADMIN") route', async () => {
     const token = makeToken('USER');
     const res = await request(app)
-      .get('/api/admin/users')
+      .get('/api/admin/audit')
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(403);
     expect(res.body.code).toBe('FORBIDDEN');
@@ -36,7 +36,7 @@ describe('authorize middleware hierarchy', () => {
   it('blocks HELPER from authorize("ADMIN") route', async () => {
     const token = makeToken('HELPER');
     const res = await request(app)
-      .get('/api/admin/users')
+      .get('/api/admin/audit')
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(403);
   });

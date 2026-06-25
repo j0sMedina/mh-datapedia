@@ -2,6 +2,11 @@ import { prisma } from '../lib/prisma';
 import { AppError } from '../lib/errors';
 import type { CreateStrategy, UpdateStrategy } from '@mh-datapedia/shared';
 
+type Role = 'USER' | 'HELPER' | 'ADMIN' | 'MASTER';
+
+const CAN_EDIT_ANY: Role[] = ['HELPER', 'ADMIN', 'MASTER'];
+const CAN_DELETE_ANY: Role[] = ['ADMIN', 'MASTER'];
+
 export async function createStrategy(authorId: string, data: CreateStrategy) {
   const exists = await prisma.monster.findUnique({
     where: { id: data.monsterId },
@@ -17,7 +22,7 @@ export async function createStrategy(authorId: string, data: CreateStrategy) {
 export async function updateStrategy(
   id: string,
   userId: string,
-  role: 'USER' | 'HELPER' | 'ADMIN' | 'MASTER',
+  role: Role,
   data: UpdateStrategy,
 ) {
   const strategy = await prisma.strategy.findUnique({
@@ -25,7 +30,7 @@ export async function updateStrategy(
     select: { id: true, authorId: true },
   });
   if (!strategy) throw new AppError(404, 'Strategy not found', 'NOT_FOUND');
-  if (role !== 'ADMIN' && strategy.authorId !== userId) {
+  if (!CAN_EDIT_ANY.includes(role) && strategy.authorId !== userId) {
     throw new AppError(403, 'Insufficient permissions', 'FORBIDDEN');
   }
   return prisma.strategy.update({
@@ -35,13 +40,13 @@ export async function updateStrategy(
   });
 }
 
-export async function deleteStrategy(id: string, userId: string, role: 'USER' | 'HELPER' | 'ADMIN' | 'MASTER') {
+export async function deleteStrategy(id: string, userId: string, role: Role) {
   const strategy = await prisma.strategy.findUnique({
     where: { id },
     select: { id: true, authorId: true },
   });
   if (!strategy) throw new AppError(404, 'Strategy not found', 'NOT_FOUND');
-  if (role !== 'ADMIN' && strategy.authorId !== userId) {
+  if (!CAN_DELETE_ANY.includes(role) && strategy.authorId !== userId) {
     throw new AppError(403, 'Insufficient permissions', 'FORBIDDEN');
   }
   await prisma.strategy.delete({ where: { id } });

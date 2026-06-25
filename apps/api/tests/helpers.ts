@@ -26,3 +26,14 @@ export async function registerAndPromoteAdmin(
   const res = await request(app).post('/api/auth/login').send({ email, password });
   return res.body.accessToken as string;
 }
+
+export async function registerAndPromoteHelper(
+  email = 'helper@example.com',
+  username = 'helperuser',
+  password = 'helperpass123',
+) {
+  await request(app).post('/api/auth/register').send({ email, username, password });
+  await prisma.user.update({ where: { email }, data: { role: 'HELPER' } });
+  const res = await request(app).post('/api/auth/login').send({ email, password });
+  return res.body.accessToken as string;
+}

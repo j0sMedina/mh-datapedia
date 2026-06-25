@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
 import { validate } from '../middleware/validate';
+import { adminLimiter } from '../middleware/rateLimiter';
 import * as adminService from '../services/admin.service';
 
 const router: IRouter = Router();
@@ -12,13 +13,22 @@ const wrap =
   (req: Request, res: Response, next: NextFunction) =>
     fn(req, res).catch(next);
 
-const RoleSchema = z.object({ role: z.enum(['USER', 'ADMIN']) });
-const BanSchema = z.object({ banned: z.boolean() });
+// MASTER excluded — cannot be set via API
+const SetRoleSchema = z.object({ role: z.enum(['USER', 'HELPER', 'ADMIN']) });
+
+const BanSchema = z.discriminatedUnion('banned', [
+  z.object({
+    banned: z.literal(true),
+    reason: z.string().min(10, 'Reason must be at least 10 characters'),
+    bannedUntil: z.string().datetime().nullable(),
+  }),
+  z.object({ banned: z.literal(false) }),
+]);
 
 router.get(
   '/users',
   authenticate,
-  authorize('ADMIN'),
+  authorize('HELPER'),
   wrap(async (req, res) => {
     const search = typeof req.query.search === 'string' ? req.query.search : undefined;
     const users = await adminService.listUsers(search);
@@ -30,9 +40,15 @@ router.patch(
   '/users/:id/role',
   authenticate,
   authorize('ADMIN'),
-  validate(RoleSchema),
+  adminLimiter,
+  validate(SetRoleSchema),
   wrap(async (req, res) => {
-    const user = await adminService.setRole(req.params.id, req.body.role, req.user!.id);
+    const user = await adminService.setRole(
+      req.params.id,
+      req.body.role,
+      req.user!.id,
+      req.user!.role,
+    );
     res.json({ user });
   }),
 );
@@ -41,10 +57,31 @@ router.patch(
   '/users/:id/ban',
   authenticate,
   authorize('ADMIN'),
+  adminLimiter,
   validate(BanSchema),
   wrap(async (req, res) => {
-    const user = await adminService.setBanned(req.params.id, req.body.banned, req.user!.id);
+    const { banned } = req.body;
+    const user = await adminService.setBanned(
+      req.params.id,
+      banned,
+      req.user!.id,
+      req.user!.role,
+      banned ? req.body.reason : undefined,
+      banned ? req.body.bannedUntil : undefined,
+    );
     res.json({ user });
+  }),
+);
+
+router.get(
+  '/audit',
+  authenticate,
+  authorize('ADMIN'),
+  wrap(async (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 20));
+    const result = await adminService.listAuditLog(page, limit);
+    res.json(result);
   }),
 );
 
