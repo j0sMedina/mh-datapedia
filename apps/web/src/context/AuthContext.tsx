@@ -1,11 +1,14 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { apiPost, apiGet, setAccessToken, setRefreshCallback } from '../lib/api';
+import { apiPost, apiGet, setAccessToken, setRefreshCallback, ApiError } from '../lib/api';
 import type { User } from '@mh-datapedia/shared';
+import type { BanDetails } from '../lib/types';
 
 export interface AuthState {
   user: User | null;
   accessToken: string | null;
   isLoading: boolean;
+  bannedDetails: BanDetails | null;
+  clearBannedDetails: () => void;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -13,27 +16,46 @@ export interface AuthState {
 
 const AuthContext = createContext<AuthState | null>(null);
 
+function extractBanDetails(body: unknown): BanDetails | null {
+  if (
+    body &&
+    typeof body === 'object' &&
+    'code' in body &&
+    (body as Record<string, unknown>).code === 'BANNED'
+  ) {
+    const b = body as Record<string, unknown>;
+    return {
+      bannedReason: (b.bannedReason as string) ?? 'No reason provided',
+      bannedAt: (b.bannedAt as string | null) ?? null,
+      bannedUntil: (b.bannedUntil as string | null) ?? null,
+    };
+  }
+  return null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [accessToken, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [bannedDetails, setBannedDetails] = useState<BanDetails | null>(null);
 
   useEffect(() => {
     setAccessToken(accessToken);
   }, [accessToken]);
 
   const silentRefresh = useCallback(async (): Promise<string | null> => {
-    console.log('[auth] silentRefresh start');
     try {
       const data = await apiPost<{ accessToken: string }>('/api/auth/refresh');
-      console.log('[auth] refresh success');
       setToken(data.accessToken);
       setAccessToken(data.accessToken);
       const me = await apiGet<{ user: User }>('/api/auth/me');
       setUser(me.user);
       return data.accessToken;
     } catch (e) {
-      console.log('[auth] refresh failed (expected if not logged in):', e);
+      if (e instanceof ApiError && e.status === 403) {
+        const details = extractBanDetails(e.body);
+        if (details) setBannedDetails(details);
+      }
       setToken(null);
       setUser(null);
       setAccessToken(null);
@@ -42,21 +64,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    console.log('[auth] effect running, calling silentRefresh');
     setRefreshCallback(silentRefresh);
-    silentRefresh().finally(() => {
-      console.log('[auth] setIsLoading(false)');
-      setIsLoading(false);
-    });
+    silentRefresh().finally(() => setIsLoading(false));
   }, [silentRefresh]);
 
   async function login(email: string, password: string): Promise<void> {
-    const data = await apiPost<{ user: User; accessToken: string }>(
-      '/api/auth/login',
-      { email, password },
-    );
-    setToken(data.accessToken);
-    setUser(data.user);
+    try {
+      const data = await apiPost<{ user: User; accessToken: string }>(
+        '/api/auth/login',
+        { email, password },
+      );
+      setToken(data.accessToken);
+      setUser(data.user);
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 403) {
+        const details = extractBanDetails(e.body);
+        if (details) {
+          setBannedDetails(details);
+          return;
+        }
+      }
+      throw e;
+    }
   }
 
   async function register(email: string, username: string, password: string): Promise<void> {
@@ -75,8 +104,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
   }
 
+  function clearBannedDetails() {
+    setBannedDetails(null);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, accessToken, isLoading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, accessToken, isLoading, bannedDetails, clearBannedDetails, login, register, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

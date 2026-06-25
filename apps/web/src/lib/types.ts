@@ -71,8 +71,28 @@ export interface AdminUser {
   id: string;
   email: string;
   username: string;
-  role: 'USER' | 'ADMIN';
+  role: 'USER' | 'HELPER' | 'ADMIN' | 'MASTER';
   banned: boolean;
+  bannedReason: string | null;
+  bannedAt: string | null;
+  bannedUntil: string | null;
+  createdAt: string;
+}
+
+export interface BanDetails {
+  bannedReason: string;
+  bannedAt: string | null;
+  bannedUntil: string | null;
+}
+
+export interface AuditEntry {
+  id: string;
+  actorId: string;
+  actorUsername: string;
+  action: 'ROLE_CHANGE' | 'BAN' | 'UNBAN';
+  targetUserId: string | null;
+  targetUsername: string | null;
+  metadata: Record<string, unknown>;
   createdAt: string;
 }
 
