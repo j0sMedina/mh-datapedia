@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
+import { searchLimiter } from '../middleware/rateLimiter';
 import {
   MonsterFiltersSchema,
   CreateMonsterSchema,
@@ -26,7 +27,7 @@ const wrap =
   (req: Request, res: Response, next: NextFunction) =>
     fn(req, res).catch(next);
 
-router.get('/', validate(MonsterFiltersSchema, 'query'), wrap(async (req, res) => {
+router.get('/', searchLimiter, validate(MonsterFiltersSchema, 'query'), wrap(async (req, res) => {
   const result = await monsterService.listMonsters(req.query as any);
   res.json(result);
 }));
@@ -65,7 +66,7 @@ router.get('/:id/strategies', validate(IdParamSchema, 'params'), wrap(async (req
 router.post(
   '/',
   authenticate,
-  authorize('ADMIN'),
+  authorize('HELPER'),
   validate(CreateMonsterSchema),
   wrap(async (req, res) => {
     const monster = await monsterService.createMonster(req.body);
@@ -76,7 +77,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  authorize('ADMIN'),
+  authorize('HELPER'),
   validate(IdParamSchema, 'params'),
   validate(UpdateMonsterSchema),
   wrap(async (req, res) => {
@@ -88,7 +89,7 @@ router.put(
 router.put(
   '/:id/weaknesses',
   authenticate,
-  authorize('ADMIN'),
+  authorize('HELPER'),
   validate(IdParamSchema, 'params'),
   validate(UpsertWeaknessesSchema),
   wrap(async (req, res) => {
@@ -100,7 +101,7 @@ router.put(
 router.put(
   '/:id/hitzones',
   authenticate,
-  authorize('ADMIN'),
+  authorize('HELPER'),
   validate(IdParamSchema, 'params'),
   validate(UpsertHitzonesSchema),
   wrap(async (req, res) => {
@@ -112,7 +113,7 @@ router.put(
 router.delete(
   '/:id',
   authenticate,
-  authorize('ADMIN'),
+  authorize('HELPER'),
   validate(IdParamSchema, 'params'),
   wrap(async (req, res) => {
     await monsterService.deleteMonster(req.params.id);

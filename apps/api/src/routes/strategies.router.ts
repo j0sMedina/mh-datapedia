@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate';
 import { validate } from '../middleware/validate';
+import { strategyLimiter } from '../middleware/rateLimiter';
 import { CreateStrategySchema, UpdateStrategySchema } from '@mh-datapedia/shared';
 import * as strategyService from '../services/strategy.service';
 
@@ -13,7 +14,7 @@ const wrap =
   (req: Request, res: Response, next: NextFunction) =>
     fn(req, res).catch(next);
 
-router.post('/', authenticate, validate(CreateStrategySchema), wrap(async (req, res) => {
+router.post('/', authenticate, strategyLimiter, validate(CreateStrategySchema), wrap(async (req, res) => {
   const strategy = await strategyService.createStrategy(req.user!.id, req.body);
   res.status(201).json({ data: strategy });
 }));
