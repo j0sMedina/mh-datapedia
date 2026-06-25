@@ -1,7 +1,6 @@
 import { RequestHandler } from 'express';
 import { AppError } from '../lib/errors';
-
-type Role = 'USER' | 'HELPER' | 'ADMIN' | 'MASTER';
+import type { Role } from '@mh-datapedia/shared';
 
 const ROLE_RANK: Record<Role, number> = {
   USER: 0,
