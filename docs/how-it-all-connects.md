@@ -22,12 +22,11 @@ function greet(name: string): string {
 }
 ```
 
-TypeScript is compiled to plain JavaScript before it runs. The compiler (`tsc`) checks every type and throws an error if something doesn't match — before the code ever runs. That is why this project can catch bugs like "you passed a number where a string was expected" at build time, not in production.
+TypeScript is compiled to plain JavaScript before it runs. The compiler (`tsc`) checks every type and throws an error if something doesn't match — before the code ever runs.
 
 The `.tsx` extension is used for files that contain JSX — the HTML-like syntax used in React components:
 
 ```tsx
-// .tsx file — TypeScript + JSX together
 function Button({ label }: { label: string }) {
   return <button>{label}</button>;
 }
@@ -40,15 +39,8 @@ function Button({ label }: { label: string }) {
 ### A function
 
 ```typescript
-// Basic function
-function add(a: number, b: number): number {
-  return a + b;
-}
-
-// Arrow function (same thing, different syntax — used more in this project)
-const add = (a: number, b: number): number => {
-  return a + b;
-};
+// Arrow function (used most in this project)
+const add = (a: number, b: number): number => a + b;
 
 // Async function (returns a Promise — used for database calls and API calls)
 async function getUser(id: string): Promise<User> {
@@ -65,37 +57,22 @@ class AppError extends Error {
     public readonly statusCode: number,
     message: string,
     public readonly code?: string,
+    public readonly data?: Record<string, unknown>, // extra payload (e.g., ban details)
   ) {
-    super(message);       // calls the parent class Error's constructor
+    super(message);
     this.name = 'AppError';
   }
 }
 
-// Using it:
-throw new AppError(404, 'Monster not found', 'NOT_FOUND');
+// Usage — error with extra data attached:
+throw new AppError(403, 'Account is banned', 'BANNED', {
+  bannedReason: 'Spam',
+  bannedAt: '2026-06-25T00:00:00Z',
+  bannedUntil: null,
+});
 ```
 
-`extends Error` means `AppError` inherits everything `Error` has, and adds `statusCode` and `code` on top. `public readonly` means those properties are automatically assigned in the constructor and cannot be changed after creation.
-
-### An interface
-
-An interface describes the shape of an object. It has no implementation — it's just a contract:
-
-```typescript
-interface Hitzone {
-  id: string;
-  part: string;
-  cut: number;
-  blunt: number;
-  fire: number;
-  // ...
-}
-
-// A function that accepts any object matching that shape:
-function displayHitzone(hz: Hitzone): string {
-  return `${hz.part}: cut=${hz.cut}`;
-}
-```
+`public readonly` means properties are automatically assigned in the constructor and cannot be changed after creation. The `data` field allows attaching structured extra info that the error handler spreads into the response body.
 
 ### A type from a Zod schema
 
@@ -104,14 +81,12 @@ In this project, most types are not written by hand — they are derived from Zo
 ```typescript
 import { z } from 'zod';
 
-// Define the schema (validation rules)
 const RegisterSchema = z.object({
   email:    z.string().email(),
   username: z.string().min(3).max(30),
   password: z.string().min(8),
 });
 
-// Derive the TypeScript type from it automatically
 type Register = z.infer<typeof RegisterSchema>;
 // Register is now: { email: string; username: string; password: string }
 ```
@@ -134,7 +109,7 @@ nginx (reverse proxy)
     │  proxies /api/* to internal network
     ▼
 Express (Node.js)
-    ├── Middleware chain (helmet, cors, auth, validate, rate limit)
+    ├── Middleware chain (helmet, cors, rate limit, auth, authorize, validate)
     ├── Router (matches the URL, calls the service)
     └── Service (business logic, calls Prisma)
             │
@@ -149,34 +124,23 @@ Express (Node.js)
 
 This package is imported by both the API and the frontend. It contains Zod schemas and the TypeScript types inferred from them.
 
-**How it's declared:**
+```typescript
+// packages/shared/src/schemas/enums.schema.ts
+export const RoleSchema = z.enum(['USER', 'HELPER', 'ADMIN', 'MASTER']);
+export type Role = z.infer<typeof RoleSchema>;
+
+export const AuditActionSchema = z.enum(['ROLE_CHANGE', 'BAN', 'UNBAN']);
+export type AuditAction = z.infer<typeof AuditActionSchema>;
+```
 
 ```typescript
 // packages/shared/src/schemas/auth.schema.ts
-
-import { z } from 'zod';
-
 export const RegisterSchema = z.object({
   email:    z.string().email(),
   username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_-]+$/),
   password: z.string().min(8),
 });
-
 export type Register = z.infer<typeof RegisterSchema>;
-```
-
-**How it's used in the API:**
-
-```typescript
-import { RegisterSchema } from '@mh-datapedia/shared';
-// validate(RegisterSchema) parses and rejects bad requests
-```
-
-**How it's used in the frontend:**
-
-```typescript
-import type { Register } from '@mh-datapedia/shared';
-// used as the type for the register form's data
 ```
 
 The same schema, the same type, both places. If you add a field to `RegisterSchema`, TypeScript immediately shows errors in both the API route and the frontend form.
@@ -188,7 +152,6 @@ The same schema, the same type, both places. If you add a field to `RegisterSche
 Middleware is a function that runs between the request arriving and the route handler running. It has this exact signature:
 
 ```typescript
-// The shape Express expects for middleware:
 type RequestHandler = (req: Request, res: Response, next: NextFunction) => void;
 ```
 
@@ -200,64 +163,85 @@ If you call `next(error)` with an argument, Express skips all remaining middlewa
 
 ### `authenticate.ts`
 
+Verifies the JWT in the `Authorization: Bearer` header and attaches the decoded user to `req.user`. Critically, it also validates the role at runtime — TypeScript types don't prevent a crafted JWT from carrying an arbitrary role string:
+
 ```typescript
+const KNOWN_ROLES = new Set(['USER', 'HELPER', 'ADMIN', 'MASTER']);
+
 export const authenticate: RequestHandler = (req, _res, next) => {
   const auth = req.headers.authorization;
-
   if (!auth?.startsWith('Bearer ')) {
     return next(new AppError(401, 'Missing or malformed authorization header', 'UNAUTHORIZED'));
-    // ↑ calling next() with an error skips to errorHandler
   }
 
-  const token = auth.slice(7); // strips "Bearer "
-
+  const token = auth.slice(7);
   try {
     const payload = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+
+    if (!KNOWN_ROLES.has(payload.role)) {
+      return next(new AppError(401, 'Invalid token', 'UNAUTHORIZED'));
+      // ↑ rejects JWTs with unknown roles — they'd pass authorize() silently otherwise
+    }
+
     req.user = { id: payload.sub, role: payload.role };
-    // ↑ attaches decoded user to the request object so later middleware can read it
-    next(); // ← no argument = success, continue to next middleware
+    next();
   } catch {
     next(new AppError(401, 'Invalid or expired token', 'UNAUTHORIZED'));
   }
 };
 ```
 
-### `validate.ts`
+### `authorize.ts`
+
+Hierarchy-aware role check. Instead of a flat `role === 'ADMIN'` comparison, it uses a rank table so a single `authorize('HELPER')` automatically passes for HELPER, ADMIN, and MASTER:
 
 ```typescript
-// This is a "middleware factory" — a function that returns a middleware function
-export const validate =
-  (schema: ZodSchema, target: Target = 'body'): RequestHandler =>
+const ROLE_RANK: Record<Role, number> = { USER: 0, HELPER: 1, ADMIN: 2, MASTER: 3 };
+
+export const authorize =
+  (minRole: Role): RequestHandler =>
   (req, _res, next) => {
-    const result = schema.safeParse(req[target]); // target = 'body' | 'params' | 'query'
-
-    if (!result.success) {
-      return next(new ValidationError(result.error.flatten()));
-      // ↑ sends 422 with field-level errors
+    if (!req.user || ROLE_RANK[req.user.role as Role] < ROLE_RANK[minRole]) {
+      return next(new AppError(403, 'Insufficient permissions', 'FORBIDDEN'));
     }
-
-    req[target] = result.data; // ← replace raw input with parsed+typed data
     next();
   };
 ```
 
-`validate` is called with a schema and returns a middleware. This is why you see it used like:
+Usage: `authorize('HELPER')` → passes for HELPER/ADMIN/MASTER. `authorize('ADMIN')` → passes for ADMIN/MASTER only.
+
+### `validate.ts`
+
+Middleware factory — a function that returns a middleware function. Validates and replaces `req.body`, `req.params`, or `req.query` with parsed+typed data:
 
 ```typescript
-router.put('/:id/weaknesses',
-  authenticate,          // middleware 1
-  authorize('ADMIN'),    // middleware 2
-  validate(IdParamSchema, 'params'), // middleware 3
-  validate(UpsertWeaknessesSchema),  // middleware 4
-  wrap(async (req, res) => { ... }), // route handler
-);
+export const validate =
+  (schema: ZodSchema, target: Target = 'body'): RequestHandler =>
+  (req, _res, next) => {
+    const result = schema.safeParse(req[target]);
+    if (!result.success) {
+      return next(new ValidationError(result.error.flatten()));
+    }
+    req[target] = result.data;
+    next();
+  };
 ```
 
-Each one runs in order. If any calls `next(error)`, the rest are skipped.
+### `rateLimiter.ts`
+
+Five limiters, all with `skip: () => process.env.NODE_ENV === 'test'` to avoid test interference:
+
+```typescript
+export const generalLimiter   = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, skip: () => isTest });
+export const authLimiter      = rateLimit({ windowMs: 15 * 60 * 1000, max: 20,  skip: () => isTest });
+export const strategyLimiter  = rateLimit({ windowMs: 60 * 60 * 1000, max: 10,  skip: () => isTest });
+export const adminLimiter     = rateLimit({ windowMs: 15 * 60 * 1000, max: 30,  skip: () => isTest });
+export const searchLimiter    = rateLimit({ windowMs: 60 * 1000,       max: 60,  skip: () => isTest });
+```
 
 ### `errorHandler.ts`
 
-The error handler has a special signature — four parameters instead of three. Express uses this to know it's an error handler:
+Four-parameter signature — Express uses this to know it's an error handler. Handles all error types in one place and spreads any `data` payload from `AppError` into the response:
 
 ```typescript
 export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
@@ -265,409 +249,351 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     return res.status(422).json({ error: err.message, details: err.details });
   }
   if (err instanceof AppError) {
-    return res.status(err.statusCode).json({ error: err.message, code: err.code });
+    return res.status(err.statusCode).json({
+      error: err.message,
+      code: err.code,
+      ...(err.data ?? {}),  // ← spreads ban details, lockedUntil, etc. into response body
+    });
   }
-  if (err instanceof Prisma.PrismaClientKnownRequestError) {
-    if (err.code === 'P2002') return res.status(409).json({ error: 'Resource already exists' });
-    if (err.code === 'P2025') return res.status(404).json({ error: 'Resource not found' });
-  }
-  return res.status(500).json({ error: 'Internal server error' });
+  // ...
 };
 ```
-
-`instanceof` checks which class the error is. Each class produces a different HTTP status and message. This is how one place handles all errors from all routes.
 
 ---
 
 ## Layer 3 — Routers (`apps/api/src/routes/`)
 
-A router groups related routes together. The monsters router is mounted at `/api/monsters` in `app.ts`, so all paths inside it are relative to that prefix.
+A router groups related routes together. Routes follow the pattern: `authenticate → authorize → validate → wrap(handler)`.
 
 ### The `wrap` helper
 
-Every async route handler needs to catch errors and pass them to `next`. Instead of repeating try/catch in every route, this project uses a `wrap` helper:
+Every async route handler needs to catch errors and pass them to `next`. Instead of repeating try/catch:
 
 ```typescript
 const wrap =
   (fn: (req: Request, res: Response) => Promise<void>) =>
   (req: Request, res: Response, next: NextFunction) =>
     fn(req, res).catch(next);
-// ↑ if fn throws or rejects, .catch(next) sends the error to the error handler
 ```
 
-Without `wrap`, every route would look like this:
+### Route declaration example
 
 ```typescript
-router.get('/:id', async (req, res, next) => {
-  try {
-    const monster = await monsterService.getMonsterById(req.params.id);
-    res.json({ data: monster });
-  } catch (err) {
-    next(err); // must do this or Express never knows about the error
-  }
-});
-```
-
-With `wrap`:
-
-```typescript
-router.get('/:id', validate(IdParamSchema, 'params'), wrap(async (req, res) => {
-  const monster = await monsterService.getMonsterById(req.params.id);
-  res.json({ data: monster });
-  // throw here → .catch(next) → errorHandler handles it
-}));
-```
-
-### How a route is declared
-
-```typescript
-router.METHOD(
-  'PATH',
-  middleware1,
-  middleware2,
-  routeHandler,
-);
-
-// Real example:
-router.put(
-  '/:id/weaknesses',        // path — :id is a URL parameter
-  authenticate,             // must be logged in
-  authorize('ADMIN'),       // must be ADMIN role
-  validate(IdParamSchema, 'params'),      // validate :id
-  validate(UpsertWeaknessesSchema),       // validate body
+// admin.router.ts
+router.patch(
+  '/users/:id/ban',
+  authenticate,                         // must be logged in
+  authorize('ADMIN'),                   // must be ADMIN or MASTER
+  adminLimiter,                         // rate limit admin actions
+  validate(IdParamSchema, 'params'),
+  validate(BanSchema),
   wrap(async (req, res) => {
-    const data = await monsterService.upsertWeaknesses(req.params.id, req.body);
-    res.json({ data });
+    const user = await adminService.setBanned(req.params.id, req.body, req.user!.id, req.user!.role);
+    res.json({ user });
   }),
 );
 ```
 
-After `validate` runs, `req.params.id` is a verified string and `req.body` is a verified `UpsertWeaknesses` array. The route handler never needs to check if the input is valid — that's already done.
+### Route summary
+
+| Router | Base path | Key middleware |
+|--------|-----------|---------------|
+| `auth.router` | `/api/auth` | `authLimiter` on login/register |
+| `monsters.router` | `/api/monsters` | `searchLimiter` on GET, `authorize('HELPER')` on writes |
+| `strategies.router` | `/api/strategies` | `strategyLimiter` on POST |
+| `admin.router` | `/api/admin` | `authorize('HELPER')` for users list, `authorize('ADMIN')` for audit, `adminLimiter` on PATCH |
 
 ---
 
 ## Layer 4 — Services (`apps/api/src/services/`)
 
-Services contain the business logic and the database calls. Routers call services; services call Prisma. This separation means you could swap Express for a different framework without rewriting the database logic.
+Services contain the business logic and database calls. Key services:
+
+### `auth.service.ts` — Login lockout and token reuse detection
 
 ```typescript
-// monster.service.ts
-
-import { prisma } from '../lib/prisma'; // the singleton Prisma client
-
-export async function getMonsterById(id: string) {
-  const monster = await prisma.monster.findUnique({
-    where: { id },
-    include: MONSTER_DETAIL_INCLUDE, // tells Prisma to JOIN all related tables
+// login() — account lockout
+async function login(email, password) {
+  // 1. Count recent failures for this email
+  const recentAttempts = await prisma.loginAttempt.count({
+    where: { email, createdAt: { gte: new Date(Date.now() - 15 * 60 * 1000) } },
   });
-  if (!monster) throw new AppError(404, 'Monster not found', 'NOT_FOUND');
-  return monster;
+  if (recentAttempts >= 5) {
+    // find oldest attempt to calculate when the lockout expires
+    throw new AppError(429, 'Too many attempts', 'RATE_LIMITED', { lockedUntil });
+  }
+
+  const user = await prisma.user.findUnique({ where: { email } });
+  const valid = user && await bcrypt.compare(password, user.passwordHash);
+
+  if (!valid) {
+    await prisma.loginAttempt.create({ data: { email } });  // record failure
+    throw new AppError(401, 'Invalid credentials', 'UNAUTHORIZED');
+  }
+
+  await prisma.loginAttempt.deleteMany({ where: { email } }); // clear on success
+  // ... auto-unban check, issue tokens
+}
+
+// refresh() — token reuse detection
+async function refresh(rawToken) {
+  const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+  const revoked = await prisma.revokedToken.findUnique({ where: { tokenHash: hash } });
+  if (revoked) {
+    // token was already rotated — someone is replaying it
+    await prisma.refreshToken.deleteMany({ where: { userId: revoked.userId } });
+    throw new AppError(401, 'Token reuse detected', 'TOKEN_REUSE_DETECTED');
+  }
+
+  const stored = await prisma.refreshToken.findUnique({ where: { token: rawToken } });
+  if (!stored) throw new AppError(401, 'Invalid token', 'UNAUTHORIZED');
+
+  // rotate: delete old, save hash as revoked, issue new token
+  await prisma.$transaction([
+    prisma.refreshToken.delete({ where: { token: rawToken } }),
+    prisma.revokedToken.create({ data: { tokenHash: hash, userId: stored.userId, expiresAt } }),
+    prisma.refreshToken.create({ data: { token: newToken, userId: stored.userId, expiresAt } }),
+  ]);
 }
 ```
 
-`prisma.monster` is an auto-generated object with methods for every operation on the `Monster` table. `findUnique` runs `SELECT ... WHERE id = $1 LIMIT 1`. Prisma translates the JavaScript object syntax into SQL — you never write raw SQL.
-
-### How the service is imported in the router
+### `admin.service.ts` — Scope-enforced role and ban management
 
 ```typescript
-import * as monsterService from '../services/monster.service';
+// setRole() — ADMIN can only touch USER/HELPER targets; MASTER is unrestricted
+const ADMIN_MANAGEABLE_ROLES = ['USER', 'HELPER'];
 
-// Later:
-const monster = await monsterService.getMonsterById(req.params.id);
+async function setRole(targetId, newRole, requesterId, requesterRole) {
+  if (targetId === requesterId) throw new AppError(400, 'Cannot change own role', 'SELF_ACTION');
+
+  const target = await prisma.user.findUniqueOrThrow({ where: { id: targetId } });
+
+  if (requesterRole === 'ADMIN' && !ADMIN_MANAGEABLE_ROLES.includes(target.role)) {
+    throw new AppError(403, 'Insufficient permissions', 'FORBIDDEN');
+  }
+
+  // atomic: update role + write audit row in same transaction
+  await prisma.$transaction([
+    prisma.user.update({ where: { id: targetId }, data: { role: newRole } }),
+    prisma.adminAction.create({ data: { actorId: requesterId, action: 'ROLE_CHANGE',
+      targetUserId: targetId, metadata: { from: target.role, to: newRole } } }),
+  ]);
+}
+
+// setBanned() — banning a HELPER or ADMIN auto-downgrades their role to USER
+async function setBanned(targetId, { banned, reason, bannedUntil }, requesterId, requesterRole) {
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: targetId },
+      data: banned
+        ? { banned: true, bannedReason: reason, bannedAt: new Date(), bannedUntil,
+            ...(target.role !== 'USER' ? { role: 'USER' } : {}) }  // downgrade on ban
+        : { banned: false, bannedReason: null, bannedAt: null, bannedUntil: null },
+    }),
+    ...(banned ? [prisma.refreshToken.deleteMany({ where: { userId: targetId } })] : []),
+    prisma.adminAction.create({ data: { actorId: requesterId,
+      action: banned ? 'BAN' : 'UNBAN', targetUserId: targetId,
+      metadata: banned ? { reason, bannedUntil } : {} } }),
+  ]);
+}
 ```
 
-`import *` imports every exported function as a property of `monsterService`. This is a module — not a class — but it works the same way for organizing related functions.
+### `admin.service.ts` — Audit log pruning
+
+On API startup and every 24 hours, entries older than 90 days are hard-deleted:
+
+```typescript
+// index.ts
+async function pruneAuditLog() {
+  const cutoff = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+  const { count } = await prisma.adminAction.deleteMany({ where: { createdAt: { lt: cutoff } } });
+  if (count > 0) logger.info(`Pruned ${count} audit log entries older than 90 days`);
+}
+
+server.listen(PORT, '::', () => {
+  pruneAuditLog();
+  setInterval(pruneAuditLog, 24 * 60 * 60 * 1000);
+});
+```
 
 ---
 
-## Layer 5 — The `AppError` class
+## Layer 5 — Frontend API client (`apps/web/src/lib/api.ts`)
 
-`AppError` is the single class used to signal a known failure across the entire API:
+On the frontend, all HTTP calls go through `fetchWithAuth`, which:
+1. Attaches the `Authorization: Bearer <token>` header if a token exists.
+2. Sends cookies (`credentials: 'include'`) so the httpOnly refresh token cookie is included.
+3. On a 401 response, silently calls `POST /api/auth/refresh` to get a new access token and retries the original request.
 
 ```typescript
-// lib/errors.ts
-export class AppError extends Error {
-  constructor(
-    public readonly statusCode: number, // HTTP status to send (404, 403, 401...)
-    message: string,                    // human-readable message
-    public readonly code?: string,      // machine-readable code ('NOT_FOUND', 'FORBIDDEN')
-  ) {
-    super(message); // pass message to the built-in Error class
-    this.name = 'AppError';
-  }
-}
+export async function apiGet<T>(path: string): Promise<T> { ... }
+export async function apiPost<T>(path: string, body?: unknown): Promise<T> { ... }
+export async function apiPut<T>(path: string, body?: unknown): Promise<T> { ... }
+export async function apiPatch<T>(path: string, body?: unknown): Promise<T> { ... }
+export async function apiDelete<T>(path: string): Promise<T> { ... }
 ```
 
-**How it connects to everything else:**
+`<T>` is a generic — a placeholder type filled in at the call site:
 
-- Services throw it: `throw new AppError(404, 'Monster not found', 'NOT_FOUND')`
-- Middleware throws it: `next(new AppError(401, 'Unauthorized', 'UNAUTHORIZED'))`
-- The error handler catches it: `if (err instanceof AppError) { res.status(err.statusCode).json(...) }`
-
-Because every part of the app throws the same class, one handler at the bottom handles everything consistently.
+```typescript
+const result = await apiPatch<{ user: AdminUser }>(`/api/admin/users/${id}/role`, { role: 'HELPER' });
+// TypeScript knows result.user is an AdminUser
+```
 
 ---
 
-## Layer 6 — Frontend API client (`apps/web/src/lib/api.ts`)
+## Layer 6 — React Context (`apps/web/src/context/AuthContext.tsx`)
 
-On the frontend, all HTTP calls go through four functions. They all call `fetchWithAuth` internally:
+Context shares state across components without prop drilling. `AuthContext` holds the current user, access token, and ban state.
 
 ```typescript
-let _accessToken: string | null = null; // stored in memory, not localStorage
-
-async function fetchWithAuth(path: string, init?: RequestInit): Promise<Response> {
-  const headers = new Headers(init?.headers);
-  headers.set('Content-Type', 'application/json');
-
-  if (_accessToken) {
-    headers.set('Authorization', `Bearer ${_accessToken}`);
-    // ↑ attaches the token to every request that has one
-  }
-
-  const res = await fetch(`${BASE_URL}${path}`, {
-    ...init,
-    headers,
-    credentials: 'include', // ← makes browser send the httpOnly cookie automatically
-  });
-
-  if (res.status === 401 && _refreshCallback && !_isRefreshing) {
-    // access token expired → silently get a new one and retry
-    _isRefreshing = true;
-    const newToken = await _refreshCallback();
-    _isRefreshing = false;
-    if (newToken) {
-      headers.set('Authorization', `Bearer ${newToken}`);
-      return fetch(`${BASE_URL}${path}`, { ...init, headers, credentials: 'include' });
-    }
-  }
-
-  return res;
-}
-
-export async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetchWithAuth(path);
-  if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null));
-  return res.json() as Promise<T>;
-}
-
-export async function apiPut<T>(path: string, body?: unknown): Promise<T> {
-  const res = await fetchWithAuth(path, {
-    method: 'PUT',
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
-  if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => null));
-  return res.json() as Promise<T>;
+interface AuthState {
+  user: User | null;
+  bannedDetails: BanDetails | null;   // set when login or refresh returns 403 BANNED
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  clearBannedDetails: () => void;
 }
 ```
 
-`<T>` is a **generic** — a placeholder type that gets filled in at the call site:
+**Ban flow:**
+- `login()` or `silentRefresh()` catches a 403 with `code === 'BANNED'` → sets `bannedDetails` instead of re-throwing.
+- `AuthContext` renders `<BannedModal>` (full-screen, non-dismissable) when `bannedDetails !== null`.
+- `BannedModal` shows the ban reason, dates, and a 100-second countdown. On countdown end or button click: `logout()` → `window.location.replace('/')`.
 
 ```typescript
-// T is filled in as { data: MonsterDetail } here:
-const monster = await apiGet<{ data: MonsterDetail }>('/api/monsters/abc123');
-// TypeScript now knows monster.data is a MonsterDetail
+// AuthContext renders this after {children}:
+{bannedDetails && (
+  <BannedModal
+    bannedReason={bannedDetails.bannedReason}
+    bannedAt={bannedDetails.bannedAt}
+    bannedUntil={bannedDetails.bannedUntil}
+    onLogout={handleBannedLogout}
+  />
+)}
 ```
 
 ---
 
 ## Layer 7 — Custom hooks (`apps/web/src/hooks/`)
 
-Hooks are functions that start with `use`. They wrap TanStack Query's `useQuery` and `useMutation` to encapsulate one API operation each.
+Hooks wrap TanStack Query's `useQuery` and `useMutation` to encapsulate one API operation each.
 
-### A query hook (read data)
+### `useDebounce.ts`
 
-```typescript
-// hooks/useMonsters.ts
-import { useQuery } from '@tanstack/react-query';
-import { apiGet } from '../lib/api';
-import type { PaginatedResponse, MonsterListItem } from '../lib/types';
-
-export function useMonsters(filters: MonsterFiltersInput = {}) {
-  const params = new URLSearchParams();
-  if (filters.game) params.set('game', filters.game);
-  // ... build query string
-
-  return useQuery({
-    queryKey: ['monsters', filters], // cache address
-    queryFn: () => apiGet<PaginatedResponse<MonsterListItem>>(`/api/monsters?${params}`),
-    // ↑ called by TanStack Query when needed, result is cached under queryKey
-  });
-}
-```
-
-### A mutation hook (write data)
+Used in search inputs to avoid firing a request on every keystroke:
 
 ```typescript
-// hooks/useUpdateWeaknesses.ts
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { UpsertWeaknesses } from '@mh-datapedia/shared';
-import { apiPut } from '../lib/api';
-import type { ElementWeakness } from '../lib/types';
-
-export function useUpdateWeaknesses(monsterId: string) {
-  const queryClient = useQueryClient(); // access to the global cache
-
-  return useMutation({
-    mutationFn: (data: UpsertWeaknesses) =>
-      apiPut<{ data: ElementWeakness[] }>(`/api/monsters/${monsterId}/weaknesses`, data)
-        .then((r) => r.data),
-    // ↑ called when you call mutate() or mutateAsync()
-
-    onSuccess: () => {
-      // invalidate = mark as stale = TanStack Query refetches automatically
-      queryClient.invalidateQueries({ queryKey: ['monsters', monsterId, 'weaknesses'] });
-      queryClient.invalidateQueries({ queryKey: ['monsters', monsterId] });
-      queryClient.invalidateQueries({ queryKey: ['monsters'] });
-    },
-  });
+export function useDebounce<T>(value: T, delay = 400): T {
+  const [debounced, setDebounced] = useState<T>(value);
+  useEffect(() => {
+    const id = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(id);
+  }, [value, delay]);
+  return debounced;
 }
-```
 
-### How a component uses both
-
-```tsx
-// Inside WeaknessesTab.tsx
-function WeaknessesTab({ monsterId }: { monsterId: string }) {
-  const { data: weaknesses, isLoading } = useWeaknesses(monsterId);
-  // ↑ reads from cache or fetches if not cached
-
-  const { mutateAsync, isPending } = useUpdateWeaknesses(monsterId);
-  // ↑ gives you a function to trigger the PUT request
-
-  async function handleSave(draft) {
-    try {
-      await mutateAsync(draft);     // calls the API
-      // onSuccess fires → cache is invalidated → useWeaknesses refetches
-    } catch (err) {
-      // show error to user
-    }
-  }
-}
+// Usage in monsters list:
+const [searchInput, setSearchInput] = useState('');
+const search = useDebounce(searchInput, 400); // only updates after 400ms of no typing
+useEffect(() => {
+  navigate({ search: (prev) => ({ ...prev, q: search || undefined }) });
+}, [search]);
 ```
 
 ---
 
-## Layer 8 — React Context (`apps/web/src/context/AuthContext.tsx`)
+## Layer 8 — Admin panel (`apps/web/src/routes/admin.tsx`)
 
-Context is React's way of sharing state across many components without passing props through every layer.
+The admin panel is a `beforeLoad`-guarded route that allows HELPER, ADMIN, and MASTER. Each role sees a different subset of controls.
+
+### Role rank (frontend)
 
 ```typescript
-// 1. Create a context with a type
-const AuthContext = createContext<AuthState | null>(null);
-
-// 2. Create a provider that holds the state and provides functions
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [accessToken, setToken] = useState<string | null>(null);
-
-  async function login(email: string, password: string): Promise<void> {
-    const data = await apiPost<{ user: User; accessToken: string }>(
-      '/api/auth/login',
-      { email, password },
-    );
-    setToken(data.accessToken); // store token in React state
-    setUser(data.user);
-  }
-
-  return (
-    <AuthContext.Provider value={{ user, accessToken, login, logout, register, isLoading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-// 3. Create a hook to read the context from any component
-export function useAuth(): AuthState {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be inside AuthProvider');
-  return ctx;
-}
+const ROLE_RANK: Record<Role, number> = { USER: 0, HELPER: 1, ADMIN: 2, MASTER: 3 };
 ```
 
-**How components use it:**
+### What each role sees
 
-```tsx
-// In Navbar.tsx — completely unrelated to WeaknessesTab, but shares the same auth state
-function Navbar() {
-  const { user, logout } = useAuth();
-  return (
-    <nav>
-      {user ? (
-        <button onClick={logout}>Logout ({user.username})</button>
-      ) : (
-        <a href="/login">Login</a>
-      )}
-    </nav>
-  );
+| Viewer role | Users tab | Audit log tab | Role controls | Ban controls |
+|-------------|-----------|---------------|---------------|--------------|
+| HELPER | ✓ (read-only) | — | — | — |
+| ADMIN | ✓ | ✓ | USER ↔ HELPER | Ban/unban USER and HELPER |
+| MASTER | ✓ | ✓ | USER / HELPER / ADMIN | Ban/unban anyone (except other MASTERs) |
+
+### `canManage` logic
+
+```typescript
+function canManage(targetRole: Role): boolean {
+  return ROLE_RANK[viewerRole] > ROLE_RANK[targetRole];
 }
+// MASTER (3) > ADMIN (2) → true. ADMIN (2) > ADMIN (2) → false.
 ```
+
+When a user is banned, role controls are hidden — only the Unban button is shown. Controls return after unbanning.
+
+### Audit log filters
+
+The Audit Log tab has a filter navbar (All / Role change / Bans / Unbans) and a debounced search bar. The search hits `GET /api/admin/audit?search=<term>` which filters by actor or target username server-side.
 
 ---
 
-## Complete workflow: admin saves new weaknesses
+## Complete workflow: ADMIN bans a user
 
 Here is the full chain traced from button click to database write to UI update:
 
 ```
-1. Admin clicks "Save" in WeaknessesTab
-   └── handleSave(draft) is called
-       └── await mutateAsync(draft)          [useUpdateWeaknesses hook]
+1. ADMIN clicks "Ban" on a user row in the admin panel
+   └── BanModal opens → ADMIN fills in reason + duration → clicks Confirm
+       └── banMutation.mutate({ id, reason, bannedUntil })
 
-2. mutateAsync calls the mutationFn:
-   └── apiPut('/api/monsters/abc/weaknesses', draft)  [api.ts]
+2. banMutation calls the mutationFn:
+   └── apiPatch('/api/admin/users/abc/ban', { banned: true, reason, bannedUntil })
        └── fetchWithAuth builds the request:
-           - adds Authorization: Bearer <token> header
-           - JSON.stringify(draft) as body
-           └── fetch('https://mh-datapedia-web.fly.dev/api/monsters/abc/weaknesses', { method: 'PUT', ... })
+           - adds Authorization: Bearer <token>
+           - JSON.stringify(body)
+           └── fetch('.../api/admin/users/abc/ban', { method: 'PATCH', ... })
 
-3. Browser sends the request → nginx receives it
-   └── nginx sees /api/ → proxies to mh-datapedia-api.internal:3001
+3. Browser sends the request → nginx proxies to mh-datapedia-api.internal:3001
 
-4. Express receives the request, runs the middleware chain:
-   ├── helmet()          sets security headers
-   ├── cors()            allows the web origin
-   ├── express.json()    parses the JSON body into req.body
-   ├── cookieParser()    parses cookies (not needed for this route but always runs)
-   ├── requestId         attaches a unique ID to this request
-   ├── generalLimiter    checks IP hasn't exceeded 100 req/15min
-   └── logger            logs "PUT /api/monsters/abc/weaknesses"
+4. Express runs the middleware chain:
+   ├── helmet, cors, express.json, cookieParser, requestId, logger
+   ├── generalLimiter    — checks IP hasn't exceeded 100 req/15min
+   └── matches PATCH /users/:id/ban in admin.router.ts
 
-5. Express matches the route PUT /:id/weaknesses in monsters.router.ts
-   └── runs the route-specific middleware chain:
-       ├── authenticate  reads JWT from header, verifies signature+expiry, sets req.user
-       ├── authorize     checks req.user.role === 'ADMIN' (throws 403 if not)
-       ├── validate(IdParamSchema, 'params')    validates req.params.id is a string
-       └── validate(UpsertWeaknessesSchema)     validates req.body shape
+5. Route middleware chain:
+   ├── authenticate      — verifies JWT, validates role is in KNOWN_ROLES, sets req.user
+   ├── authorize('ADMIN')— checks ROLE_RANK[req.user.role] >= ROLE_RANK['ADMIN']
+   ├── adminLimiter      — checks ADMIN hasn't exceeded 30 PATCH requests/15min
+   ├── validate(IdParamSchema, 'params')  — validates req.params.id
+   └── validate(BanSchema)               — validates body (reason min 10 chars, bannedUntil)
 
-6. Route handler calls monsterService.upsertWeaknesses(req.params.id, req.body)
+6. Route handler calls adminService.setBanned(id, body, req.user.id, req.user.role)
 
-7. Service opens a Prisma transaction:
-   └── prisma.$transaction(async (tx) => {
-         tx.elementWeakness.deleteMany(...)   → DELETE FROM "ElementWeakness" WHERE monsterId = $1
-         tx.elementWeakness.createMany(...)   → INSERT INTO "ElementWeakness" (monsterId, element, rating, isImmune) VALUES ...
-         return tx.elementWeakness.findMany() → SELECT * FROM "ElementWeakness" WHERE monsterId = $1
-       })
-   All three SQL statements run in the same transaction. If any fails, all roll back.
+7. Service runs a Prisma $transaction:
+   ├── user.update      → SET banned=true, bannedReason, bannedAt, bannedUntil,
+   │                       role='USER' (if target was HELPER or ADMIN)
+   ├── refreshToken.deleteMany → DELETE refresh tokens (logs target out immediately)
+   └── adminAction.create → INSERT audit row (actorId, BAN, targetUserId, metadata)
+   All three writes succeed or all roll back.
 
-8. Prisma returns the saved weaknesses. Service returns them to the router.
-   └── res.json({ data: [...weaknesses] })
+8. Service returns updated user → res.json({ user })
 
 9. Response travels back: Express → nginx → browser
-   └── fetchWithAuth receives the response
-       └── res.json() parses the JSON
-           └── apiPut returns { data: ElementWeakness[] }
+   └── banMutation.onSuccess fires:
+       └── queryClient.invalidateQueries(['admin', 'users'])
 
-10. mutationFn resolves → onSuccess fires:
-    └── queryClient.invalidateQueries(['monsters', 'abc', 'weaknesses'])
-    └── queryClient.invalidateQueries(['monsters', 'abc'])
-    └── queryClient.invalidateQueries(['monsters'])
+10. TanStack Query refetches the users list
+    └── UsersTab re-renders — banned user now shows "Banned" status and only Unban button
 
-11. TanStack Query refetches all invalidated queries
-    └── useWeaknesses(monsterId) refetches → new data from server
-        └── WeaknessesTab re-renders with the updated weakness list
+11. On the banned user's next request or token refresh:
+    └── auth.service.refresh() sees banned=true and bannedUntil not expired
+        └── throws AppError(403, 'Account is banned', 'BANNED', { bannedReason, bannedAt, bannedUntil })
+        └── AuthContext catches this → sets bannedDetails
+        └── BannedModal appears full-screen with 100s countdown
+        └── Countdown reaches 0 → logout() + redirect to /
 ```
-
-That is 11 steps, touching 8 different layers, using TypeScript functions, classes, middleware, services, Prisma, PostgreSQL transactions, an HTTP client, React hooks, and a shared cache — all connected in a single admin button click.
 
 ---
 
@@ -675,33 +601,49 @@ That is 11 steps, touching 8 different layers, using TypeScript functions, class
 
 ```
 packages/shared/
-  └── Zod schemas (RegisterSchema, UpsertWeaknessesSchema, ...)
+  └── Zod schemas (RoleSchema, AuditActionSchema, RegisterSchema, ...)
       ├── used by API middleware (validate)  → rejects bad input
       └── used by frontend hooks (types)     → TypeScript knows the shape
 
 apps/api/
+  index.ts
+  └── server.listen() → pruneAuditLog() on start + every 24h
   app.ts
   └── createApp() mounts all middleware + routers in order
-      middleware/ (authenticate, authorize, validate, rateLimiter, errorHandler)
-      └── each is a function: (req, res, next) => void
-          routes/ (auth.router, monsters.router, ...)
-          └── each file creates a Router, declares METHOD + PATH + middleware chain
-              services/ (auth.service, monster.service)
-              └── each exported function does one operation, calls prisma, may throw AppError
-                  lib/prisma.ts
-                  └── singleton PrismaClient — the only thing that talks to PostgreSQL
+      middleware/
+      ├── authenticate   — JWT verify + KNOWN_ROLES check → req.user
+      ├── authorize      — ROLE_RANK hierarchy check
+      ├── validate       — Zod parse → req.body/params/query
+      ├── rateLimiter    — 5 limiters (general/auth/strategy/admin/search)
+      └── errorHandler   — catches AppError/ValidationError/Prisma errors
+      routes/
+      └── each file: Router → METHOD + PATH + middleware chain → service call
+      services/
+      ├── auth.service   — login lockout, token rotation + reuse detection, auto-unban
+      ├── admin.service  — setRole (scope-enforced), setBanned (atomic tx), listAuditLog (search+pagination)
+      └── monster/strategy services — business logic, Prisma calls, AppError throws
+      lib/prisma.ts
+      └── singleton PrismaClient — the only thing that talks to PostgreSQL
 
 apps/web/
   main.tsx
-  └── mounts QueryClientProvider + AuthProvider + Router
+  └── QueryClientProvider + AuthProvider + Router
       context/AuthContext.tsx
-      └── holds user + token in React state, exposes login/logout/register
-          lib/api.ts
-          └── fetchWithAuth — adds auth header, handles 401 refresh, wraps fetch
-              hooks/ (useMonsters, useMonster, useUpdateWeaknesses, ...)
-              └── each wraps useQuery or useMutation with one specific API call
-                  routes/ (file-based pages)
-                  └── each page reads hooks, renders components
-                      components/
-                      └── pure UI — receives data as props, calls hooks for mutations
+      └── user + token + bannedDetails in React state
+          ├── silentRefresh on load (from httpOnly cookie)
+          ├── BANNED 403 → sets bannedDetails → renders BannedModal
+          └── exposes login/logout/register/clearBannedDetails
+      lib/api.ts
+      └── fetchWithAuth — auth header, 401 silent refresh, wraps fetch
+      hooks/
+      ├── useDebounce    — 400ms debounce for search inputs
+      └── useMonsters, useMonster, useUpdateWeaknesses, ... — TanStack Query wrappers
+      routes/
+      ├── /admin         — HELPER/ADMIN/MASTER; tabs, role-gated controls, audit log
+      ├── /monsters      — list with debounced search
+      └── /monsters/$id  — detail with hitzones, weaknesses, strategies tabs
+      components/
+      ├── ui/BannedModal  — full-screen overlay, 100s countdown, auto-logout
+      └── monsters/detail — MonsterHeader, HitzonesTab, WeaknessesTab, StrategiesTab
+                            (all check ['HELPER','ADMIN','MASTER'].includes(user.role) for edit access)
 ```

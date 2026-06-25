@@ -6,18 +6,19 @@ This document explains how the project is structured as a monorepo, how Docker p
 
 ## The monorepo
 
-A monorepo is a single Git repository that contains multiple projects. This project has three:
+A monorepo is a single Git repository that contains multiple projects. This project has four:
 
 ```
 mh-datapedia/
 ├── apps/
 │   ├── api/          — the Express backend
-│   └── web/          — the React frontend
+│   ├── web/          — the React frontend
+│   └── mobile/       — the React Native / Expo mobile app
 └── packages/
     └── shared/       — Zod schemas and TypeScript types shared between api and web
 ```
 
-The alternative would be three separate repositories. The monorepo approach has a key advantage here: when you change a Zod schema in `packages/shared/` (for example, adding a required field to `UpsertWeaknessesSchema`), TypeScript immediately shows errors in both `apps/api/` and `apps/web/` — in the same editor, in the same commit. There is no "publish the shared package, then update the consumers" step.
+The alternative would be four separate repositories. The monorepo approach has a key advantage here: when you change a Zod schema in `packages/shared/` (for example, adding a new role to `RoleSchema`), TypeScript immediately shows errors in both `apps/api/` and `apps/web/` — in the same editor, in the same commit. There is no "publish the shared package, then update the consumers" step.
 
 ---
 
@@ -32,7 +33,7 @@ packages:
 ```
 
 This means:
-- A single `pnpm install` at the root installs dependencies for all three packages.
+- A single `pnpm install` at the root installs dependencies for all four packages.
 - Packages can reference each other: `apps/api/package.json` lists `"@mh-datapedia/shared": "workspace:*"` as a dependency. pnpm resolves this to the local `packages/shared/` folder instead of downloading from npm. When you import `from '@mh-datapedia/shared'`, you are importing directly from the local source.
 - pnpm uses a content-addressable store on disk: identical files are stored once and hard-linked. This makes installs fast and saves disk space compared to npm.
 - The `pnpm-lock.yaml` file records the exact version of every dependency. `pnpm install --frozen-lockfile` (used in CI) refuses to change this file — if it would need to update, it fails. This guarantees reproducible installs.
@@ -73,7 +74,12 @@ If you run `pnpm build` again without changing anything, Turborepo reads its cac
 
 ## The shared package
 
-`packages/shared/` compiles to two outputs: CommonJS (`dist/index.js`) for the API and ES Module (`dist/index.esm.js`) for the frontend. Both are compiled from the same TypeScript source.
+`packages/shared/` compiles to two outputs: CommonJS (`dist/index.js`) for the API and ES Module (`dist/esm/index.js`) for the frontend. Both are compiled from the same TypeScript source.
+
+Key schemas:
+- **`enums.schema.ts`** — `RoleSchema` (`USER | HELPER | ADMIN | MASTER`), `AuditActionSchema` (`ROLE_CHANGE | BAN | UNBAN`)
+- **`auth.schema.ts`** — RegisterSchema, LoginSchema
+- **`monster.schema.ts`**, **`strategy.schema.ts`**, **`weakness.schema.ts`**, **`hitzone.schema.ts`** — content schemas
 
 This is why the CI pipeline always runs `pnpm --filter @mh-datapedia/shared build` before anything else. Without it, the `dist/` folder doesn't exist and both `apps/api` and `apps/web` fail to import from `@mh-datapedia/shared`.
 
@@ -83,7 +89,7 @@ This is why the CI pipeline always runs `pnpm --filter @mh-datapedia/shared buil
 
 Docker packages an application into a self-contained image that runs the same way everywhere — on your machine, on a server, on Fly.io.
 
-Both apps use **multi-stage Dockerfiles**. The idea is to have a large "builder" stage that has all the tools needed to compile the code, and a small "runner" stage that has only what's needed to run it. This keeps the production image small.
+Both web apps use **multi-stage Dockerfiles**. The idea is to have a large "builder" stage that has all the tools needed to compile the code, and a small "runner" stage that has only what's needed to run it. This keeps the production image small.
 
 ### API Dockerfile (`apps/api/Dockerfile`)
 
@@ -124,6 +130,10 @@ Both apps use **multi-stage Dockerfiles**. The idea is to have a large "builder"
 
 The web server does not run Node.js at all in production — it just serves static files.
 
+### Mobile app (`apps/mobile`)
+
+The mobile app is **not** deployed via Docker. It is built using **EAS (Expo Application Services)** — Expo's cloud build service. Running `eas build -p android --profile preview` uploads the source to Expo's servers, which compile the native Android `.apk`. The resulting file is downloaded and distributed directly (e.g., via WhatsApp or Google Drive for testing). No Fly.io involvement.
+
 ---
 
 ## How nginx connects the frontend to the API
@@ -151,7 +161,7 @@ location / {
 }
 ```
 
-This means: try to find the file (`$uri`), try adding a `/` to see if it's a directory, and if both fail, serve `index.html`. This is required for client-side routing — when a user refreshes the page at `/monsters/abc123`, nginx serves `index.html` and React Router takes over from there.
+This means: try to find the file (`$uri`), try adding a `/` to see if it's a directory, and if both fail, serve `index.html`. This is required for client-side routing — when a user refreshes the page at `/monsters/abc123`, nginx serves `index.html` and TanStack Router takes over from there.
 
 ---
 
@@ -174,7 +184,7 @@ Each app is configured by a TOML file at the repo root:
 
 **Auto-stop / auto-start:** Both apps are configured with `auto_stop_machines = true` and `min_machines_running = 0` (for web) or `1` (for API). Fly.io will stop machines when there's no traffic and start them on the next request. This keeps costs low for low-traffic apps.
 
-**Secrets:** Production environment variables are never in the code or in any file. They are set via `flyctl secrets set VAR=value` and are injected by Fly.io as environment variables when the container starts. The app reads them via the `env.ts` validator at startup.
+**Secrets:** Production environment variables are never in the code or in any file. They are set via `flyctl secrets set VAR=value` and are injected by Fly.io as environment variables when the container starts. The app reads them via the `env.ts` validator at startup. The three production secrets are `DATABASE_URL`, `JWT_SECRET`, and `JWT_REFRESH_SECRET`. `DATABASE_URL` lives only in Fly secrets — it is never set as a GitHub Actions secret.
 
 ---
 
@@ -187,7 +197,7 @@ The CI/CD pipeline is a GitHub Actions workflow at `.github/workflows/deploy.yml
 ```
 push to master
 ├── [changes]  — detect which files changed
-└── [test]     — run the full test suite
+└── [test]     — run the full test suite (52 tests)
         │
   needs: [test, changes]
         ├── [deploy-api]  — if apps/api or packages/shared or fly.api.toml changed
@@ -227,10 +237,10 @@ Key steps:
 2. `pnpm install --frozen-lockfile` — reproducible install.
 3. `pnpm --filter @mh-datapedia/shared build` — build shared package first.
 4. `prisma generate` — generate the Prisma client so TypeScript types exist.
-5. `prisma migrate deploy` — apply migrations to the CI test database.
-6. Write `apps/api/.env.test` from GitHub secrets — Prisma 5 reads env from a file in test mode.
+5. `prisma migrate reset --force --skip-seed` — reset the CI test database to a clean state.
+6. Write `apps/api/.env.test` from GitHub secrets — Prisma reads env from a file in test mode.
 7. `pnpm typecheck` — TypeScript check across all packages.
-8. `pnpm test` — run Jest + supertest (33 tests).
+8. `pnpm test` — run Jest + supertest (52 tests across 8 test suites).
 
 The test database is a PostgreSQL 16 container that GitHub Actions spins up alongside the test runner. The connection string is `postgresql://postgres:postgres@localhost:5432/mh_datapedia_test`. It is destroyed after the job ends.
 
@@ -243,7 +253,7 @@ The test database is a PostgreSQL 16 container that GitHub Actions spins up alon
 
 `--remote-only` means Fly.io builds the Docker image on its own remote builders instead of on the GitHub runner. This avoids needing Docker-in-Docker on GitHub Actions and makes deploys faster.
 
-The `FLY_API_TOKEN` secret is an org-level Fly.io token (`flyctl tokens create org --org personal`). It gives the CI runner permission to deploy to any app in the organization. The token is stored as a GitHub Actions secret — it is never in the codebase.
+The `FLY_API_TOKEN` secret is an org-level Fly.io token. It gives the CI runner permission to deploy to any app in the organization. The token is stored as a GitHub Actions secret — it is never in the codebase.
 
 The action pin (`@ed8efb3...` instead of `@master`) is a security practice. Pinning to a commit SHA means the action cannot be silently changed by a supply-chain attack on Fly.io's GitHub repository.
 
@@ -261,11 +271,9 @@ dist/              — compiled output (reproducible from source)
 .env.prod          — production secrets (never needed locally)
 *.tsbuildinfo      — TypeScript incremental build cache
 .turbo/            — Turborepo task cache
-dev-output.txt     — local dev server output logs
-dev-error.txt      — local dev server error logs
 ```
 
-The most important ones are the `.env` files. If a `.env` file were committed, every secret in it (database password, JWT secret) would be permanently in the Git history — even if you deleted the file in a later commit, it would still be visible in `git log`. Git history is public if the repository is public.
+The most important ones are the `.env` files. If a `.env` file were committed, every secret in it (database password, JWT secret) would be permanently in the Git history — even if you deleted the file in a later commit, it would still be visible in `git log`.
 
 ---
 
@@ -303,7 +311,7 @@ Note that the secrets are passed as step-level environment variables (`env:`) ra
 1. You edit a file in `apps/api/src/` and push to `master`.
 2. GitHub Actions starts the workflow.
 3. `changes` detects `apps/api/**` changed → `api=true`, `web=false`.
-4. `test` runs 33 tests against a fresh Postgres container. If any fail, everything stops here.
+4. `test` runs 52 tests against a fresh Postgres container. If any fail, everything stops here.
 5. `deploy-api` starts (because `api=true`). `deploy-web` is skipped (because `web=false`).
 6. `flyctl deploy --config fly.api.toml --remote-only` tells Fly.io to build the API Docker image using the current repo code.
 7. Fly.io's remote builder runs the multi-stage Dockerfile, producing a fresh image.
