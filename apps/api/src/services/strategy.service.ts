@@ -17,7 +17,7 @@ export async function createStrategy(authorId: string, data: CreateStrategy) {
 export async function updateStrategy(
   id: string,
   userId: string,
-  role: 'USER' | 'ADMIN',
+  role: 'USER' | 'HELPER' | 'ADMIN' | 'MASTER',
   data: UpdateStrategy,
 ) {
   const strategy = await prisma.strategy.findUnique({
@@ -35,7 +35,7 @@ export async function updateStrategy(
   });
 }
 
-export async function deleteStrategy(id: string, userId: string, role: 'USER' | 'ADMIN') {
+export async function deleteStrategy(id: string, userId: string, role: 'USER' | 'HELPER' | 'ADMIN' | 'MASTER') {
   const strategy = await prisma.strategy.findUnique({
     where: { id },
     select: { id: true, authorId: true },

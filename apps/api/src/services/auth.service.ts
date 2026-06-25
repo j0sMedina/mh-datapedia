@@ -10,7 +10,7 @@ const SALT_ROUNDS = 12;
 export const ACCESS_TOKEN_TTL_S = 15 * 60;
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
-export function signAccessToken(userId: string, role: 'USER' | 'ADMIN') {
+export function signAccessToken(userId: string, role: 'USER' | 'HELPER' | 'ADMIN' | 'MASTER') {
   return jwt.sign({ sub: userId, role }, env.JWT_SECRET, {
     expiresIn: ACCESS_TOKEN_TTL_S,
   });

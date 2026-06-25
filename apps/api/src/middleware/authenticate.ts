@@ -5,7 +5,7 @@ import { AppError } from '../lib/errors';
 
 interface JwtPayload {
   sub: string;
-  role: 'USER' | 'ADMIN';
+  role: 'USER' | 'HELPER' | 'ADMIN' | 'MASTER';
   iat: number;
   exp: number;
 }
