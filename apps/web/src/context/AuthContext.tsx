@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { apiPost, apiGet, setAccessToken, setRefreshCallback, ApiError } from '../lib/api';
 import type { User } from '@mh-datapedia/shared';
 import type { BanDetails } from '../lib/types';
+import { BannedModal } from '../components/ui/BannedModal';
 
 export interface AuthState {
   user: User | null;
@@ -108,11 +109,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setBannedDetails(null);
   }
 
+  async function handleBannedLogout() {
+    await logout();
+    clearBannedDetails();
+    window.location.replace('/');
+  }
+
   return (
     <AuthContext.Provider
       value={{ user, accessToken, isLoading, bannedDetails, clearBannedDetails, login, register, logout }}
     >
       {children}
+      {bannedDetails && (
+        <BannedModal
+          bannedReason={bannedDetails.bannedReason}
+          bannedAt={bannedDetails.bannedAt}
+          bannedUntil={bannedDetails.bannedUntil}
+          onLogout={handleBannedLogout}
+        />
+      )}
     </AuthContext.Provider>
   );
 }
