@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { z } from 'zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMonsters } from '../../hooks/useMonsters';
 import { MonsterFilters } from '../../components/monsters/MonsterFilters';
 import { MonsterGrid } from '../../components/monsters/MonsterGrid';
 import { Button } from '../../components/ui/Button';
 import { MonsterFormModal } from '../../components/admin/MonsterFormModal';
 import { useAuth } from '../../context/AuthContext';
+import { useDebounce } from '../../hooks/useDebounce';
 
 const monsterSearchSchema = z.object({
   type:   z.string().optional(),
@@ -26,8 +27,21 @@ function MonstersPage() {
   const { data, isLoading } = useMonsters({ type, search, page });
   const [showAddModal, setShowAddModal] = useState(false);
 
+  // Local search input state — debounced before updating the URL
+  const [searchInput, setSearchInput] = useState(search ?? '');
+  const debouncedSearch = useDebounce(searchInput, 400);
+
+  useEffect(() => {
+    navigate({ search: (prev) => ({ ...prev, search: debouncedSearch || undefined, page: 1 }) });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch]);
+
   const setFilter = (key: 'type' | 'search', val: string | undefined) => {
-    navigate({ search: (prev) => ({ ...prev, [key]: val, page: 1 }) });
+    if (key === 'search') {
+      setSearchInput(val ?? '');
+    } else {
+      navigate({ search: (prev) => ({ ...prev, [key]: val, page: 1 }) });
+    }
   };
 
   return (
@@ -44,7 +58,7 @@ function MonstersPage() {
       <div className="mb-6">
         <MonsterFilters
           type={type}
-          search={search}
+          search={searchInput}
           onTypeChange={(t) => setFilter('type', t)}
           onSearchChange={(s) => setFilter('search', s)}
         />
