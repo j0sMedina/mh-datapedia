@@ -28,7 +28,7 @@ export function HeaderRight() {
   if (user) {
     return (
       <View className="flex-row items-center gap-3">
-        <Text style={{ color: user.role === 'ADMIN' ? '#2f9e8f' : '#a8a29e', fontSize: 14 }}>{user.username}</Text>
+        <Text style={{ color: user.role === 'MASTER' ? '#fbbf24' : user.role === 'ADMIN' ? '#2f9e8f' : user.role === 'HELPER' ? '#a78bfa' : '#a8a29e', fontSize: 14 }}>{user.username}</Text>
         <Pressable
           onPress={handleLogout}
           className="border border-stone-700 rounded px-3 py-1"

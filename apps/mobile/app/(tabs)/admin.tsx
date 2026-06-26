@@ -8,8 +8,8 @@ import { useAdminUsers, type AdminUser } from '../../src/hooks/useAdminUsers';
 import { UserCard } from '../../src/components/admin/UserCard';
 import { UserActionSheet } from '../../src/components/admin/UserActionSheet';
 
-type Filter = 'All' | 'Admins' | 'Hunters';
-const FILTERS: Filter[] = ['All', 'Admins', 'Hunters'];
+type Filter = 'All' | 'Admins' | 'Helpers' | 'Hunters';
+const FILTERS: Filter[] = ['All', 'Admins', 'Helpers', 'Hunters'];
 
 export default function AdminScreen() {
   const { user: currentUser } = useAuth();
@@ -19,17 +19,19 @@ export default function AdminScreen() {
   const actionSheetRef = useRef<BottomSheetModal>(null);
 
   const totalCount = users.length;
-  const adminCount = users.filter((u) => u.role === 'ADMIN').length;
+  const adminCount = users.filter((u) => u.role === 'ADMIN' || u.role === 'MASTER').length;
+  const helperCount = users.filter((u) => u.role === 'HELPER').length;
   const hunterCount = users.filter((u) => u.role === 'USER').length;
 
   const filteredUsers = users.filter((u) => {
-    if (filter === 'Admins') return u.role === 'ADMIN';
+    if (filter === 'Admins') return u.role === 'ADMIN' || u.role === 'MASTER';
+    if (filter === 'Helpers') return u.role === 'HELPER';
     if (filter === 'Hunters') return u.role === 'USER';
     return true;
   });
 
   const isPending = roleMutation.isPending || banMutation.isPending;
-  const isMaster = currentUser?.email === 'silverkx@mh.com';
+  const isMaster = currentUser?.role === 'MASTER';
 
   useEffect(() => {
     if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MASTER')) {
@@ -37,12 +39,15 @@ export default function AdminScreen() {
     }
   }, [currentUser]);
 
-  function handleRoleChange(userId: string, role: 'USER' | 'ADMIN') {
+  function handleRoleChange(userId: string, role: 'USER' | 'HELPER' | 'ADMIN') {
     roleMutation.mutate({ userId, role }, { onSuccess: () => actionSheetRef.current?.dismiss() });
   }
 
-  function handleBanChange(userId: string, banned: boolean) {
-    banMutation.mutate({ userId, banned }, { onSuccess: () => actionSheetRef.current?.dismiss() });
+  function handleBanChange(userId: string, banned: boolean, reason?: string) {
+    const payload = banned
+      ? { userId, banned: true as const, reason: reason!, bannedUntil: null }
+      : { userId, banned: false as const };
+    banMutation.mutate(payload, { onSuccess: () => actionSheetRef.current?.dismiss() });
   }
 
   if (isLoading) {
@@ -65,10 +70,11 @@ export default function AdminScreen() {
       </View>
 
       {/* Stats cards */}
-      <View style={{ flexDirection: 'row', gap: 10, paddingHorizontal: 16, marginBottom: 12 }}>
+      <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 16, marginBottom: 12 }}>
         {([
-          { label: 'USERS', count: totalCount, f: 'All' as Filter },
+          { label: 'TOTAL', count: totalCount, f: 'All' as Filter },
           { label: 'ADMINS', count: adminCount, f: 'Admins' as Filter },
+          { label: 'HELPERS', count: helperCount, f: 'Helpers' as Filter },
           { label: 'HUNTERS', count: hunterCount, f: 'Hunters' as Filter },
         ] as const).map(({ label, count, f }) => (
           <Pressable
@@ -80,14 +86,14 @@ export default function AdminScreen() {
               borderRadius: 8,
               borderWidth: 1,
               borderColor: filter === f ? '#2f9e8f' : '#292524',
-              paddingVertical: 12,
-              paddingHorizontal: 14,
+              paddingVertical: 10,
+              paddingHorizontal: 8,
             }}
           >
-            <Text style={{ color: filter === f ? '#2f9e8f' : '#fafaf9', fontSize: 22, fontWeight: 'bold' }}>
+            <Text style={{ color: filter === f ? '#2f9e8f' : '#fafaf9', fontSize: 20, fontWeight: 'bold' }}>
               {count}
             </Text>
-            <Text style={{ color: '#57534e', fontSize: 11, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
+            <Text style={{ color: '#57534e', fontSize: 9, letterSpacing: 1, marginTop: 2 }}>{label}</Text>
           </Pressable>
         ))}
       </View>
@@ -119,7 +125,7 @@ export default function AdminScreen() {
             key={f}
             onPress={() => setFilter(f)}
             style={{
-              paddingHorizontal: 14,
+              paddingHorizontal: 12,
               paddingVertical: 6,
               borderRadius: 20,
               borderWidth: 1,
@@ -127,7 +133,7 @@ export default function AdminScreen() {
               backgroundColor: filter === f ? 'rgba(47,158,143,0.15)' : 'transparent',
             }}
           >
-            <Text style={{ color: filter === f ? '#2f9e8f' : '#a8a29e', fontSize: 13, fontWeight: '500' }}>
+            <Text style={{ color: filter === f ? '#2f9e8f' : '#a8a29e', fontSize: 12, fontWeight: '500' }}>
               {f}
             </Text>
           </Pressable>
@@ -142,7 +148,11 @@ export default function AdminScreen() {
           <UserCard
             user={item}
             isSelf={item.id === currentUser?.id}
-            canAct={item.role === 'USER' || isMaster}
+            canAct={
+              item.role === 'USER' ||
+              item.role === 'HELPER' ||
+              (isMaster && item.role === 'ADMIN')
+            }
             onActionPress={() => {
               setSelectedUser(item);
               actionSheetRef.current?.present();
@@ -160,6 +170,7 @@ export default function AdminScreen() {
       <UserActionSheet
         ref={actionSheetRef}
         user={selectedUser}
+        isMaster={isMaster}
         onRoleChange={handleRoleChange}
         onBanChange={handleBanChange}
         isPending={isPending}
