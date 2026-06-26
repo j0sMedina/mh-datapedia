@@ -38,18 +38,30 @@ export const UserActionSheet = forwardRef<BottomSheetModal, UserActionSheetProps
 
     const canBan = banReason.trim().length >= 10;
 
-    // Determine which role buttons to show based on target role and requester
+    // Role buttons depend on who is acting (isMaster) and the target's current role.
+    // ADMIN can only move users within USER ↔ HELPER (API enforces ADMIN_MANAGEABLE_ROLES).
+    // MASTER can move anyone to USER / HELPER / ADMIN (MASTER itself is excluded from the API schema).
     function getRoleButtons(u: AdminUser) {
       const buttons: { label: string; role: 'USER' | 'HELPER' | 'ADMIN'; style: 'primary' | 'secondary' }[] = [];
 
-      if (u.role === 'USER') {
-        buttons.push({ label: 'Promote to Helper', role: 'HELPER', style: 'primary' });
-        buttons.push({ label: 'Promote to Admin', role: 'ADMIN', style: 'primary' });
-      } else if (u.role === 'HELPER') {
-        buttons.push({ label: 'Demote to Hunter', role: 'USER', style: 'secondary' });
-        buttons.push({ label: 'Promote to Admin', role: 'ADMIN', style: 'primary' });
-      } else if (u.role === 'ADMIN' && isMaster) {
-        buttons.push({ label: 'Demote to Helper', role: 'HELPER', style: 'secondary' });
+      if (isMaster) {
+        if (u.role === 'USER') {
+          buttons.push({ label: 'Promote to Helper', role: 'HELPER', style: 'primary' });
+          buttons.push({ label: 'Promote to Admin', role: 'ADMIN', style: 'primary' });
+        } else if (u.role === 'HELPER') {
+          buttons.push({ label: 'Demote to Hunter', role: 'USER', style: 'secondary' });
+          buttons.push({ label: 'Promote to Admin', role: 'ADMIN', style: 'primary' });
+        } else if (u.role === 'ADMIN') {
+          buttons.push({ label: 'Demote to Helper', role: 'HELPER', style: 'secondary' });
+          buttons.push({ label: 'Demote to Hunter', role: 'USER', style: 'secondary' });
+        }
+      } else {
+        // ADMIN: only USER ↔ HELPER
+        if (u.role === 'USER') {
+          buttons.push({ label: 'Promote to Helper', role: 'HELPER', style: 'primary' });
+        } else if (u.role === 'HELPER') {
+          buttons.push({ label: 'Demote to Hunter', role: 'USER', style: 'secondary' });
+        }
       }
 
       return buttons;
