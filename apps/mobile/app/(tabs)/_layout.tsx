@@ -53,7 +53,7 @@ export default function TabLayout() {
         name="admin"
         options={{
           title: 'Admin',
-          href: user?.role === 'ADMIN' ? undefined : null,
+          href: (user?.role === 'ADMIN' || user?.role === 'MASTER') ? undefined : null,
           tabBarIcon: ({ color, size }) => (
             <MaterialCommunityIcons name="crown" color={color} size={size} />
           ),

@@ -32,7 +32,7 @@ export default function AdminScreen() {
   const isMaster = currentUser?.email === 'silverkx@mh.com';
 
   useEffect(() => {
-    if (!currentUser || currentUser.role !== 'ADMIN') {
+    if (!currentUser || (currentUser.role !== 'ADMIN' && currentUser.role !== 'MASTER')) {
       router.replace('/');
     }
   }, [currentUser]);

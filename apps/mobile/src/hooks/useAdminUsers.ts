@@ -23,7 +23,7 @@ export function useAdminUsers() {
       apiGet<{ users: AdminUser[] }>(
         `/api/admin/users${search ? `?search=${encodeURIComponent(search)}` : ''}`,
       ).then((r) => r.users),
-    enabled: user?.role === 'ADMIN',
+    enabled: user?.role === 'ADMIN' || user?.role === 'MASTER',
   });
 
   const roleMutation = useMutation({
