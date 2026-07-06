@@ -1,66 +1,71 @@
+import { View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppTitle, HeaderRight } from '../../src/components/ui/AppHeader';
 import { useAuth } from '../../src/context/AuthContext';
+import { VerificationBanner } from '../../src/components/ui/VerificationBanner';
 
 export default function TabLayout() {
   const { user } = useAuth();
 
   return (
-    <Tabs
-      screenOptions={{
-        headerStyle: { backgroundColor: '#0c0a09' },
-        headerTintColor: '#fafaf9',
-        headerShadowVisible: false,
-        headerRightContainerStyle: { paddingRight: 16 },
-        tabBarStyle: {
-          backgroundColor: '#1c1917',
-          borderTopColor: '#292524',
-          borderTopWidth: 1,
-        },
-        tabBarActiveTintColor: '#2f9e8f',
-        tabBarInactiveTintColor: '#57534e',
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Monsters',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list" color={color} size={size} />
-          ),
-          headerTitle: () => <AppTitle label="Monsters" />,
-          headerRight: () => <HeaderRight />,
+    <View style={{ flex: 1 }}>
+      {user && !user.emailVerified && <VerificationBanner email={user.email} />}
+      <Tabs
+        screenOptions={{
+          headerStyle: { backgroundColor: '#0c0a09' },
+          headerTintColor: '#fafaf9',
+          headerShadowVisible: false,
+          headerRightContainerStyle: { paddingRight: 16 },
+          tabBarStyle: {
+            backgroundColor: '#1c1917',
+            borderTopColor: '#292524',
+            borderTopWidth: 1,
+          },
+          tabBarActiveTintColor: '#2f9e8f',
+          tabBarInactiveTintColor: '#57534e',
         }}
-      />
-      <Tabs.Screen
-        name="favorites"
-        options={{
-          title: 'Favorites',
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? 'heart' : 'heart-outline'}
-              color={color}
-              size={size}
-            />
-          ),
-          headerTitle: () => <AppTitle label="Favorites" />,
-          headerRight: () => <HeaderRight />,
-        }}
-      />
-      <Tabs.Screen
-        name="admin"
-        options={{
-          title: 'Admin',
-          href: (user?.role === 'ADMIN' || user?.role === 'MASTER') ? undefined : null,
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="crown" color={color} size={size} />
-          ),
-          headerTitle: () => <AppTitle label="Admin" />,
-          headerRight: () => <HeaderRight />,
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Monsters',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="list" color={color} size={size} />
+            ),
+            headerTitle: () => <AppTitle label="Monsters" />,
+            headerRight: () => <HeaderRight />,
+          }}
+        />
+        <Tabs.Screen
+          name="favorites"
+          options={{
+            title: 'Favorites',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'heart' : 'heart-outline'}
+                color={color}
+                size={size}
+              />
+            ),
+            headerTitle: () => <AppTitle label="Favorites" />,
+            headerRight: () => <HeaderRight />,
+          }}
+        />
+        <Tabs.Screen
+          name="admin"
+          options={{
+            title: 'Admin',
+            href: (user?.role === 'ADMIN' || user?.role === 'MASTER') ? undefined : null,
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons name="crown" color={color} size={size} />
+            ),
+            headerTitle: () => <AppTitle label="Admin" />,
+            headerRight: () => <HeaderRight />,
+          }}
+        />
+      </Tabs>
+    </View>
   );
 }

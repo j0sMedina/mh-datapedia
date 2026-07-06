@@ -1,6 +1,7 @@
+import { Alert } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '../context/AuthContext';
-import { apiGet, apiPost, apiDelete } from '../lib/api';
+import { apiGet, apiPost, apiDelete, ApiError } from '../lib/api';
 import type { Monster } from '@mh-datapedia/shared';
 
 export function useFavorites() {
@@ -31,8 +32,15 @@ export function useFavorites() {
       }
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (err, _vars, ctx) => {
       queryClient.setQueryData(['favorites'], ctx?.previous);
+      const code = err instanceof ApiError
+        ? (err.body as { code?: string } | null)?.code
+        : undefined;
+      if (code === 'EMAIL_NOT_VERIFIED') {
+        Alert.alert('Email not verified', 'Check your inbox and verify your email to save favorites.');
+        return;
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
@@ -50,8 +58,15 @@ export function useFavorites() {
       );
       return { previous };
     },
-    onError: (_err, _vars, ctx) => {
+    onError: (err, _vars, ctx) => {
       queryClient.setQueryData(['favorites'], ctx?.previous);
+      const code = err instanceof ApiError
+        ? (err.body as { code?: string } | null)?.code
+        : undefined;
+      if (code === 'EMAIL_NOT_VERIFIED') {
+        Alert.alert('Email not verified', 'Check your inbox and verify your email to save favorites.');
+        return;
+      }
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
