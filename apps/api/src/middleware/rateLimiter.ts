@@ -46,3 +46,13 @@ export const searchLimiter = rateLimit({
   message: { error: 'Too many search requests', code: 'RATE_LIMITED' },
   skip: () => isTest,
 });
+
+export const resendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => (req as { user?: { id: string } }).user?.id ?? req.ip ?? 'unknown',
+  message: { error: 'Too many resend requests', code: 'RATE_LIMITED' },
+  skip: () => isTest,
+});

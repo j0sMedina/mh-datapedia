@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { env } from '../config/env';
 import { AppError } from '../lib/errors';
+import { sendVerificationEmail } from './email.service';
 import type { Register, Login } from '@mh-datapedia/shared';
 
 const SALT_ROUNDS = 12;
@@ -11,8 +12,18 @@ export const ACCESS_TOKEN_TTL_S = 15 * 60;
 const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const LOCKOUT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_LOGIN_ATTEMPTS = 5;
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
 type Role = 'USER' | 'HELPER' | 'ADMIN' | 'MASTER';
+
+const USER_SELECT = {
+  id: true,
+  email: true,
+  username: true,
+  role: true,
+  emailVerified: true,
+  createdAt: true,
+} as const;
 
 export function signAccessToken(userId: string, role: Role) {
   return jwt.sign({ sub: userId, role }, env.JWT_SECRET, {
@@ -31,12 +42,28 @@ async function createRefreshToken(userId: string) {
   return token;
 }
 
+function generateVerifyToken() {
+  return randomBytes(32).toString('hex');
+}
+
 export async function register(data: Register) {
   const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
+  const verifyEmailToken = generateVerifyToken();
+  const verifyEmailTokenExpiry = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
+
   const user = await prisma.user.create({
-    data: { email: data.email, username: data.username, passwordHash },
-    select: { id: true, email: true, username: true, role: true, createdAt: true },
+    data: {
+      email: data.email,
+      username: data.username,
+      passwordHash,
+      verifyEmailToken,
+      verifyEmailTokenExpiry,
+    },
+    select: USER_SELECT,
   });
+
+  await sendVerificationEmail(data.email, verifyEmailToken);
+
   const accessToken = signAccessToken(user.id, user.role);
   const refreshToken = await createRefreshToken(user.id);
   return { user, accessToken, refreshToken, expiresIn: ACCESS_TOKEN_TTL_S };
@@ -99,6 +126,7 @@ export async function login(data: Login) {
       email: user.email,
       username: user.username,
       role: user.role,
+      emailVerified: user.emailVerified,
       createdAt: user.createdAt,
     },
     accessToken,
@@ -175,8 +203,47 @@ export async function logout(token: string) {
 export async function getMe(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, email: true, username: true, role: true, createdAt: true },
+    select: USER_SELECT,
   });
   if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
   return user;
+}
+
+export async function verifyEmail(token: string) {
+  if (!token) throw new AppError(400, 'Invalid or expired token', 'INVALID_TOKEN');
+
+  const user = await prisma.user.findUnique({
+    where: { verifyEmailToken: token },
+    select: { id: true, emailVerified: true, verifyEmailTokenExpiry: true },
+  });
+
+  if (!user) throw new AppError(400, 'Invalid or expired token', 'INVALID_TOKEN');
+  if (user.emailVerified) throw new AppError(400, 'Email already verified', 'ALREADY_VERIFIED');
+  if (user.verifyEmailTokenExpiry && user.verifyEmailTokenExpiry < new Date()) {
+    throw new AppError(400, 'Invalid or expired token', 'INVALID_TOKEN');
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailVerified: true, verifyEmailToken: null, verifyEmailTokenExpiry: null },
+  });
+}
+
+export async function resendVerification(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, emailVerified: true },
+  });
+  if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
+  if (user.emailVerified) throw new AppError(400, 'Email already verified', 'ALREADY_VERIFIED');
+
+  const verifyEmailToken = generateVerifyToken();
+  const verifyEmailTokenExpiry = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { verifyEmailToken, verifyEmailTokenExpiry },
+  });
+
+  await sendVerificationEmail(user.email, verifyEmailToken);
 }

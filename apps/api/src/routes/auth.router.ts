@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction, IRouter } from 'express';
-import { authLimiter } from '../middleware/rateLimiter';
+import { authLimiter, resendLimiter } from '../middleware/rateLimiter';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
 import { AppError } from '../lib/errors';
@@ -76,5 +76,29 @@ router.get('/me', authenticate, async (req: Request, res: Response, next: NextFu
     next(err);
   }
 });
+
+router.get('/verify-email', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = typeof req.query.token === 'string' ? req.query.token : '';
+    await authService.verifyEmail(token);
+    res.json({ message: 'Email verified' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/resend-verification',
+  authenticate,
+  resendLimiter,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await authService.resendVerification(req.user!.id);
+      res.json({ message: 'Verification email sent' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export default router;
