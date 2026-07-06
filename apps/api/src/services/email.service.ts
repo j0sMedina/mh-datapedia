@@ -1,15 +1,19 @@
 import { Resend } from 'resend';
 import { env } from '../config/env';
 
-const resend = new Resend(env.RESEND_API_KEY);
 const isTest = env.NODE_ENV === 'test';
+let _resend: Resend | null = null;
+function getResend() {
+  if (!_resend) _resend = new Resend(env.RESEND_API_KEY);
+  return _resend;
+}
 
 export async function sendVerificationEmail(to: string, token: string): Promise<void> {
   if (isTest) return;
 
   const link = `https://mh-datapedia-web.fly.dev/verify-email?token=${token}`;
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: 'onboarding@resend.dev',
     to,
     subject: 'Verify your MH Datapedia account',
