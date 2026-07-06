@@ -6,6 +6,7 @@ import { LoginModalProvider } from '../context/LoginModalContext';
 import { Navbar } from '../components/layout/Navbar';
 import { LoginModal } from '../components/auth/LoginModal';
 import { Spinner } from '../components/ui/Spinner';
+import { VerificationBanner } from '../components/ui/VerificationBanner';
 
 export const Route = createRootRouteWithContext<{ auth: AuthState }>()({
   component: RootLayout,
@@ -26,6 +27,9 @@ function RootLayout() {
     <LoginModalProvider>
       <div className="min-h-screen bg-stone-950 text-stone-50 flex flex-col">
         <Navbar />
+        {auth.user && !auth.user.emailVerified && (
+          <VerificationBanner onResent={() => {}} />
+        )}
         <main className="flex-1">
           <Outlet />
         </main>
