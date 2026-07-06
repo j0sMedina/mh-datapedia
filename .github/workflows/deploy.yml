@@ -86,6 +86,7 @@ jobs:
           printf 'CORS_ORIGIN=http://localhost:5173\n' >> apps/api/.env.test
           printf 'SMTP_USER=\n' >> apps/api/.env.test
           printf 'SMTP_PASSWORD=\n' >> apps/api/.env.test
+          printf 'SMTP_FROM=\n' >> apps/api/.env.test
 
       - name: Typecheck
         run: pnpm typecheck

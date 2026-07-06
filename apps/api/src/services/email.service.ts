@@ -23,7 +23,7 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
   if (isTest) return;
   const link = `https://mh-datapedia-web.fly.dev/verify-email?token=${token}`;
   await getTransporter().sendMail({
-    from: `"MH Datapedia" <${env.SMTP_USER}>`,
+    from: `"MH Datapedia" <${env.SMTP_FROM || env.SMTP_USER}>`,
     to,
     subject: 'Verify your MH Datapedia account',
     html: `
@@ -41,7 +41,7 @@ export async function sendPasswordResetEmail(to: string, token: string): Promise
   if (isTest) return;
   const link = `https://mh-datapedia-web.fly.dev/reset-password?token=${token}`;
   await getTransporter().sendMail({
-    from: `"MH Datapedia" <${env.SMTP_USER}>`,
+    from: `"MH Datapedia" <${env.SMTP_FROM || env.SMTP_USER}>`,
     to,
     subject: 'Reset your MH Datapedia password',
     html: `
