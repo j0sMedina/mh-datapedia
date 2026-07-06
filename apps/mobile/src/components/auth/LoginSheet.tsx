@@ -1,5 +1,5 @@
 import { forwardRef, useCallback, useState } from 'react';
-import { View, Text, Pressable, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, StyleSheet, Linking } from 'react-native';
 import {
   BottomSheetModal,
   BottomSheetTextInput,
@@ -59,7 +59,7 @@ export const LoginSheet = forwardRef<BottomSheetModal, LoginSheetProps>(
     return (
       <BottomSheetModal
         ref={ref}
-        snapPoints={['44%']}
+        snapPoints={['52%']}
         enableDynamicSizing={false}
         backdropComponent={renderBackdrop}
         backgroundStyle={styles.sheetBg}
@@ -121,6 +121,13 @@ export const LoginSheet = forwardRef<BottomSheetModal, LoginSheetProps>(
               <Text style={styles.registerAccent}>Register</Text>
             </Text>
           </Pressable>
+
+          <Pressable
+            onPress={() => Linking.openURL('https://mh-datapedia-web.fly.dev/forgot-password')}
+            style={styles.forgotLink}
+          >
+            <Text style={styles.forgotText}>Forgot password?</Text>
+          </Pressable>
         </View>
       </BottomSheetModal>
     );
@@ -174,4 +181,6 @@ const styles = StyleSheet.create({
   registerLink: { alignItems: 'center', paddingVertical: 4 },
   registerText: { color: 'rgba(255,255,255,0.3)', fontSize: 12 },
   registerAccent: { color: '#2f9e8f' },
+  forgotLink: { alignItems: 'center', paddingVertical: 2 },
+  forgotText: { color: 'rgba(255,255,255,0.25)', fontSize: 11 },
 });
