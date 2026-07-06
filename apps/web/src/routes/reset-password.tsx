@@ -50,7 +50,7 @@ function ResetPasswordPage() {
     try {
       await apiPost('/api/auth/reset-password', { token, password });
       setStatus('success');
-      setMessage('Password reset — redirecting to home in 3 seconds.');
+      setMessage('Password reset successfully. Redirecting to login in 3 seconds.');
     } catch (err) {
       if (err instanceof ApiError && (err.body as { code?: string })?.code === 'INVALID_TOKEN') {
         setMessage('This link has expired or has already been used.');
