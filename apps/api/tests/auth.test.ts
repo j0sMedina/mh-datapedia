@@ -248,6 +248,12 @@ describe('POST /api/auth/forgot-password + POST /api/auth/reset-password', () =>
     expect(res.status).toBe(200);
     expect(res.body.message).toContain('Password reset successfully');
 
+    // Sessions were revoked — check before creating any new session
+    const tokens = await prisma.refreshToken.findMany({
+      where: { user: { email: resetEmail } },
+    });
+    expect(tokens).toHaveLength(0);
+
     // Can now log in with new password
     const newLoginRes = await request(app)
       .post('/api/auth/login')
@@ -259,12 +265,6 @@ describe('POST /api/auth/forgot-password + POST /api/auth/reset-password', () =>
       .post('/api/auth/login')
       .send({ email: resetEmail, password: originalPassword });
     expect(oldLoginRes.status).toBe(401);
-
-    // Sessions were revoked — verify no refresh tokens remain
-    const tokens = await prisma.refreshToken.findMany({
-      where: { user: { email: resetEmail } },
-    });
-    expect(tokens).toHaveLength(0);
   });
 
   it('reset-password with invalid token returns 400 INVALID_TOKEN', async () => {
