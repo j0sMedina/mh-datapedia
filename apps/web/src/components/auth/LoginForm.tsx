@@ -9,9 +9,10 @@ import { ApiError } from '../../lib/api';
 
 interface LoginFormProps {
   onSuccess: () => void;
+  onForgotPassword?: () => void;
 }
 
-export function LoginForm({ onSuccess }: LoginFormProps) {
+export function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
   const { login } = useAuth();
   const {
     register,
@@ -55,6 +56,17 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? 'Signing in…' : 'Sign in'}
       </Button>
+      {onForgotPassword && (
+        <div className="text-center">
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            className="text-stone-500 hover:text-stone-400 text-sm transition-colors"
+          >
+            Forgot password?
+          </button>
+        </div>
+      )}
     </form>
   );
 }

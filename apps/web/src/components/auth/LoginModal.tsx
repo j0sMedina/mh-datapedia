@@ -1,15 +1,22 @@
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 import { useLoginModal } from '../../context/LoginModalContext';
 import { LoginForm } from './LoginForm';
 import { RegisterForm } from './RegisterForm';
 
 export function LoginModal() {
   const { isOpen, mode, close, switchMode } = useLoginModal();
+  const navigate = useNavigate();
 
   if (!isOpen) return null;
 
   const isLogin = mode === 'login';
+
+  function handleForgotPassword() {
+    close();
+    navigate({ to: '/forgot-password' });
+  }
 
   return createPortal(
     <div
@@ -43,7 +50,7 @@ export function LoginModal() {
         </p>
 
         {isLogin
-          ? <LoginForm onSuccess={close} />
+          ? <LoginForm onSuccess={close} onForgotPassword={handleForgotPassword} />
           : <RegisterForm onSuccess={close} />
         }
 
