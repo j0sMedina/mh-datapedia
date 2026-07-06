@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { z } from 'zod';
 import { authenticate } from '../middleware/authenticate';
+import { requireVerified } from '../middleware/requireVerified';
 import { validate } from '../middleware/validate';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../lib/errors';
@@ -31,6 +32,7 @@ router.get(
 router.post(
   '/me/favorites/:monsterId',
   authenticate,
+  requireVerified,
   validate(MonsterIdParamSchema, 'params'),
   wrap(async (req, res) => {
     const { monsterId } = req.params;
@@ -47,6 +49,7 @@ router.post(
 router.delete(
   '/me/favorites/:monsterId',
   authenticate,
+  requireVerified,
   validate(MonsterIdParamSchema, 'params'),
   wrap(async (req, res) => {
     await prisma.user.update({

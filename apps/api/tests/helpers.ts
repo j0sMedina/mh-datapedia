@@ -13,6 +13,11 @@ export async function registerUser(
   const res = await request(app)
     .post('/api/auth/register')
     .send({ email, username, password });
+  // Auto-verify so write routes work in tests
+  await prisma.user.update({
+    where: { email },
+    data: { emailVerified: true, verifyEmailToken: null, verifyEmailTokenExpiry: null },
+  });
   return res.body.accessToken as string;
 }
 
@@ -22,7 +27,10 @@ export async function registerAndPromoteAdmin(
   password = 'adminpass123',
 ) {
   await request(app).post('/api/auth/register').send({ email, username, password });
-  await prisma.user.update({ where: { email }, data: { role: 'ADMIN' } });
+  await prisma.user.update({
+    where: { email },
+    data: { role: 'ADMIN', emailVerified: true, verifyEmailToken: null, verifyEmailTokenExpiry: null },
+  });
   const res = await request(app).post('/api/auth/login').send({ email, password });
   return res.body.accessToken as string;
 }
@@ -33,7 +41,10 @@ export async function registerAndPromoteHelper(
   password = 'helperpass123',
 ) {
   await request(app).post('/api/auth/register').send({ email, username, password });
-  await prisma.user.update({ where: { email }, data: { role: 'HELPER' } });
+  await prisma.user.update({
+    where: { email },
+    data: { role: 'HELPER', emailVerified: true, verifyEmailToken: null, verifyEmailTokenExpiry: null },
+  });
   const res = await request(app).post('/api/auth/login').send({ email, password });
   return res.body.accessToken as string;
 }

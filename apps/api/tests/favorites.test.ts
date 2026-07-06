@@ -22,8 +22,27 @@ beforeAll(async () => {
 
 afterAll(async () => {
   await prisma.monster.deleteMany({ where: { name: 'Favorites Test Monster' } });
-  await prisma.user.deleteMany({ where: { email: { in: ['favuser@example.com', 'favadmin@example.com'] } } });
+  await prisma.user.deleteMany({ where: { email: { in: ['favuser@example.com', 'favadmin@example.com', 'unverified@example.com'] } } });
   await prisma.$disconnect();
+});
+
+describe('POST /api/users/me/favorites/:monsterId — email verification gate', () => {
+  it('returns 403 EMAIL_NOT_VERIFIED for unverified user', async () => {
+    // Register without auto-verifying
+    const regRes = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'unverified@example.com', username: 'unverified', password: 'password123' });
+    const unverifiedToken = regRes.body.accessToken;
+
+    const res = await request(app)
+      .post(`/api/users/me/favorites/${monsterId}`)
+      .set('Authorization', `Bearer ${unverifiedToken}`);
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('EMAIL_NOT_VERIFIED');
+
+    // Cleanup
+    await prisma.user.deleteMany({ where: { email: 'unverified@example.com' } });
+  });
 });
 
 describe('POST /api/users/me/favorites/:monsterId', () => {
