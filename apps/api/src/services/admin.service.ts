@@ -3,7 +3,7 @@ import { AppError } from '../lib/errors';
 
 type Role = 'USER' | 'HELPER' | 'ADMIN' | 'MASTER';
 
-const USER_SELECT = {
+const USER_SELECT_ADMIN = {
   id: true,
   email: true,
   username: true,
@@ -15,18 +15,33 @@ const USER_SELECT = {
   createdAt: true,
 } as const;
 
+const USER_SELECT_HELPER = {
+  id: true,
+  username: true,
+  role: true,
+  banned: true,
+  bannedReason: true,
+  bannedAt: true,
+  bannedUntil: true,
+  createdAt: true,
+} as const;
+
+const USER_SELECT = USER_SELECT_ADMIN;
+
 const ADMIN_MANAGEABLE_ROLES: Role[] = ['USER', 'HELPER'];
 
-export async function listUsers(search?: string) {
+export async function listUsers(search?: string, requesterRole: Role = 'ADMIN') {
+  const canSeeEmail = requesterRole === 'ADMIN' || requesterRole === 'MASTER';
+  const select = canSeeEmail ? USER_SELECT_ADMIN : USER_SELECT_HELPER;
   const where = search
     ? {
         OR: [
-          { email: { contains: search, mode: 'insensitive' as const } },
+          ...(canSeeEmail ? [{ email: { contains: search, mode: 'insensitive' as const } }] : []),
           { username: { contains: search, mode: 'insensitive' as const } },
         ],
       }
     : undefined;
-  return prisma.user.findMany({ where, select: USER_SELECT, orderBy: { createdAt: 'desc' } });
+  return prisma.user.findMany({ where, select, orderBy: { createdAt: 'desc' } });
 }
 
 export async function setRole(

@@ -32,7 +32,7 @@ router.get(
   searchLimiter,
   wrap(async (req, res) => {
     const search = typeof req.query.search === 'string' ? req.query.search : undefined;
-    const users = await adminService.listUsers(search);
+    const users = await adminService.listUsers(search, req.user!.role);
     res.json({ users });
   }),
 );

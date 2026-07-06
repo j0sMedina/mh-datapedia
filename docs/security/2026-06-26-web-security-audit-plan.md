@@ -137,17 +137,17 @@ token = f"{header}.{payload}."
 
 ---
 
-### 2.3 HELPER reads full user list (email exposure)
+### 2.3 HELPER reads user list (no email exposure)
 
-**What we're testing:** `GET /api/admin/users` requires only HELPER role. HELPERs can see every user's email, role, and ban status.
+**What we're testing:** `GET /api/admin/users` requires only HELPER role. HELPERs must NOT receive email addresses — only usernames, role, and ban status.
 
 **Attack:**
 1. Log in as a HELPER account.
 2. Call GET /api/admin/users — list all users.
 
-**What to record:** What fields are returned? Does it include email addresses? How many users are listed?
+**What to record:** What fields are returned? Must NOT include `email`. Only ADMIN and MASTER responses include email.
 
-**Why it matters:** This is intentional by design, but it must be documented. If a HELPER account is compromised, the attacker gets the full user directory including emails. Evaluate whether HELPERs need emails or only usernames.
+**Why it matters:** Emails are sensitive PII. HELPERs have read access for moderation (username, role, ban status) but no business reason to see contact addresses. Fixed in `admin.service.ts` — `listUsers` now uses a role-aware select.
 
 ---
 
@@ -395,6 +395,6 @@ These are not bugs — they are intentional design trade-offs. Record them so th
 | Risk | Why it exists | Mitigation |
 |------|---------------|------------|
 | Access token valid 15 min after ban/demotion | JWTs are stateless; invalidating requires a denylist | Short expiry (15 min) limits the window |
-| HELPER can read all user emails | HELPERs need the user list to moderate | Evaluate if email should be excluded from HELPER view |
+| ~~HELPER can read all user emails~~ | Fixed — `listUsers` now strips email for HELPER role | — |
 | Swagger UI public | Developer convenience | Remove in production or add auth gate |
 | Rate limiter in-memory | No Redis dependency | Acceptable for single-instance deploy; re-evaluate at scale |
