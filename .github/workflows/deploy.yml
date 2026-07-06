@@ -84,8 +84,8 @@ jobs:
           printf 'NODE_ENV=test\n' >> apps/api/.env.test
           printf 'PORT=3002\n' >> apps/api/.env.test
           printf 'CORS_ORIGIN=http://localhost:5173\n' >> apps/api/.env.test
-          printf 'GMAIL_USER=\n' >> apps/api/.env.test
-          printf 'GMAIL_APP_PASSWORD=\n' >> apps/api/.env.test
+          printf 'SMTP_USER=\n' >> apps/api/.env.test
+          printf 'SMTP_PASSWORD=\n' >> apps/api/.env.test
 
       - name: Typecheck
         run: pnpm typecheck

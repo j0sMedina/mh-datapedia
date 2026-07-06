@@ -7,12 +7,12 @@ let _transporter: nodemailer.Transporter | null = null;
 function getTransporter() {
   if (!_transporter) {
     _transporter = nodemailer.createTransport({
-      host: 'smtp.gmail.com',
+      host: 'smtp-relay.brevo.com',
       port: 587,
       secure: false,
       auth: {
-        user: env.GMAIL_USER,
-        pass: env.GMAIL_APP_PASSWORD,
+        user: env.SMTP_USER,
+        pass: env.SMTP_PASSWORD,
       },
     });
   }
@@ -23,7 +23,7 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
   if (isTest) return;
   const link = `https://mh-datapedia-web.fly.dev/verify-email?token=${token}`;
   await getTransporter().sendMail({
-    from: `"MH Datapedia" <${env.GMAIL_USER}>`,
+    from: `"MH Datapedia" <${env.SMTP_USER}>`,
     to,
     subject: 'Verify your MH Datapedia account',
     html: `
@@ -41,7 +41,7 @@ export async function sendPasswordResetEmail(to: string, token: string): Promise
   if (isTest) return;
   const link = `https://mh-datapedia-web.fly.dev/reset-password?token=${token}`;
   await getTransporter().sendMail({
-    from: `"MH Datapedia" <${env.GMAIL_USER}>`,
+    from: `"MH Datapedia" <${env.SMTP_USER}>`,
     to,
     subject: 'Reset your MH Datapedia password',
     html: `
