@@ -42,16 +42,18 @@ export function VerificationBanner({ onResent }: Props) {
             : 'Verify your email to unlock all features.'}
         </span>
       </div>
-      {!sent && (
-        <button
-          onClick={handleResend}
-          disabled={sending}
-          className="shrink-0 bg-amber-900 text-amber-100 hover:bg-amber-800 px-3 py-1 rounded text-xs font-semibold disabled:opacity-50 transition-colors"
-        >
-          {sending ? 'Sending…' : 'Resend email'}
-        </button>
-      )}
-      {error && <span className="text-red-800 shrink-0 text-xs">{error}</span>}
+      <div className="flex items-center gap-3 shrink-0">
+        {error && <span className="text-red-800 text-xs">{error}</span>}
+        {!sent && (
+          <button
+            onClick={handleResend}
+            disabled={sending}
+            className="bg-amber-900 text-amber-100 hover:bg-amber-800 px-3 py-1 rounded text-xs font-semibold disabled:opacity-50 transition-colors"
+          >
+            {sending ? 'Sending…' : 'Resend email'}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
