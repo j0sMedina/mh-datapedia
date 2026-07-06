@@ -31,22 +31,27 @@ export function VerificationBanner({ onResent }: Props) {
   }
 
   return (
-    <div className="bg-amber-900/60 border-b border-amber-700 px-4 py-2 flex items-center justify-between gap-4 text-sm">
-      <span className="text-amber-200">
-        {sent
-          ? 'Verification email sent — check your inbox.'
-          : 'Please verify your email to unlock all features. Check your inbox for a link from onboarding@resend.dev.'}
-      </span>
+    <div className="bg-amber-500 px-4 py-2 flex items-center justify-between gap-4 text-sm">
+      <div className="flex items-center gap-3">
+        <span className="bg-amber-900 text-amber-100 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wide shrink-0">
+          Unverified
+        </span>
+        <span className="text-amber-950 font-medium">
+          {sent
+            ? 'Verification email sent — check your inbox.'
+            : 'Verify your email to unlock all features.'}
+        </span>
+      </div>
       {!sent && (
         <button
           onClick={handleResend}
           disabled={sending}
-          className="shrink-0 text-amber-100 underline hover:text-white disabled:opacity-50"
+          className="shrink-0 bg-amber-900 text-amber-100 hover:bg-amber-800 px-3 py-1 rounded text-xs font-semibold disabled:opacity-50 transition-colors"
         >
           {sending ? 'Sending…' : 'Resend email'}
         </button>
       )}
-      {error && <span className="text-red-400 shrink-0">{error}</span>}
+      {error && <span className="text-red-800 shrink-0 text-xs">{error}</span>}
     </div>
   );
 }
