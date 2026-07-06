@@ -21,6 +21,8 @@ model User {
   emailVerified          Boolean   @default(false)
   verifyEmailToken       String?   @unique
   verifyEmailTokenExpiry DateTime?
+  resetPasswordToken       String?   @unique
+  resetPasswordTokenExpiry DateTime?
   favorites     Monster[]      @relation("UserFavorites")
   strategies    Strategy[]
   refreshTokens RefreshToken[]
