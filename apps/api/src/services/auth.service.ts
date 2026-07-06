@@ -219,7 +219,7 @@ export async function verifyEmail(token: string) {
 
   if (!user) throw new AppError(400, 'Invalid or expired token', 'INVALID_TOKEN');
   if (user.emailVerified) throw new AppError(400, 'Email already verified', 'ALREADY_VERIFIED');
-  if (user.verifyEmailTokenExpiry && user.verifyEmailTokenExpiry < new Date()) {
+  if (!user.verifyEmailTokenExpiry || user.verifyEmailTokenExpiry < new Date()) {
     throw new AppError(400, 'Invalid or expired token', 'INVALID_TOKEN');
   }
 

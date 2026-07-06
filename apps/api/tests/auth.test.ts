@@ -121,14 +121,39 @@ describe('GET /api/auth/verify-email', () => {
     expect(updated?.verifyEmailToken).toBeNull();
   });
 
-  it('returns 400 ALREADY_VERIFIED if used twice', async () => {
+  it('returns 400 ALREADY_VERIFIED when token exists but user is already verified', async () => {
+    // Get the token that was set during registration in the previous test
     const dbUser = await prisma.user.findUnique({
       where: { email: 'verify@example.com' },
-      select: { emailVerified: true },
+      select: { verifyEmailToken: true, emailVerified: true },
     });
-    // Already verified from previous test — token is null, so lookup fails
-    const res = await request(app).get('/api/auth/verify-email?token=someoldtoken');
+
+    // If already verified (from previous test), create a new unverified user for this test
+    const testEmail = 'alreadyverified@example.com';
+    await request(app)
+      .post('/api/auth/register')
+      .send({ email: testEmail, username: 'alreadyverifieduser', password: 'password123' });
+
+    const freshUser = await prisma.user.findUnique({
+      where: { email: testEmail },
+      select: { verifyEmailToken: true },
+    });
+    expect(freshUser?.verifyEmailToken).toBeTruthy();
+    const token = freshUser!.verifyEmailToken!;
+
+    // Manually set emailVerified=true but KEEP the token (simulates concurrent request race)
+    await prisma.user.update({
+      where: { email: testEmail },
+      data: { emailVerified: true },
+    });
+
+    // Now call verify-email — should get ALREADY_VERIFIED because token exists and emailVerified=true
+    const res = await request(app).get(`/api/auth/verify-email?token=${token}`);
     expect(res.status).toBe(400);
+    expect(res.body.code).toBe('ALREADY_VERIFIED');
+
+    // Cleanup
+    await prisma.user.deleteMany({ where: { email: testEmail } });
   });
 });
 
