@@ -5,6 +5,7 @@ export const UserSchema = z.object({
     email: z.string().email(),
     username: z.string(),
     role: RoleSchema,
+    emailVerified: z.boolean(),
     createdAt: z.string(),
 });
 export const AuthTokensSchema = z.object({
@@ -19,5 +20,10 @@ export const RegisterSchema = z.object({
 export const LoginSchema = z.object({
     email: z.string().email(),
     password: z.string(),
+});
+export const ForgotPasswordSchema = z.object({ email: z.string().email() });
+export const ResetPasswordSchema = z.object({
+    token: z.string().min(1),
+    password: z.string().min(8),
 });
 //# sourceMappingURL=auth.schema.js.map

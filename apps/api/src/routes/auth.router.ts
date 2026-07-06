@@ -1,9 +1,9 @@
 import { Router, Request, Response, NextFunction, IRouter } from 'express';
-import { authLimiter, resendLimiter } from '../middleware/rateLimiter';
+import { authLimiter, resendLimiter, forgotPasswordLimiter } from '../middleware/rateLimiter';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
 import { AppError } from '../lib/errors';
-import { RegisterSchema, LoginSchema } from '@mh-datapedia/shared';
+import { RegisterSchema, LoginSchema, ForgotPasswordSchema, ResetPasswordSchema } from '@mh-datapedia/shared';
 import * as authService from '../services/auth.service';
 
 const router: IRouter = Router();
@@ -95,6 +95,33 @@ router.post(
     try {
       await authService.resendVerification(req.user!.id);
       res.json({ message: 'Verification email sent' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  '/forgot-password',
+  forgotPasswordLimiter,
+  validate(ForgotPasswordSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await authService.forgotPassword(req.body.email);
+      res.json({ message: 'If that email exists, a reset link has been sent.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  '/reset-password',
+  validate(ResetPasswordSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await authService.resetPassword(req.body.token, req.body.password);
+      res.json({ message: 'Password reset successfully.' });
     } catch (err) {
       next(err);
     }

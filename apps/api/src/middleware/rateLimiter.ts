@@ -56,3 +56,12 @@ export const resendLimiter = rateLimit({
   message: { error: 'Too many resend requests', code: 'RATE_LIMITED' },
   skip: () => isTest,
 });
+
+export const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests', code: 'RATE_LIMITED' },
+  skip: () => isTest,
+});

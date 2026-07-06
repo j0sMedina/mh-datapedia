@@ -4,6 +4,7 @@ export declare const UserSchema: z.ZodObject<{
     email: z.ZodString;
     username: z.ZodString;
     role: z.ZodEnum<["USER", "HELPER", "ADMIN", "MASTER"]>;
+    emailVerified: z.ZodBoolean;
     createdAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     id: string;
@@ -11,12 +12,14 @@ export declare const UserSchema: z.ZodObject<{
     email: string;
     username: string;
     role: "USER" | "HELPER" | "ADMIN" | "MASTER";
+    emailVerified: boolean;
 }, {
     id: string;
     createdAt: string;
     email: string;
     username: string;
     role: "USER" | "HELPER" | "ADMIN" | "MASTER";
+    emailVerified: boolean;
 }>;
 export type User = z.infer<typeof UserSchema>;
 export declare const AuthTokensSchema: z.ZodObject<{
@@ -55,4 +58,23 @@ export declare const LoginSchema: z.ZodObject<{
     password: string;
 }>;
 export type Login = z.infer<typeof LoginSchema>;
+export declare const ForgotPasswordSchema: z.ZodObject<{
+    email: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    email: string;
+}, {
+    email: string;
+}>;
+export declare const ResetPasswordSchema: z.ZodObject<{
+    token: z.ZodString;
+    password: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    password: string;
+    token: string;
+}, {
+    password: string;
+    token: string;
+}>;
+export type ForgotPassword = z.infer<typeof ForgotPasswordSchema>;
+export type ResetPassword = z.infer<typeof ResetPasswordSchema>;
 //# sourceMappingURL=auth.schema.d.ts.map

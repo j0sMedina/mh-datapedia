@@ -29,3 +29,11 @@ export const LoginSchema = z.object({
   password: z.string(),
 });
 export type Login = z.infer<typeof LoginSchema>;
+
+export const ForgotPasswordSchema = z.object({ email: z.string().email() });
+export const ResetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8),
+});
+export type ForgotPassword = z.infer<typeof ForgotPasswordSchema>;
+export type ResetPassword = z.infer<typeof ResetPasswordSchema>;

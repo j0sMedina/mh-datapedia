@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { env } from '../config/env';
 import { AppError } from '../lib/errors';
-import { sendVerificationEmail } from './email.service';
+import { sendVerificationEmail, sendPasswordResetEmail } from './email.service';
 import type { Register, Login } from '@mh-datapedia/shared';
 
 const SALT_ROUNDS = 12;
@@ -13,6 +13,7 @@ const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const LOCKOUT_WINDOW_MS = 15 * 60 * 1000;
 const MAX_LOGIN_ATTEMPTS = 5;
 const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 type Role = 'USER' | 'HELPER' | 'ADMIN' | 'MASTER';
 
@@ -251,4 +252,45 @@ export async function resendVerification(userId: string) {
   });
 
   await sendVerificationEmail(user.email, verifyEmailToken);
+}
+
+export async function forgotPassword(email: string): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { email }, select: { id: true } });
+  if (!user) return;
+
+  const resetPasswordToken = randomBytes(32).toString('hex');
+  const resetPasswordTokenExpiry = new Date(Date.now() + RESET_TOKEN_TTL_MS);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { resetPasswordToken, resetPasswordTokenExpiry },
+  });
+
+  try {
+    await sendPasswordResetEmail(email, resetPasswordToken);
+  } catch (err) {
+    console.error('[forgotPassword] Failed to send reset email:', err);
+  }
+}
+
+export async function resetPassword(token: string, password: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { resetPasswordToken: token },
+    select: { id: true, resetPasswordTokenExpiry: true },
+  });
+
+  if (!user) throw new AppError(400, 'Invalid or expired reset link', 'INVALID_TOKEN');
+  if (!user.resetPasswordTokenExpiry || user.resetPasswordTokenExpiry < new Date()) {
+    throw new AppError(400, 'Invalid or expired reset link', 'INVALID_TOKEN');
+  }
+
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+
+  await prisma.$transaction([
+    prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, resetPasswordToken: null, resetPasswordTokenExpiry: null },
+    }),
+    prisma.refreshToken.deleteMany({ where: { userId: user.id } }),
+  ]);
 }

@@ -11,6 +11,7 @@ afterAll(async () => {
   await prisma.refreshToken.deleteMany();
   await prisma.user.deleteMany({ where: { email: { contains: 'authtest' } } });
   await prisma.user.deleteMany({ where: { email: 'verify@example.com' } });
+  await prisma.user.deleteMany({ where: { email: 'reset@example.com' } });
   await prisma.$disconnect();
 });
 
@@ -175,5 +176,144 @@ describe('POST /api/auth/resend-verification', () => {
       .set('Authorization', `Bearer ${token}`);
     expect(res.status).toBe(400);
     expect(res.body.code).toBe('ALREADY_VERIFIED');
+  });
+});
+
+describe('POST /api/auth/forgot-password + POST /api/auth/reset-password', () => {
+  const resetEmail = 'reset@example.com';
+  const resetUsername = 'resetuser';
+  const originalPassword = 'original123';
+  const newPassword = 'newpassword456';
+
+  beforeAll(async () => {
+    await request(app)
+      .post('/api/auth/register')
+      .send({ email: resetEmail, username: resetUsername, password: originalPassword });
+    await prisma.user.update({
+      where: { email: resetEmail },
+      data: { emailVerified: true, verifyEmailToken: null, verifyEmailTokenExpiry: null },
+    });
+  });
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { email: resetEmail } });
+  });
+
+  it('forgot-password returns 200 for registered email', async () => {
+    const res = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: resetEmail });
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('If that email exists');
+  });
+
+  it('forgot-password returns 200 for unknown email', async () => {
+    const res = await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: 'nobody@example.com' });
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('If that email exists');
+  });
+
+  it('forgot-password generates a token in the database', async () => {
+    await request(app)
+      .post('/api/auth/forgot-password')
+      .send({ email: resetEmail });
+    const user = await prisma.user.findUnique({
+      where: { email: resetEmail },
+      select: { resetPasswordToken: true, resetPasswordTokenExpiry: true },
+    });
+    expect(user?.resetPasswordToken).not.toBeNull();
+    expect(user?.resetPasswordTokenExpiry).not.toBeNull();
+  });
+
+  it('reset-password with valid token changes password and revokes sessions', async () => {
+    // Get a fresh token
+    await request(app).post('/api/auth/forgot-password').send({ email: resetEmail });
+    const user = await prisma.user.findUnique({
+      where: { email: resetEmail },
+      select: { resetPasswordToken: true },
+    });
+    const token = user!.resetPasswordToken!;
+
+    // Create a session to verify it gets revoked
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: resetEmail, password: originalPassword });
+    expect(loginRes.status).toBe(200);
+
+    const res = await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token, password: newPassword });
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('Password reset successfully');
+
+    // Can now log in with new password
+    const newLoginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: resetEmail, password: newPassword });
+    expect(newLoginRes.status).toBe(200);
+
+    // Old password no longer works
+    const oldLoginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: resetEmail, password: originalPassword });
+    expect(oldLoginRes.status).toBe(401);
+
+    // Sessions were revoked — verify no refresh tokens remain
+    const tokens = await prisma.refreshToken.findMany({
+      where: { user: { email: resetEmail } },
+    });
+    expect(tokens).toHaveLength(0);
+  });
+
+  it('reset-password with invalid token returns 400 INVALID_TOKEN', async () => {
+    const res = await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token: 'notarealtoken', password: newPassword });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_TOKEN');
+  });
+
+  it('reset-password with expired token returns 400 INVALID_TOKEN', async () => {
+    // Generate a token then manually set its expiry to the past
+    await request(app).post('/api/auth/forgot-password').send({ email: resetEmail });
+    const user = await prisma.user.findUnique({
+      where: { email: resetEmail },
+      select: { resetPasswordToken: true },
+    });
+    const token = user!.resetPasswordToken!;
+    await prisma.user.update({
+      where: { email: resetEmail },
+      data: { resetPasswordTokenExpiry: new Date(Date.now() - 1000) },
+    });
+
+    const res = await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token, password: newPassword });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_TOKEN');
+  });
+
+  it('reset-password token can only be used once', async () => {
+    await request(app).post('/api/auth/forgot-password').send({ email: resetEmail });
+    const user = await prisma.user.findUnique({
+      where: { email: resetEmail },
+      select: { resetPasswordToken: true },
+    });
+    const token = user!.resetPasswordToken!;
+
+    // First use
+    const first = await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token, password: 'yetanother789' });
+    expect(first.status).toBe(200);
+
+    // Second use — token is already cleared
+    const second = await request(app)
+      .post('/api/auth/reset-password')
+      .send({ token, password: 'yetanother789' });
+    expect(second.status).toBe(400);
+    expect(second.body.code).toBe('INVALID_TOKEN');
   });
 });
