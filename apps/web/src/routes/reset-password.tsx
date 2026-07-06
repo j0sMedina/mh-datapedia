@@ -16,10 +16,11 @@ function ResetPasswordPage() {
   const [confirm, setConfirm] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState('');
+  const [errorCode, setErrorCode] = useState('');
 
   useEffect(() => {
     if (status === 'success') {
-      const t = setTimeout(() => navigate({ to: '/' }), 3000);
+      const t = setTimeout(() => navigate({ to: '/login' }), 3000);
       return () => clearTimeout(t);
     }
   }, [status, navigate]);
@@ -51,13 +52,13 @@ function ResetPasswordPage() {
       setStatus('success');
       setMessage('Password reset — redirecting to home in 3 seconds.');
     } catch (err) {
-      setStatus('error');
-      const code = (err instanceof ApiError ? (err.body as { code?: string })?.code : undefined);
-      if (code === 'INVALID_TOKEN') {
+      if (err instanceof ApiError && (err.body as { code?: string })?.code === 'INVALID_TOKEN') {
         setMessage('This link has expired or has already been used.');
+        setErrorCode('INVALID_TOKEN');
       } else {
         setMessage('Something went wrong. Please try again.');
       }
+      setStatus('error');
     }
   }
 
@@ -105,7 +106,7 @@ function ResetPasswordPage() {
             {status === 'error' && (
               <>
                 <p className="text-red-400 text-sm">{message}</p>
-                {(message === 'This link has expired or has already been used.') && (
+                {errorCode === 'INVALID_TOKEN' && (
                   <div className="text-center">
                     <Link to="/forgot-password" className="text-teal-500 hover:text-teal-400 text-sm">
                       Request a new link

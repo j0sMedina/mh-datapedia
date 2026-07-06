@@ -117,6 +117,7 @@ router.post(
 
 router.post(
   '/reset-password',
+  forgotPasswordLimiter,
   validate(ResetPasswordSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
