@@ -1,53 +1,43 @@
-# Fix Report: StrategyFormSheet Import & FAB Float
+# Final Fix Report — Email Verification Feature
 
-**Date:** 2026-06-23
-**Status:** Complete — TypeScript clean (0 errors)
+Date: 2026-07-05
 
----
+## Fix 1: Auth state refresh after email verification (web)
 
-## Fix 1: Named Import for StrategyFormSheet
+**Problem:** After a successful `GET /api/auth/verify-email`, the in-memory `user.emailVerified` remained `false`, so the verification banner persisted on navigation home.
 
-**File:** `apps/mobile/src/components/detail/StrategiesTab.tsx`
+**Solution:** Added a `fetchUser` function to `AuthContext.tsx` that calls `GET /api/auth/me` and updates the `user` state in memory. Exposed it on the `AuthState` interface and context value, then called it from `verify-email.tsx` after the success branch.
 
-**Problem:** `StrategyFormSheet` uses `export const StrategyFormSheet = forwardRef(...)` — a named export only, no default export. The previous `import StrategyFormSheet from './StrategyFormSheet'` was a default import, causing a TypeScript compile error and runtime crash (the import resolves to `undefined`).
+**Changes:**
 
-**Change:** Removed the incorrect default import entirely. `StrategyFormSheet` is no longer used in `StrategiesTab.tsx` after Fix 2 — it was moved to `[id].tsx` where it is imported correctly as `import { StrategyFormSheet } from '../../src/components/detail/StrategyFormSheet'`.
+- `apps/web/src/context/AuthContext.tsx`
+  - Added `fetchUser: () => Promise<void>` to the `AuthState` interface
+  - Added `fetchUser` implementation using `useCallback` — calls `GET /api/auth/me`, updates `user` state, silently ignores errors
+  - Exposed `fetchUser` in the `AuthContext.Provider` value
 
----
+- `apps/web/src/routes/verify-email.tsx`
+  - Added import: `import { useAuth } from '../context/AuthContext';`
+  - Destructured `fetchUser` from `useAuth()` in `VerifyEmailPage`
+  - Changed `.then()` to `async`, added `await fetchUser().catch(() => {})` after `setStatus('success')` — verification succeeds even if the refresh errors
 
-## Fix 2: FAB Moved Outside ScrollView
+## Fix 2: Wrap sendVerificationEmail in try-catch in register()
 
-**Files changed:**
-- `apps/mobile/src/components/detail/StrategiesTab.tsx` (removed FAB + sheet)
-- `apps/mobile/app/monsters/[id].tsx` (added FAB + sheet outside ScrollView)
+**Problem:** If Resend failed during registration, the user row was committed but the response was a 500. The user couldn't re-register (duplicate email) and didn't know to log in.
 
-**Problem:** The FAB `Pressable` was rendered inside `StrategiesTab`, which itself was rendered as a child of `[id].tsx`'s `ScrollView`. A `position: absolute` element inside `ScrollView` content does not float above the screen — it scrolls with the content. The FAB was therefore not fixed/floating as intended.
+**Change:** `apps/api/src/services/auth.service.ts` — wrapped the `sendVerificationEmail(data.email, verifyEmailToken)` call in a try-catch that logs the error and allows the function to return success normally.
 
-**Root cause:** `ScrollView` in React Native establishes its own layout context; absolute children are positioned relative to the scroll content, not the viewport.
-
-**Fix:**
-1. Removed from `StrategiesTab.tsx`: FAB `Pressable`, `StrategyFormSheet` render, `useRef`, `BottomSheetModal`, `StrategyFormSheet` import, `useAuth` import, `Pressable` from react-native imports, and `monsterId` from the component's prop interface (it was only passed to `StrategyFormSheet`).
-2. Added to `[id].tsx` (outside `</ScrollView>`, inside the outer `<View style={{ flex: 1 }}`):
-   - `useRef` added to React import
-   - `BottomSheetModal` imported from `@gorhom/bottom-sheet`
-   - `StrategyFormSheet` imported as named export
-   - `const sheetRef = useRef<BottomSheetModal>(null)` declared in component
-   - FAB rendered after `</ScrollView>`, conditionally on `activeTab === 4 && user`
-   - `<StrategyFormSheet ref={sheetRef} monsterId={id} />` rendered unconditionally after FAB (so the ref persists across tab switches)
-
-The outer container in `[id].tsx` was already `<View style={{ flex: 1, backgroundColor: '#0c0a09' }}>`, so absolute positioning works correctly relative to the full screen.
-
----
-
-## TypeScript Result
-
-```
-npx tsc --noEmit  →  0 errors (no output)
+```typescript
+try {
+  await sendVerificationEmail(data.email, verifyEmailToken);
+} catch (err) {
+  console.error('[register] Failed to send verification email:', err);
+  // User was created — they can log in and request a new verification email
+}
 ```
 
----
+## TypeScript Results
 
-## Files Changed
-
-- `apps/mobile/src/components/detail/StrategiesTab.tsx`
-- `apps/mobile/app/monsters/[id].tsx`
+| Package               | Result    |
+|-----------------------|-----------|
+| `@mh-datapedia/api`   | 0 errors  |
+| `@mh-datapedia/web`   | 0 errors  |

@@ -10,6 +10,7 @@ export interface AuthState {
   isLoading: boolean;
   bannedDetails: BanDetails | null;
   clearBannedDetails: () => void;
+  fetchUser: () => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -43,6 +44,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setAccessToken(accessToken);
   }, [accessToken]);
+
+  const fetchUser = useCallback(async (): Promise<void> => {
+    try {
+      const me = await apiGet<{ user: User }>('/api/auth/me');
+      setUser(me.user);
+    } catch {
+      // silently fail — caller handles errors as needed
+    }
+  }, []);
 
   const silentRefresh = useCallback(async (): Promise<string | null> => {
     try {
@@ -117,7 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, accessToken, isLoading, bannedDetails, clearBannedDetails, login, register, logout }}
+      value={{ user, accessToken, isLoading, bannedDetails, clearBannedDetails, fetchUser, login, register, logout }}
     >
       {children}
       {bannedDetails && (

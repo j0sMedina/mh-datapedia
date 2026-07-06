@@ -62,7 +62,12 @@ export async function register(data: Register) {
     select: USER_SELECT,
   });
 
-  await sendVerificationEmail(data.email, verifyEmailToken);
+  try {
+    await sendVerificationEmail(data.email, verifyEmailToken);
+  } catch (err) {
+    console.error('[register] Failed to send verification email:', err);
+    // User was created — they can log in and request a new verification email
+  }
 
   const accessToken = signAccessToken(user.id, user.role);
   const refreshToken = await createRefreshToken(user.id);

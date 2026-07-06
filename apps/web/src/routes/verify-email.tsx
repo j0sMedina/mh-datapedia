@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { apiGet } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 
 export const Route = createFileRoute('/verify-email')({
   component: VerifyEmailPage,
@@ -11,6 +12,7 @@ type Status = 'loading' | 'success' | 'error';
 
 function VerifyEmailPage() {
   const { token } = Route.useSearch();
+  const { fetchUser } = useAuth();
   const [status, setStatus] = useState<Status>('loading');
   const [message, setMessage] = useState('');
 
@@ -22,9 +24,10 @@ function VerifyEmailPage() {
     }
 
     apiGet(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
-      .then(() => {
+      .then(async () => {
         setStatus('success');
         setMessage('Email verified! You can now submit strategies and add favorites.');
+        await fetchUser().catch(() => {}); // refresh in-memory auth state; don't fail verification if this errors
       })
       .catch((err: unknown) => {
         setStatus('error');
