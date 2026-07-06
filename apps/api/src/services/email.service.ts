@@ -13,7 +13,7 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
 
   const link = `https://mh-datapedia-web.fly.dev/verify-email?token=${token}`;
 
-  await getResend().emails.send({
+  const { error } = await getResend().emails.send({
     from: 'onboarding@resend.dev',
     to,
     subject: 'Verify your MH Datapedia account',
@@ -26,4 +26,6 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
       </div>
     `,
   });
+
+  if (error) throw new Error(`Resend error: ${error.message}`);
 }
