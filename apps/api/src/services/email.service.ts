@@ -1,20 +1,29 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { env } from '../config/env';
 
 const isTest = env.NODE_ENV === 'test';
-let _resend: Resend | null = null;
-function getResend() {
-  if (!_resend) _resend = new Resend(env.RESEND_API_KEY);
-  return _resend;
+let _transporter: nodemailer.Transporter | null = null;
+
+function getTransporter() {
+  if (!_transporter) {
+    _transporter = nodemailer.createTransport({
+      host: 'smtp.gmail.com',
+      port: 587,
+      secure: false,
+      auth: {
+        user: env.GMAIL_USER,
+        pass: env.GMAIL_APP_PASSWORD,
+      },
+    });
+  }
+  return _transporter;
 }
 
 export async function sendVerificationEmail(to: string, token: string): Promise<void> {
   if (isTest) return;
-
   const link = `https://mh-datapedia-web.fly.dev/verify-email?token=${token}`;
-
-  const { error } = await getResend().emails.send({
-    from: 'onboarding@resend.dev',
+  await getTransporter().sendMail({
+    from: `"MH Datapedia" <${env.GMAIL_USER}>`,
     to,
     subject: 'Verify your MH Datapedia account',
     html: `
@@ -26,6 +35,22 @@ export async function sendVerificationEmail(to: string, token: string): Promise<
       </div>
     `,
   });
+}
 
-  if (error) throw new Error(`Resend error: ${error.message}`);
+export async function sendPasswordResetEmail(to: string, token: string): Promise<void> {
+  if (isTest) return;
+  const link = `https://mh-datapedia-web.fly.dev/reset-password?token=${token}`;
+  await getTransporter().sendMail({
+    from: `"MH Datapedia" <${env.GMAIL_USER}>`,
+    to,
+    subject: 'Reset your MH Datapedia password',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0c0a09;color:#fafaf9;border-radius:8px;">
+        <h1 style="color:#2f9e8f;font-size:20px;margin-bottom:16px;">MH Datapedia</h1>
+        <p style="margin-bottom:24px;">Click the button below to reset your password. This link expires in 1 hour.</p>
+        <a href="${link}" style="display:inline-block;background:#2f9e8f;color:#fafaf9;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Reset Password</a>
+        <p style="margin-top:24px;font-size:12px;color:#78716c;">If you didn't request this, ignore this email. Your password won't change.</p>
+      </div>
+    `,
+  });
 }
