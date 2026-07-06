@@ -17,7 +17,10 @@ model User {
   banned        Boolean        @default(false)
   bannedReason  String?
   bannedAt      DateTime?
-  bannedUntil   DateTime?
+  bannedUntil            DateTime?
+  emailVerified          Boolean   @default(false)
+  verifyEmailToken       String?   @unique
+  verifyEmailTokenExpiry DateTime?
   favorites     Monster[]      @relation("UserFavorites")
   strategies    Strategy[]
   refreshTokens RefreshToken[]
