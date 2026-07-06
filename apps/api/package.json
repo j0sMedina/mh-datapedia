@@ -28,7 +28,6 @@
     "jsonwebtoken": "^9.0.2",
     "nodemailer": "^9.0.3",
     "prisma": "^5.15.0",
-    "resend": "^6.17.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "winston": "^3.13.0",
