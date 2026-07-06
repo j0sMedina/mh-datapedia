@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as FavoritesRouteImport } from './routes/favorites'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MonstersIndexRouteImport } from './routes/monsters/index'
 import { Route as MonstersIdRouteImport } from './routes/monsters/$id'
 
+const VerifyEmailRoute = VerifyEmailRouteImport.update({
+  id: '/verify-email',
+  path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/monsters/$id': typeof MonstersIdRoute
   '/monsters/': typeof MonstersIndexRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/monsters/$id': typeof MonstersIdRoute
   '/monsters': typeof MonstersIndexRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/favorites': typeof FavoritesRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/verify-email': typeof VerifyEmailRoute
   '/monsters/$id': typeof MonstersIdRoute
   '/monsters/': typeof MonstersIndexRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/login'
     | '/register'
+    | '/verify-email'
     | '/monsters/$id'
     | '/monsters/'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/login'
     | '/register'
+    | '/verify-email'
     | '/monsters/$id'
     | '/monsters'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/favorites'
     | '/login'
     | '/register'
+    | '/verify-email'
     | '/monsters/$id'
     | '/monsters/'
   fileRoutesById: FileRoutesById
@@ -117,12 +129,20 @@ export interface RootRouteChildren {
   FavoritesRoute: typeof FavoritesRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  VerifyEmailRoute: typeof VerifyEmailRoute
   MonstersIdRoute: typeof MonstersIdRoute
   MonstersIndexRoute: typeof MonstersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/verify-email': {
+      id: '/verify-email'
+      path: '/verify-email'
+      fullPath: '/verify-email'
+      preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   FavoritesRoute: FavoritesRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  VerifyEmailRoute: VerifyEmailRoute,
   MonstersIdRoute: MonstersIdRoute,
   MonstersIndexRoute: MonstersIndexRoute,
 }
