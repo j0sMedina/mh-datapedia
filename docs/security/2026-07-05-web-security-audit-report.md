@@ -15,7 +15,7 @@
 | 1.2 | Token replay after logout | ⚠️ PARTIAL (known design) |
 | 1.3 | Refresh token reuse | ✅ HELD |
 | 1.4 | JWT alg:none | ✅ HELD |
-| 1.5 | CSRF on refresh | ⏭️ SKIPPED (browser required) |
+| 1.5 | CSRF on refresh | ✅ HELD |
 | 2.1 | Self-promotion | ✅ HELD |
 | 2.2 | IDOR — ADMIN demotes MASTER | ✅ HELD |
 | 2.3 | HELPER email exposure | ✅ FIXED (before audit) |
@@ -24,7 +24,7 @@
 | 3.1 | SQL injection via search | ✅ HELD |
 | 3.2 | ReDoS via search | ✅ HELD |
 | 3.3 | Mass assignment on register | ✅ HELD |
-| 3.4 | XSS via username | ⏭️ SKIPPED (browser required) |
+| 3.4 | XSS via username | ✅ HELD |
 | 4.1 | Security headers | ✅ HELD |
 | 4.2 | CORS origin | ✅ HELD |
 | 4.3 | Swagger UI public | ⚠️ PARTIAL (known accepted risk) |
@@ -33,7 +33,7 @@
 | 5.3 | Pagination clamp | ✅ HELD |
 | 6.1 | X-Forwarded-For spoofing | ✅ HELD |
 
-**Result: 14 HELD — 3 PARTIAL (all accepted design) — 2 SKIPPED (browser) — 1 PRE-FIXED**
+**Result: 16 HELD — 3 PARTIAL (all accepted design) — 1 PRE-FIXED — 0 BROKEN**
 
 ---
 
@@ -112,11 +112,21 @@ curl /api/auth/me -H "Authorization: Bearer $HEADER.$PAYLOAD."
 
 ### 1.5 — CSRF on cookie-based refresh
 
-**Status:** ⏭️ SKIPPED
+**Status:** ✅ HELD
 
-**Reason:** Requires a real browser to test `SameSite=strict` cookie behavior. Cannot be reproduced with curl (curl sends cookies regardless of same-site policy).
+**What was tried:** From the browser console on `https://mh-datapedia-web.fly.dev` (while logged in):
+```javascript
+fetch('https://mh-datapedia-api.fly.dev/api/auth/refresh', {
+  method: 'POST',
+  credentials: 'include'
+}).then(r => r.json()).then(console.log)
+```
 
-**Expected result:** `SameSite=strict` prevents the `refresh_token` cookie from being sent on cross-site form POSTs. The cookie is also `httpOnly`, so JavaScript on an attacker page cannot read it.
+**Server response:** Two independent blocks:
+1. `SameSite=strict` — cookie not sent cross-origin → server returned 401 (no refresh token)
+2. CORS — browser blocked reading the response (`Access-Control-Allow-Origin: localhost:5173` ≠ request origin)
+
+**Why it held:** `SameSite=strict` is the primary defense — the cookie is never attached to cross-origin requests regardless of CORS. The CORS block is a secondary layer (currently triggered by the `CORS_ORIGIN=localhost:5173` misconfiguration). If CORS_ORIGIN is corrected to the production web domain, block 2 changes behavior, but block 1 (SameSite) still holds independently.
 
 ---
 
@@ -248,11 +258,17 @@ curl -X POST /api/auth/register \
 
 ### 3.4 — XSS via username
 
-**Status:** ⏭️ SKIPPED
+**Status:** ✅ HELD
 
-**Reason:** Requires a real browser to verify whether the payload executes or is escaped. Cannot be confirmed with curl.
+**What was tried:**
+1. Registration form with username `<img src=x onerror=alert(1)>` → rejected by frontend validation ("invalid nick").
+2. Direct curl bypassing frontend: `{"username":"<img src=x onerror=alert(1)>"}` → server returned 422 `VALIDATION_ERROR`.
 
-**Expected result:** React escapes all JSX text content by default. Unless a component uses `dangerouslySetInnerHTML` (none were found in the codebase via grep), the payload `<img src=x onerror=alert(1)>` would render as plain text. Manual browser verification recommended.
+**Server response:** `{"fieldErrors":{"username":["Invalid"]}}`
+
+**Why it held:** Two independent layers:
+1. `RegisterSchema` enforces `username` regex `/^[a-zA-Z0-9_-]+$/` — `<`, `>`, spaces and all special characters are rejected server-side. The payload never reaches the database.
+2. Even if it bypassed validation, React escapes JSX text by default and no component uses `dangerouslySetInnerHTML`.
 
 ---
 
