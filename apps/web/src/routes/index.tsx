@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMonsters } from '../hooks/useMonsters';
 import { MonsterCard } from '../components/monsters/MonsterCard';
 
@@ -11,10 +11,20 @@ function HeroCTA({ children, onArrive }: { children: React.ReactNode; onArrive: 
   const [fx, setFx] = useState<{ x: number; y: number; r: number } | null>(null);
   const fired = useRef(false);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio('/questhornfx.mp3');
+    audio.volume = 0.4;
+    audio.preload = 'auto';
+    audioRef.current = audio;
+    return () => { audio.src = ''; };
+  }, []);
 
   const handle = () => {
     if (fired.current || !btnRef.current) return;
     fired.current = true;
+    audioRef.current?.play().catch(() => {});
     const rect = btnRef.current.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
