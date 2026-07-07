@@ -36,10 +36,16 @@ function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
-async function createRefreshToken(userId: string) {
+async function createRefreshToken(
+  userId: string,
+  userAgent?: string,
+  ipAddress?: string,
+): Promise<string> {
   const token = randomBytes(64).toString('hex');
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
-  await prisma.refreshToken.create({ data: { token, userId, expiresAt } });
+  await prisma.refreshToken.create({
+    data: { token, userId, expiresAt, userAgent, ipAddress },
+  });
   return token;
 }
 
@@ -47,7 +53,10 @@ function generateVerifyToken() {
   return randomBytes(32).toString('hex');
 }
 
-export async function register(data: Register) {
+export async function register(
+  data: Register,
+  meta?: { userAgent?: string; ipAddress?: string },
+) {
   const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
   const verifyEmailToken = generateVerifyToken();
   const verifyEmailTokenExpiry = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
@@ -71,11 +80,14 @@ export async function register(data: Register) {
   }
 
   const accessToken = signAccessToken(user.id, user.role);
-  const refreshToken = await createRefreshToken(user.id);
+  const refreshToken = await createRefreshToken(user.id, meta?.userAgent, meta?.ipAddress);
   return { user, accessToken, refreshToken, expiresIn: ACCESS_TOKEN_TTL_S };
 }
 
-export async function login(data: Login) {
+export async function login(
+  data: Login,
+  meta?: { userAgent?: string; ipAddress?: string },
+) {
   // Check lockout before anything else
   const windowStart = new Date(Date.now() - LOCKOUT_WINDOW_MS);
   const attemptCount = await prisma.loginAttempt.count({
@@ -125,7 +137,7 @@ export async function login(data: Login) {
   await prisma.loginAttempt.deleteMany({ where: { email: data.email } });
 
   const accessToken = signAccessToken(user.id, user.role);
-  const refreshToken = await createRefreshToken(user.id);
+  const refreshToken = await createRefreshToken(user.id, meta?.userAgent, meta?.ipAddress);
   return {
     user: {
       id: user.id,
@@ -197,7 +209,11 @@ export async function refresh(token: string) {
     }),
   ]);
 
-  const newRefreshToken = await createRefreshToken(stored.userId);
+  const newRefreshToken = await createRefreshToken(
+    stored.userId,
+    stored.userAgent ?? undefined,
+    stored.ipAddress ?? undefined,
+  );
   const accessToken = signAccessToken(stored.userId, currentUser.role);
   return { accessToken, refreshToken: newRefreshToken, expiresIn: ACCESS_TOKEN_TTL_S };
 }

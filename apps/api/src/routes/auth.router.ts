@@ -21,7 +21,10 @@ router.post(
   validate(RegisterSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { user, accessToken, refreshToken, expiresIn } = await authService.register(req.body);
+      const { user, accessToken, refreshToken, expiresIn } = await authService.register(req.body, {
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip,
+      });
       res.cookie(COOKIE, refreshToken, COOKIE_OPTS);
       res.status(201).json({ user, accessToken, expiresIn });
     } catch (err) {
@@ -36,7 +39,10 @@ router.post(
   validate(LoginSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { user, accessToken, refreshToken, expiresIn } = await authService.login(req.body);
+      const { user, accessToken, refreshToken, expiresIn } = await authService.login(req.body, {
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip,
+      });
       res.cookie(COOKIE, refreshToken, COOKIE_OPTS);
       res.json({ user, accessToken, expiresIn });
     } catch (err) {

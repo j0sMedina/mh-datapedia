@@ -63,6 +63,23 @@ describe('POST /api/auth/login', () => {
     expect(res.status).toBe(401);
     expect(res.body.code).toBe('INVALID_CREDENTIALS');
   });
+
+  it('Login captures userAgent and ipAddress on stored token', async () => {
+    const testUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36';
+    const res = await request(app)
+      .post('/api/auth/login')
+      .set('User-Agent', testUA)
+      .send({ email: 'login@example.com', password: 'password123' });
+    expect(res.status).toBe(200);
+
+    const user = await prisma.user.findUnique({ where: { email: 'login@example.com' } });
+    const stored = await prisma.refreshToken.findFirst({
+      where: { userId: user!.id },
+      orderBy: { createdAt: 'desc' },
+    });
+    expect(stored?.userAgent).toBe(testUA);
+    expect(stored?.ipAddress).toBeDefined();
+  });
 });
 
 describe('GET /api/auth/me', () => {
