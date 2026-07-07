@@ -9,28 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VerifyTwoFactorRouteImport } from './routes/verify-2fa'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as Verify2faRouteImport } from './routes/verify-2fa'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as FavoritesRouteImport } from './routes/favorites'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MonstersIndexRouteImport } from './routes/monsters/index'
 import { Route as MonstersIdRouteImport } from './routes/monsters/$id'
-import { Route as AccountSessionsRouteImport } from './routes/account/sessions'
 import { Route as AccountTwoFactorAuthRouteImport } from './routes/account/two-factor-auth'
+import { Route as AccountSessionsRouteImport } from './routes/account/sessions'
 
-const VerifyTwoFactorRoute = VerifyTwoFactorRouteImport.update({
-  id: '/verify-2fa',
-  path: '/verify-2fa',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Verify2faRoute = Verify2faRouteImport.update({
+  id: '/verify-2fa',
+  path: '/verify-2fa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -63,6 +64,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -78,26 +84,27 @@ const MonstersIdRoute = MonstersIdRouteImport.update({
   path: '/monsters/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AccountSessionsRoute = AccountSessionsRouteImport.update({
-  id: '/account/sessions',
-  path: '/account/sessions',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AccountTwoFactorAuthRoute = AccountTwoFactorAuthRouteImport.update({
   id: '/account/two-factor-auth',
   path: '/account/two-factor-auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountSessionsRoute = AccountSessionsRouteImport.update({
+  id: '/account/sessions',
+  path: '/account/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/admin': typeof AdminRoute
   '/favorites': typeof FavoritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/verify-2fa': typeof VerifyTwoFactorRoute
+  '/verify-2fa': typeof Verify2faRoute
   '/verify-email': typeof VerifyEmailRoute
   '/account/sessions': typeof AccountSessionsRoute
   '/account/two-factor-auth': typeof AccountTwoFactorAuthRoute
@@ -106,13 +113,14 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/admin': typeof AdminRoute
   '/favorites': typeof FavoritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/verify-2fa': typeof VerifyTwoFactorRoute
+  '/verify-2fa': typeof Verify2faRoute
   '/verify-email': typeof VerifyEmailRoute
   '/account/sessions': typeof AccountSessionsRoute
   '/account/two-factor-auth': typeof AccountTwoFactorAuthRoute
@@ -122,13 +130,14 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
   '/admin': typeof AdminRoute
   '/favorites': typeof FavoritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
-  '/verify-2fa': typeof VerifyTwoFactorRoute
+  '/verify-2fa': typeof Verify2faRoute
   '/verify-email': typeof VerifyEmailRoute
   '/account/sessions': typeof AccountSessionsRoute
   '/account/two-factor-auth': typeof AccountTwoFactorAuthRoute
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$'
     | '/admin'
     | '/favorites'
     | '/forgot-password'
@@ -154,6 +164,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$'
     | '/admin'
     | '/favorites'
     | '/forgot-password'
@@ -169,6 +180,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/$'
     | '/admin'
     | '/favorites'
     | '/forgot-password'
@@ -185,13 +197,14 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SplatRoute: typeof SplatRoute
   AdminRoute: typeof AdminRoute
   FavoritesRoute: typeof FavoritesRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
-  VerifyTwoFactorRoute: typeof VerifyTwoFactorRoute
+  Verify2faRoute: typeof Verify2faRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   AccountSessionsRoute: typeof AccountSessionsRoute
   AccountTwoFactorAuthRoute: typeof AccountTwoFactorAuthRoute
@@ -208,18 +221,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/verify-2fa': {
+      id: '/verify-2fa'
+      path: '/verify-2fa'
+      fullPath: '/verify-2fa'
+      preLoaderRoute: typeof Verify2faRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/verify-2fa': {
-      id: '/verify-2fa'
-      path: '/verify-2fa'
-      fullPath: '/verify-2fa'
-      preLoaderRoute: typeof VerifyTwoFactorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -257,6 +270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -278,13 +298,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MonstersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/account/sessions': {
-      id: '/account/sessions'
-      path: '/account/sessions'
-      fullPath: '/account/sessions'
-      preLoaderRoute: typeof AccountSessionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/account/two-factor-auth': {
       id: '/account/two-factor-auth'
       path: '/account/two-factor-auth'
@@ -292,18 +305,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountTwoFactorAuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/sessions': {
+      id: '/account/sessions'
+      path: '/account/sessions'
+      fullPath: '/account/sessions'
+      preLoaderRoute: typeof AccountSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SplatRoute: SplatRoute,
   AdminRoute: AdminRoute,
   FavoritesRoute: FavoritesRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
-  VerifyTwoFactorRoute: VerifyTwoFactorRoute,
+  Verify2faRoute: Verify2faRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   AccountSessionsRoute: AccountSessionsRoute,
   AccountTwoFactorAuthRoute: AccountTwoFactorAuthRoute,
