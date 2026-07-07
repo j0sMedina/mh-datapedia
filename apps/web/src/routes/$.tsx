@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export const Route = createFileRoute('/$')({
   component: NotFoundPage,
@@ -7,22 +7,40 @@ export const Route = createFileRoute('/$')({
 
 function NotFoundPage() {
   const navigate = useNavigate();
-  const [fx, setFx] = useState<{ x: number; y: number; r: number } | null>(null);
+  const [fx, setFx] = useState<{ x: number; y: number; r: number; blackoutMs: number } | null>(null);
   const fired = useRef(false);
   const btnRef = useRef<HTMLButtonElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio('/arkveld-roar.mp3');
+    audio.volume = 0.3;
+    audio.preload = 'auto';
+    audioRef.current = audio;
+    return () => { audio.src = ''; };
+  }, []);
 
   function handleClick() {
     if (fired.current || !btnRef.current) return;
     fired.current = true;
-    new Audio('/arkveld-roar.mp3').play().catch(() => {});
+
+    const audio = audioRef.current;
+    const blackoutMs = audio?.duration ? audio.duration * 1000 : 1150;
+
+    if (audio) {
+      audio.play().catch(() => {});
+      audio.addEventListener('ended', () => navigate({ to: '/' }), { once: true });
+    } else {
+      setTimeout(() => navigate({ to: '/' }), 1150);
+    }
+
     const rect = btnRef.current.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
     const w = window.innerWidth, h = window.innerHeight;
     const dx = Math.max(x, w - x), dy = Math.max(y, h - y);
     const r = Math.ceil(Math.hypot(dx, dy) / 20) + 2;
-    setFx({ x, y, r });
-    setTimeout(() => navigate({ to: '/' }), 1150);
+    setFx({ x, y, r, blackoutMs });
   }
 
   return (
@@ -63,7 +81,10 @@ function NotFoundPage() {
           <span className="mh-ripple" />
           <span className="mh-ripple mh-ripple--2" />
           <span className="mh-ripple mh-ripple--3" />
-          <div className="mh-blackout" />
+          <div
+            className="mh-blackout"
+            style={{ animationDuration: `${fx.blackoutMs}ms`, animationDelay: '0ms' }}
+          />
         </div>
       )}
     </div>
