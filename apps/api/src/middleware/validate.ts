@@ -6,7 +6,7 @@ type Target = 'body' | 'params' | 'query';
 
 export class ValidationError extends AppError {
   constructor(public readonly details: unknown) {
-    super(422, 'Validation failed', 'VALIDATION_ERROR');
+    super(400, 'Validation failed', 'VALIDATION_ERROR');
   }
 }
 

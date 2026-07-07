@@ -8,7 +8,7 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
   logger.error(err.message, { stack: err.stack });
 
   if (err instanceof ValidationError) {
-    return res.status(422).json({ error: err.message, details: err.details, code: err.code });
+    return res.status(400).json({ error: err.message, details: err.details, code: err.code });
   }
 
   if (err instanceof AppError) {

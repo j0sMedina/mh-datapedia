@@ -145,6 +145,57 @@ describe('PUT /api/monsters/:id/weaknesses', () => {
   });
 });
 
+describe('Monster tags', () => {
+  let apexMonsterId: string;
+
+  beforeAll(async () => {
+    const res = await request(app)
+      .post('/api/monsters')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ ...TEST_MONSTER, name: 'Test Apex Rathalos', tags: ['Apex', 'Tempered'] });
+    apexMonsterId = res.body.data.id;
+  });
+
+  afterAll(async () => {
+    await prisma.monster.deleteMany({ where: { name: 'Test Apex Rathalos' } });
+  });
+
+  it('creates monster with tags', async () => {
+    const res = await request(app).get(`/api/monsters/${apexMonsterId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.tags).toEqual(expect.arrayContaining(['Apex', 'Tempered']));
+  });
+
+  it('creates monster without tags defaults to []', async () => {
+    const res = await request(app).get(`/api/monsters/${testMonsterId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.data.tags).toEqual([]);
+  });
+
+  it('rejects invalid tag combo: Afflicted + Tempered → 400', async () => {
+    const res = await request(app)
+      .post('/api/monsters')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ ...TEST_MONSTER, name: 'Test Invalid Tags', tags: ['Afflicted', 'Tempered'] });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects ArchTempered without Apex → 400', async () => {
+    const res = await request(app)
+      .post('/api/monsters')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ ...TEST_MONSTER, name: 'Test No Apex AT', tags: ['ArchTempered'] });
+    expect(res.status).toBe(400);
+  });
+
+  it('filters by tags=Apex returns only Apex monsters', async () => {
+    const res = await request(app).get('/api/monsters?tags=Apex');
+    expect(res.status).toBe(200);
+    expect(res.body.data.length).toBeGreaterThan(0);
+    res.body.data.forEach((m: any) => expect(m.tags).toContain('Apex'));
+  });
+});
+
 describe('PUT /api/monsters/:id/hitzones', () => {
   it('returns 401 without auth', async () => {
     const res = await request(app)

@@ -113,7 +113,7 @@ describe('setBanned scope', () => {
       .patch(`/api/admin/users/${userId}/ban`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ banned: true, bannedUntil: null });
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
   });
 
   it('ADMIN cannot ban another ADMIN', async () => {

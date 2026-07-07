@@ -28,11 +28,11 @@ describe('POST /api/auth/register', () => {
     expect(res.headers['set-cookie']).toBeDefined();
   });
 
-  it('returns 422 with invalid email', async () => {
+  it('returns 400 with invalid email', async () => {
     const res = await request(app)
       .post('/api/auth/register')
       .send({ ...BASE_USER, email: 'notanemail' });
-    expect(res.status).toBe(422);
+    expect(res.status).toBe(400);
     expect(res.body.code).toBe('VALIDATION_ERROR');
   });
 
