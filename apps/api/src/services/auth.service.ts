@@ -1,6 +1,8 @@
 import { randomBytes, createHash } from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { authenticator } from 'otplib';
+import QRCode from 'qrcode';
 import { prisma } from '../lib/prisma';
 import { env } from '../config/env';
 import { AppError } from '../lib/errors';
@@ -33,6 +35,7 @@ const USER_SELECT = {
   username: true,
   role: true,
   emailVerified: true,
+  totpEnabled: true,
   createdAt: true,
 } as const;
 
@@ -146,6 +149,16 @@ export async function login(
   // Clear lockout on success
   await prisma.loginAttempt.deleteMany({ where: { email: data.email } });
 
+  // If 2FA is enabled, return a short-lived pending token instead of a session
+  if (user.totpEnabled) {
+    const mfaPendingToken = jwt.sign(
+      { sub: user.id, mfa: true },
+      env.JWT_SECRET,
+      { expiresIn: 300 },
+    );
+    return { mfaRequired: true as const, mfaPendingToken };
+  }
+
   const accessToken = signAccessToken(user.id, user.role);
   const refreshToken = await createRefreshToken(user.id, meta?.userAgent, meta?.ipAddress);
   return {
@@ -155,6 +168,7 @@ export async function login(
       username: user.username,
       role: user.role,
       emailVerified: user.emailVerified,
+      totpEnabled: user.totpEnabled,
       createdAt: user.createdAt,
     },
     accessToken,
@@ -374,4 +388,122 @@ export async function changePassword(
   const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
   await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
   await revokeOtherSessions(userId, currentToken);
+}
+
+export async function totpSetup(userId: string): Promise<{ qrCodeDataUrl: string; secret: string }> {
+  const user = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+  if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
+
+  const secret = authenticator.generateSecret();
+  const otpAuthUrl = authenticator.keyuri(user.email, 'MH Datapedia', secret);
+
+  await prisma.user.update({ where: { id: userId }, data: { totpSecret: secret } });
+
+  const qrCodeDataUrl = await QRCode.toDataURL(otpAuthUrl);
+  return { qrCodeDataUrl, secret };
+}
+
+export async function totpEnable(userId: string, code: string): Promise<{ backupCodes: string[] }> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { totpSecret: true },
+  });
+  if (!user?.totpSecret) throw new AppError(400, 'TOTP not set up', 'INVALID_CODE');
+
+  const isValid = authenticator.verify({ token: code, secret: user.totpSecret });
+  if (!isValid) throw new AppError(400, 'Invalid TOTP code', 'INVALID_CODE');
+
+  const plainCodes = Array.from({ length: 10 }, () => randomBytes(5).toString('hex'));
+  const hashedCodes = await Promise.all(plainCodes.map((c) => bcrypt.hash(c, SALT_ROUNDS)));
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { totpEnabled: true, backupCodes: hashedCodes },
+  });
+
+  return { backupCodes: plainCodes };
+}
+
+export async function totpDisable(userId: string, password: string): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true },
+  });
+  if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
+
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) throw new AppError(400, 'Invalid password', 'INVALID_PASSWORD');
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { totpEnabled: false, totpSecret: null, backupCodes: [] },
+  });
+}
+
+export async function totpVerify(
+  mfaPendingToken: string,
+  code: string,
+  meta?: { userAgent?: string; ipAddress?: string },
+) {
+  let userId: string;
+  try {
+    const payload = jwt.verify(mfaPendingToken, env.JWT_SECRET) as { sub: string; mfa: boolean };
+    if (!payload.mfa) throw new Error('not mfa token');
+    userId = payload.sub;
+  } catch {
+    throw new AppError(401, 'Invalid or expired MFA token', 'UNAUTHORIZED');
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || !user.totpEnabled || !user.totpSecret) {
+    throw new AppError(401, 'Invalid MFA state', 'UNAUTHORIZED');
+  }
+
+  // Try TOTP first (6-digit numeric)
+  const totpValid = authenticator.verify({ token: code, secret: user.totpSecret });
+  if (totpValid) {
+    const accessToken = signAccessToken(user.id, user.role);
+    const refreshToken = await createRefreshToken(user.id, meta?.userAgent, meta?.ipAddress);
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        username: user.username,
+        role: user.role,
+        emailVerified: user.emailVerified,
+        totpEnabled: user.totpEnabled,
+        createdAt: user.createdAt,
+      },
+      accessToken,
+      refreshToken,
+      expiresIn: ACCESS_TOKEN_TTL_S,
+    };
+  }
+
+  // Try backup codes (10-char hex strings, stored as bcrypt hashes)
+  for (let i = 0; i < user.backupCodes.length; i++) {
+    const match = await bcrypt.compare(code, user.backupCodes[i]);
+    if (match) {
+      const newBackupCodes = user.backupCodes.filter((_, idx) => idx !== i);
+      await prisma.user.update({ where: { id: userId }, data: { backupCodes: newBackupCodes } });
+      const accessToken = signAccessToken(user.id, user.role);
+      const refreshToken = await createRefreshToken(user.id, meta?.userAgent, meta?.ipAddress);
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          username: user.username,
+          role: user.role,
+          emailVerified: user.emailVerified,
+          totpEnabled: user.totpEnabled,
+          createdAt: user.createdAt,
+        },
+        accessToken,
+        refreshToken,
+        expiresIn: ACCESS_TOKEN_TTL_S,
+      };
+    }
+  }
+
+  throw new AppError(400, 'Invalid code', 'INVALID_CODE');
 }

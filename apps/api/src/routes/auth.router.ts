@@ -3,7 +3,10 @@ import { authLimiter, resendLimiter, forgotPasswordLimiter } from '../middleware
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
 import { AppError } from '../lib/errors';
-import { RegisterSchema, LoginSchema, ForgotPasswordSchema, ResetPasswordSchema, ChangePasswordSchema } from '@mh-datapedia/shared';
+import {
+  RegisterSchema, LoginSchema, ForgotPasswordSchema, ResetPasswordSchema,
+  ChangePasswordSchema, TotpVerifySchema, TotpEnableSchema, TotpDisableSchema,
+} from '@mh-datapedia/shared';
 import * as authService from '../services/auth.service';
 
 const router: IRouter = Router();
@@ -39,12 +42,15 @@ router.post(
   validate(LoginSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { user, accessToken, refreshToken, expiresIn } = await authService.login(req.body, {
+      const result = await authService.login(req.body, {
         userAgent: req.headers['user-agent'],
         ipAddress: req.ip,
       });
-      res.cookie(COOKIE, refreshToken, COOKIE_OPTS);
-      res.json({ user, accessToken, expiresIn });
+      if ('mfaRequired' in result) {
+        return res.json({ mfaRequired: true, mfaPendingToken: result.mfaPendingToken });
+      }
+      res.cookie(COOKIE, result.refreshToken, COOKIE_OPTS);
+      res.json({ user: result.user, accessToken: result.accessToken, expiresIn: result.expiresIn });
     } catch (err) {
       next(err);
     }
@@ -191,6 +197,60 @@ router.post(
         currentToken ?? '',
       );
       res.json({ message: 'Password updated.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get('/totp/setup', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await authService.totpSetup(req.user!.id);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/totp/enable',
+  authenticate,
+  validate(TotpEnableSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await authService.totpEnable(req.user!.id, req.body.code);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  '/totp/disable',
+  authenticate,
+  validate(TotpDisableSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await authService.totpDisable(req.user!.id, req.body.password);
+      res.json({ message: 'Two-factor authentication disabled.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.post(
+  '/totp/verify',
+  validate(TotpVerifySchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await authService.totpVerify(req.body.mfaPendingToken, req.body.code, {
+        userAgent: req.headers['user-agent'],
+        ipAddress: req.ip,
+      });
+      res.cookie(COOKIE, result.refreshToken, COOKIE_OPTS);
+      res.json({ user: result.user, accessToken: result.accessToken, expiresIn: result.expiresIn });
     } catch (err) {
       next(err);
     }
