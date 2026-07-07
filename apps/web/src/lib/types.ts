@@ -47,6 +47,7 @@ export interface MonsterListItem {
   name: string;
   title: string;
   type: string;
+  tags: string[];
   imageUrl: string | null;
   iconUrl: string | null;
   isBoss: boolean;

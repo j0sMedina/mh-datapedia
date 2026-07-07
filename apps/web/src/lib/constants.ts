@@ -5,12 +5,8 @@ export const GAME_NAMES: Record<string, string> = {
 export const GAME_ORDER = ['MONSTER_HUNTER_WILDS'] as const;
 
 export const TYPE_BADGE_CLASSES: Record<string, string> = {
-  Large:           'bg-amber-500/10 text-amber-500',
   Small:           'bg-stone-700 text-stone-400',
   ElderDragon:     'bg-amber-400/10 text-amber-400',
-  Apex:            'bg-red-400/10 text-red-400',
-  Afflicted:       'bg-red-400/10 text-red-400',
-  Tempered:        'bg-red-400/10 text-red-400',
   FlyingWyvern:    'bg-sky-400/10 text-sky-400',
   BruteWyvern:     'bg-red-400/10 text-red-400',
   FangedBeast:     'bg-orange-400/10 text-orange-400',
@@ -22,6 +18,13 @@ export const TYPE_BADGE_CLASSES: Record<string, string> = {
   Amphibian:       'bg-green-400/10 text-green-400',
   Cephalopod:      'bg-violet-400/10 text-violet-400',
   Machine:         'bg-zinc-400/10 text-zinc-400',
+};
+
+export const TAG_BADGE_CLASSES: Record<string, string> = {
+  Apex:         'bg-amber-500/15 text-amber-400 border border-amber-500/30',
+  Tempered:     'bg-purple-500/15 text-purple-400 border border-purple-500/30',
+  ArchTempered: 'bg-red-500/15 text-red-400 border border-red-500/30',
+  Afflicted:    'bg-purple-900/40 text-purple-300 border border-purple-800/50',
 };
 
 export const ELEMENT_COLORS: Record<string, string> = {

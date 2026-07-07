@@ -6,3 +6,7 @@ export function cn(...classes: (string | undefined | false | null)[]): string {
 export function formatType(type: string): string {
   return type.replace(/([a-z])([A-Z])/g, '$1 $2');
 }
+
+export function formatTag(tag: string): string {
+  return tag === 'ArchTempered' ? 'Arch-Tempered' : tag;
+}
