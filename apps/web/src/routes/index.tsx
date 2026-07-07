@@ -10,11 +10,14 @@ export const Route = createFileRoute('/')({ component: LandingPage });
 function HeroCTA({ children, onArrive }: { children: React.ReactNode; onArrive: () => void }) {
   const [fx, setFx] = useState<{ x: number; y: number; r: number } | null>(null);
   const fired = useRef(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
 
-  const handle = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (fired.current) return;
+  const handle = () => {
+    if (fired.current || !btnRef.current) return;
     fired.current = true;
-    const x = e.clientX, y = e.clientY;
+    const rect = btnRef.current.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
     const w = window.innerWidth, h = window.innerHeight;
     const dx = Math.max(x, w - x), dy = Math.max(y, h - y);
     const r = Math.ceil(Math.hypot(dx, dy) / 20) + 2;
@@ -24,7 +27,7 @@ function HeroCTA({ children, onArrive }: { children: React.ReactNode; onArrive: 
 
   return (
     <>
-      <button type="button" className="mh-cta" onClick={handle}>{children}</button>
+      <button ref={btnRef} type="button" className="mh-cta" onClick={handle}>{children}</button>
       {fx && (
         <div
           className="mh-ripple-wrap"
