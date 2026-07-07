@@ -1,10 +1,29 @@
-import { createFileRoute, Link } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import { useRef, useState } from 'react';
 
 export const Route = createFileRoute('/$')({
   component: NotFoundPage,
 });
 
 function NotFoundPage() {
+  const navigate = useNavigate();
+  const [fx, setFx] = useState<{ x: number; y: number; r: number } | null>(null);
+  const fired = useRef(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  function handleClick() {
+    if (fired.current || !btnRef.current) return;
+    fired.current = true;
+    const rect = btnRef.current.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    const w = window.innerWidth, h = window.innerHeight;
+    const dx = Math.max(x, w - x), dy = Math.max(y, h - y);
+    const r = Math.ceil(Math.hypot(dx, dy) / 20) + 2;
+    setFx({ x, y, r });
+    setTimeout(() => navigate({ to: '/' }), 1150);
+  }
+
   return (
     <div
       className="relative overflow-hidden flex items-center justify-center p-4"
@@ -30,13 +49,22 @@ function NotFoundPage() {
           <p className="text-6xl font-display font-bold text-white tracking-tight">404</p>
           <p className="text-stone-300 mt-1 text-sm">This page was consumed by Arkveld.</p>
         </div>
-        <Link
-          to="/"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-accent text-stone-950 font-semibold text-sm hover:bg-accent-hover transition-colors"
-        >
+        <button ref={btnRef} type="button" className="mh-cta" onClick={handleClick}>
           Back to home
-        </Link>
+        </button>
       </div>
+
+      {fx && (
+        <div
+          className="mh-ripple-wrap"
+          style={{ '--mh-x': fx.x + 'px', '--mh-y': fx.y + 'px', '--mh-r': fx.r } as React.CSSProperties}
+        >
+          <span className="mh-ripple" />
+          <span className="mh-ripple mh-ripple--2" />
+          <span className="mh-ripple mh-ripple--3" />
+          <div className="mh-blackout" />
+        </div>
+      )}
     </div>
   );
 }
