@@ -11,7 +11,8 @@ export interface AuthState {
   bannedDetails: BanDetails | null;
   clearBannedDetails: () => void;
   fetchUser: () => Promise<void>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<{ mfaRequired: true } | void>;
+  loginWithTokens: (user: User, accessToken: string) => void;
   register: (email: string, username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -79,14 +80,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     silentRefresh().finally(() => setIsLoading(false));
   }, [silentRefresh]);
 
-  async function login(email: string, password: string): Promise<void> {
+  async function login(email: string, password: string): Promise<{ mfaRequired: true } | void> {
     try {
-      const data = await apiPost<{ user: User; accessToken: string }>(
-        '/api/auth/login',
-        { email, password },
-      );
-      setToken(data.accessToken);
-      setUser(data.user);
+      const data = await apiPost<{
+        user?: User;
+        accessToken?: string;
+        mfaRequired?: boolean;
+        mfaPendingToken?: string;
+      }>('/api/auth/login', { email, password });
+
+      if (data.mfaRequired && data.mfaPendingToken) {
+        sessionStorage.setItem('mfaPendingToken', data.mfaPendingToken);
+        return { mfaRequired: true };
+      }
+
+      setToken(data.accessToken!);
+      setUser(data.user!);
     } catch (e) {
       if (e instanceof ApiError && e.status === 403) {
         const details = extractBanDetails(e.body);
@@ -97,6 +106,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       throw e;
     }
+  }
+
+  function loginWithTokens(user: User, accessToken: string): void {
+    setToken(accessToken);
+    setUser(user);
   }
 
   async function register(email: string, username: string, password: string): Promise<void> {
@@ -127,7 +141,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, accessToken, isLoading, bannedDetails, clearBannedDetails, fetchUser, login, register, logout }}
+      value={{ user, accessToken, isLoading, bannedDetails, clearBannedDetails, fetchUser, login, loginWithTokens, register, logout }}
     >
       {children}
       {bannedDetails && (

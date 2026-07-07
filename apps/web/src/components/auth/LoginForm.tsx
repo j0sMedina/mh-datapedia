@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@mh-datapedia/shared';
 import type { Login } from '@mh-datapedia/shared';
+import { useNavigate } from '@tanstack/react-router';
 import { useAuth } from '../../context/AuthContext';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
@@ -14,6 +15,7 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
   const { login } = useAuth();
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
@@ -23,7 +25,11 @@ export function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
 
   const onSubmit = async (data: Login) => {
     try {
-      await login(data.email, data.password);
+      const result = await login(data.email, data.password);
+      if (result?.mfaRequired) {
+        navigate({ to: '/verify-2fa' });
+        return;
+      }
       onSuccess();
     } catch (err) {
       if (err instanceof ApiError && err.status === 401) {

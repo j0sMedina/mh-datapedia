@@ -9,7 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as AccountSessionsRouteImport } from './routes/account/sessions'
+import { Route as VerifyTwoFactorRouteImport } from './routes/verify-2fa'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
@@ -20,10 +20,11 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as MonstersIndexRouteImport } from './routes/monsters/index'
 import { Route as MonstersIdRouteImport } from './routes/monsters/$id'
+import { Route as AccountSessionsRouteImport } from './routes/account/sessions'
 
-const AccountSessionsRoute = AccountSessionsRouteImport.update({
-  id: '/account/sessions',
-  path: '/account/sessions',
+const VerifyTwoFactorRoute = VerifyTwoFactorRouteImport.update({
+  id: '/verify-2fa',
+  path: '/verify-2fa',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -76,44 +77,52 @@ const MonstersIdRoute = MonstersIdRouteImport.update({
   path: '/monsters/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountSessionsRoute = AccountSessionsRouteImport.update({
+  id: '/account/sessions',
+  path: '/account/sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/account/sessions': typeof AccountSessionsRoute
   '/admin': typeof AdminRoute
   '/favorites': typeof FavoritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/verify-2fa': typeof VerifyTwoFactorRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/account/sessions': typeof AccountSessionsRoute
   '/monsters/$id': typeof MonstersIdRoute
   '/monsters/': typeof MonstersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/account/sessions': typeof AccountSessionsRoute
   '/admin': typeof AdminRoute
   '/favorites': typeof FavoritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/verify-2fa': typeof VerifyTwoFactorRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/account/sessions': typeof AccountSessionsRoute
   '/monsters/$id': typeof MonstersIdRoute
   '/monsters': typeof MonstersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/account/sessions': typeof AccountSessionsRoute
   '/admin': typeof AdminRoute
   '/favorites': typeof FavoritesRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/verify-2fa': typeof VerifyTwoFactorRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/account/sessions': typeof AccountSessionsRoute
   '/monsters/$id': typeof MonstersIdRoute
   '/monsters/': typeof MonstersIndexRoute
 }
@@ -121,72 +130,83 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/account/sessions'
     | '/admin'
     | '/favorites'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/verify-2fa'
     | '/verify-email'
+    | '/account/sessions'
     | '/monsters/$id'
     | '/monsters/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/account/sessions'
     | '/admin'
     | '/favorites'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/verify-2fa'
     | '/verify-email'
+    | '/account/sessions'
     | '/monsters/$id'
     | '/monsters'
   id:
     | '__root__'
     | '/'
-    | '/account/sessions'
     | '/admin'
     | '/favorites'
     | '/forgot-password'
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/verify-2fa'
     | '/verify-email'
+    | '/account/sessions'
     | '/monsters/$id'
     | '/monsters/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AccountSessionsRoute: typeof AccountSessionsRoute
   AdminRoute: typeof AdminRoute
   FavoritesRoute: typeof FavoritesRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  VerifyTwoFactorRoute: typeof VerifyTwoFactorRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  AccountSessionsRoute: typeof AccountSessionsRoute
   MonstersIdRoute: typeof MonstersIdRoute
   MonstersIndexRoute: typeof MonstersIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/account/sessions': {
-      id: '/account/sessions'
-      path: '/account/sessions'
-      fullPath: '/account/sessions'
-      preLoaderRoute: typeof AccountSessionsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/verify-email': {
       id: '/verify-email'
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verify-2fa': {
+      id: '/verify-2fa'
+      path: '/verify-2fa'
+      fullPath: '/verify-2fa'
+      preLoaderRoute: typeof VerifyTwoFactorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/register': {
@@ -208,13 +228,6 @@ declare module '@tanstack/react-router' {
       path: '/forgot-password'
       fullPath: '/forgot-password'
       preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/favorites': {
@@ -252,19 +265,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MonstersIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/sessions': {
+      id: '/account/sessions'
+      path: '/account/sessions'
+      fullPath: '/account/sessions'
+      preLoaderRoute: typeof AccountSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AccountSessionsRoute: AccountSessionsRoute,
   AdminRoute: AdminRoute,
   FavoritesRoute: FavoritesRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  VerifyTwoFactorRoute: VerifyTwoFactorRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  AccountSessionsRoute: AccountSessionsRoute,
   MonstersIdRoute: MonstersIdRoute,
   MonstersIndexRoute: MonstersIndexRoute,
 }
