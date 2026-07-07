@@ -12,7 +12,7 @@ function NotFoundPage() {
     >
       <div
         className="absolute inset-0 bg-cover bg-center scale-110"
-        style={{ backgroundImage: "url('/frontpage.jpg')", filter: 'blur(24px)' }}
+        style={{ backgroundImage: "url('/wyveria.avif')", filter: 'blur(24px)' }}
       />
       <div className="absolute inset-0 bg-black/60" />
 
