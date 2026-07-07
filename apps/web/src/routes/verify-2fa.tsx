@@ -65,7 +65,7 @@ function VerifyTwoFactorPage() {
             id="totp-verify-code"
             label="Code"
             type="text"
-            inputMode="numeric"
+            inputMode="text"
             maxLength={10}
             placeholder="000000"
             value={code}
