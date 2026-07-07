@@ -12,6 +12,8 @@ afterAll(async () => {
   await prisma.user.deleteMany({ where: { email: { contains: 'authtest' } } });
   await prisma.user.deleteMany({ where: { email: 'verify@example.com' } });
   await prisma.user.deleteMany({ where: { email: 'reset@example.com' } });
+  await prisma.user.deleteMany({ where: { email: 'sessions@example.com' } });
+  await prisma.user.deleteMany({ where: { email: 'sessions2@example.com' } });
   await prisma.$disconnect();
 });
 
@@ -332,5 +334,150 @@ describe('POST /api/auth/forgot-password + POST /api/auth/reset-password', () =>
       .send({ token, password: 'yetanother789' });
     expect(second.status).toBe(400);
     expect(second.body.code).toBe('INVALID_TOKEN');
+  });
+});
+
+describe('Session management', () => {
+  const sessionEmail = 'sessions@example.com';
+  const sessionPassword = 'sesspass123';
+  let sessionCookie: string;
+  let secondCookie: string;
+
+  beforeAll(async () => {
+    await request(app)
+      .post('/api/auth/register')
+      .send({ email: sessionEmail, username: 'sessionuser', password: sessionPassword });
+    await prisma.user.update({
+      where: { email: sessionEmail },
+      data: { emailVerified: true },
+    });
+
+    const login1 = await request(app)
+      .post('/api/auth/login')
+      .send({ email: sessionEmail, password: sessionPassword });
+    sessionCookie = login1.headers['set-cookie'][0];
+
+    const login2 = await request(app)
+      .post('/api/auth/login')
+      .send({ email: sessionEmail, password: sessionPassword });
+    secondCookie = login2.headers['set-cookie'][0];
+  });
+
+  afterAll(async () => {
+    await prisma.user.deleteMany({ where: { email: sessionEmail } });
+  });
+
+  it('GET /api/auth/sessions returns active sessions with isCurrent', async () => {
+    // Get access token for the first session
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: sessionEmail, password: sessionPassword });
+    const accessToken = loginRes.body.accessToken;
+    const cookie = loginRes.headers['set-cookie'][0];
+
+    const res = await request(app)
+      .get('/api/auth/sessions')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Cookie', cookie);
+
+    expect(res.status).toBe(200);
+    expect(Array.isArray(res.body)).toBe(true);
+    expect(res.body.length).toBeGreaterThanOrEqual(1);
+    const current = res.body.find((s: { isCurrent: boolean }) => s.isCurrent);
+    expect(current).toBeDefined();
+    expect(current.deviceLabel).toBeDefined();
+  });
+
+  it('DELETE /api/auth/sessions/:id revokes another session', async () => {
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: sessionEmail, password: sessionPassword });
+    const accessToken = loginRes.body.accessToken;
+    const cookie = loginRes.headers['set-cookie'][0];
+
+    const sessions = await request(app)
+      .get('/api/auth/sessions')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Cookie', cookie);
+
+    const other = sessions.body.find((s: { isCurrent: boolean }) => !s.isCurrent);
+    if (!other) return; // skip if only one session
+
+    const res = await request(app)
+      .delete(`/api/auth/sessions/${other.id}`)
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Cookie', cookie);
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain('revoked');
+  });
+
+  it('DELETE /api/auth/sessions/:id returns 403 for another user session', async () => {
+    // Create a second user and try to delete a session from the first user
+    await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'sessions2@example.com', username: 'sessionuser2', password: sessionPassword });
+    await prisma.user.update({
+      where: { email: 'sessions2@example.com' },
+      data: { emailVerified: true },
+    });
+    const login2 = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'sessions2@example.com', password: sessionPassword });
+    const accessToken2 = login2.body.accessToken;
+    const cookie2 = login2.headers['set-cookie'][0];
+
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: sessionEmail, password: sessionPassword });
+    const accessToken = loginRes.body.accessToken;
+    const cookie = loginRes.headers['set-cookie'][0];
+
+    const sessions = await request(app)
+      .get('/api/auth/sessions')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Cookie', cookie);
+    const targetId = sessions.body[0].id;
+
+    const res = await request(app)
+      .delete(`/api/auth/sessions/${targetId}`)
+      .set('Authorization', `Bearer ${accessToken2}`)
+      .set('Cookie', cookie2);
+
+    expect(res.status).toBe(403);
+
+    await prisma.user.deleteMany({ where: { email: 'sessions2@example.com' } });
+  });
+
+  it('DELETE /api/auth/sessions revokes all other sessions', async () => {
+    // Create two fresh sessions
+    const l1 = await request(app)
+      .post('/api/auth/login')
+      .send({ email: sessionEmail, password: sessionPassword });
+    const l2 = await request(app)
+      .post('/api/auth/login')
+      .send({ email: sessionEmail, password: sessionPassword });
+
+    const accessToken = l1.body.accessToken;
+    const cookie = l1.headers['set-cookie'][0];
+
+    const before = await request(app)
+      .get('/api/auth/sessions')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Cookie', cookie);
+    expect(before.body.length).toBeGreaterThanOrEqual(2);
+
+    const res = await request(app)
+      .delete('/api/auth/sessions')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Cookie', cookie);
+    expect(res.status).toBe(200);
+
+    const after = await request(app)
+      .get('/api/auth/sessions')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Cookie', cookie);
+    expect(after.body.every((s: { isCurrent: boolean }) => s.isCurrent)).toBe(true);
+    expect(after.body.length).toBe(1);
   });
 });

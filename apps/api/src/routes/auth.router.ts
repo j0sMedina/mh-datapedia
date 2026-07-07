@@ -135,4 +135,45 @@ router.post(
   },
 );
 
+router.get('/sessions', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const currentToken = req.cookies[COOKIE] as string | undefined;
+    const sessions = await authService.getSessions(req.user!.id, currentToken ?? '');
+    res.json(sessions);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.delete(
+  '/sessions/:id',
+  authenticate,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const currentToken = req.cookies[COOKIE] as string | undefined;
+      const { wasCurrentSession } = await authService.revokeSession(
+        req.params.id,
+        req.user!.id,
+        currentToken ?? '',
+      );
+      if (wasCurrentSession) {
+        res.clearCookie(COOKIE, { httpOnly: true, sameSite: 'strict' });
+      }
+      res.json({ message: 'Session revoked.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.delete('/sessions', authenticate, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const currentToken = req.cookies[COOKIE] as string | undefined;
+    await authService.revokeOtherSessions(req.user!.id, currentToken ?? '');
+    res.json({ message: 'All other sessions revoked.' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 export default router;

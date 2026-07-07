@@ -5,6 +5,7 @@ import { prisma } from '../lib/prisma';
 import { env } from '../config/env';
 import { AppError } from '../lib/errors';
 import { sendVerificationEmail, sendPasswordResetEmail } from './email.service';
+import { parseUserAgent } from '../lib/parseUserAgent';
 import type { Register, Login } from '@mh-datapedia/shared';
 
 const SALT_ROUNDS = 12;
@@ -16,6 +17,15 @@ const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
 
 type Role = 'USER' | 'HELPER' | 'ADMIN' | 'MASTER';
+
+type SessionItem = {
+  id: string;
+  deviceLabel: string;
+  ipAddress: string | null;
+  createdAt: string;
+  lastUsedAt: string;
+  isCurrent: boolean;
+};
 
 const USER_SELECT = {
   id: true,
@@ -309,4 +319,41 @@ export async function resetPassword(token: string, password: string): Promise<vo
     }),
     prisma.refreshToken.deleteMany({ where: { userId: user.id } }),
   ]);
+}
+
+export async function getSessions(userId: string, currentToken: string): Promise<SessionItem[]> {
+  const sessions = await prisma.refreshToken.findMany({
+    where: { userId, expiresAt: { gt: new Date() } },
+    orderBy: { lastUsedAt: 'desc' },
+  });
+
+  return sessions.map((s) => ({
+    id: s.id,
+    deviceLabel: parseUserAgent(s.userAgent),
+    ipAddress: s.ipAddress,
+    createdAt: s.createdAt.toISOString(),
+    lastUsedAt: s.lastUsedAt.toISOString(),
+    isCurrent: s.token === currentToken,
+  }));
+}
+
+export async function revokeSession(
+  sessionId: string,
+  userId: string,
+  currentToken: string,
+): Promise<{ wasCurrentSession: boolean }> {
+  const session = await prisma.refreshToken.findUnique({ where: { id: sessionId } });
+  if (!session || session.userId !== userId) {
+    throw new AppError(403, 'Session not found', 'FORBIDDEN');
+  }
+
+  const wasCurrentSession = session.token === currentToken;
+  await prisma.refreshToken.delete({ where: { id: sessionId } });
+  return { wasCurrentSession };
+}
+
+export async function revokeOtherSessions(userId: string, currentToken: string): Promise<void> {
+  await prisma.refreshToken.deleteMany({
+    where: { userId, token: { not: currentToken } },
+  });
 }
