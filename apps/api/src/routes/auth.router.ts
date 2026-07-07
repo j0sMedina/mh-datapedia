@@ -3,7 +3,7 @@ import { authLimiter, resendLimiter, forgotPasswordLimiter } from '../middleware
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
 import { AppError } from '../lib/errors';
-import { RegisterSchema, LoginSchema, ForgotPasswordSchema, ResetPasswordSchema } from '@mh-datapedia/shared';
+import { RegisterSchema, LoginSchema, ForgotPasswordSchema, ResetPasswordSchema, ChangePasswordSchema } from '@mh-datapedia/shared';
 import * as authService from '../services/auth.service';
 
 const router: IRouter = Router();
@@ -175,5 +175,23 @@ router.delete('/sessions', authenticate, async (req: Request, res: Response, nex
     next(err);
   }
 });
+
+router.post(
+  '/change-password',
+  authenticate,
+  validate(ChangePasswordSchema),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await authService.changePassword(
+        req.user!.id,
+        req.body.currentPassword,
+        req.body.newPassword,
+      );
+      res.json({ message: 'Password updated.' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 export default router;

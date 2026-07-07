@@ -14,6 +14,7 @@ afterAll(async () => {
   await prisma.user.deleteMany({ where: { email: 'reset@example.com' } });
   await prisma.user.deleteMany({ where: { email: 'sessions@example.com' } });
   await prisma.user.deleteMany({ where: { email: 'sessions2@example.com' } });
+  await prisma.user.deleteMany({ where: { email: 'changepw@example.com' } });
   await prisma.$disconnect();
 });
 
@@ -509,5 +510,48 @@ describe('Session management', () => {
       .set('Cookie', cookie);
     expect(after.body.every((s: { isCurrent: boolean }) => s.isCurrent)).toBe(true);
     expect(after.body.length).toBe(1);
+  });
+});
+
+describe('POST /api/auth/change-password', () => {
+  let accessToken: string;
+
+  beforeAll(async () => {
+    await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'changepw@example.com', username: 'changepw', password: 'oldpassword1' });
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'changepw@example.com', password: 'oldpassword1' });
+    await prisma.user.update({
+      where: { email: 'changepw@example.com' },
+      data: { emailVerified: true },
+    });
+    accessToken = loginRes.body.accessToken;
+  });
+
+  it('returns 200 with correct current password', async () => {
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ currentPassword: 'oldpassword1', newPassword: 'newpassword1' });
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Password updated.');
+  });
+
+  it('returns 400 INVALID_PASSWORD with wrong current password', async () => {
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .set('Authorization', `Bearer ${accessToken}`)
+      .send({ currentPassword: 'wrongpassword', newPassword: 'newpassword1' });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_PASSWORD');
+  });
+
+  it('returns 401 without auth', async () => {
+    const res = await request(app)
+      .post('/api/auth/change-password')
+      .send({ currentPassword: 'oldpassword1', newPassword: 'newpassword1' });
+    expect(res.status).toBe(401);
   });
 });

@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SessionSchema = exports.ResetPasswordSchema = exports.ForgotPasswordSchema = exports.LoginSchema = exports.RegisterSchema = exports.AuthTokensSchema = exports.UserSchema = void 0;
+exports.ChangePasswordSchema = exports.SessionSchema = exports.ResetPasswordSchema = exports.ForgotPasswordSchema = exports.LoginSchema = exports.RegisterSchema = exports.AuthTokensSchema = exports.UserSchema = void 0;
 const zod_1 = require("zod");
 const enums_schema_1 = require("./enums.schema");
 exports.UserSchema = zod_1.z.object({
@@ -36,5 +36,9 @@ exports.SessionSchema = zod_1.z.object({
     createdAt: zod_1.z.string(),
     lastUsedAt: zod_1.z.string(),
     isCurrent: zod_1.z.boolean(),
+});
+exports.ChangePasswordSchema = zod_1.z.object({
+    currentPassword: zod_1.z.string().min(1),
+    newPassword: zod_1.z.string().min(8),
 });
 //# sourceMappingURL=auth.schema.js.map

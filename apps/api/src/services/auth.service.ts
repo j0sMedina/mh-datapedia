@@ -357,3 +357,19 @@ export async function revokeOtherSessions(userId: string, currentToken: string):
     where: { userId, token: { not: currentToken } },
   });
 }
+
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true },
+  });
+  if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) throw new AppError(400, 'Invalid current password', 'INVALID_PASSWORD');
+  const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+}

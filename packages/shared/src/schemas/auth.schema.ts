@@ -47,3 +47,9 @@ export const SessionSchema = z.object({
   isCurrent: z.boolean(),
 });
 export type Session = z.infer<typeof SessionSchema>;
+
+export const ChangePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+export type ChangePassword = z.infer<typeof ChangePasswordSchema>;

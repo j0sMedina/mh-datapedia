@@ -34,4 +34,8 @@ export const SessionSchema = z.object({
     lastUsedAt: z.string(),
     isCurrent: z.boolean(),
 });
+export const ChangePasswordSchema = z.object({
+    currentPassword: z.string().min(1),
+    newPassword: z.string().min(8),
+});
 //# sourceMappingURL=auth.schema.js.map

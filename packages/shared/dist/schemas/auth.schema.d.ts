@@ -100,4 +100,15 @@ export declare const SessionSchema: z.ZodObject<{
     isCurrent: boolean;
 }>;
 export type Session = z.infer<typeof SessionSchema>;
+export declare const ChangePasswordSchema: z.ZodObject<{
+    currentPassword: z.ZodString;
+    newPassword: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    currentPassword: string;
+    newPassword: string;
+}, {
+    currentPassword: string;
+    newPassword: string;
+}>;
+export type ChangePassword = z.infer<typeof ChangePasswordSchema>;
 //# sourceMappingURL=auth.schema.d.ts.map
