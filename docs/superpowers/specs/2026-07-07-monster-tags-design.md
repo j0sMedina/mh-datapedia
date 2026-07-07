@@ -143,7 +143,7 @@ Tags displayed as small colour-coded badges alongside the monster name/type:
 | Arch-Tempered | red |
 | Afflicted | dark purple |
 
-Display name is composed at render time: `[tags joined] [name]` (e.g., "Arch-Tempered Arkveld") — never stored in the `name` field.
+The monster name is always displayed as-is (`"Arkveld"`, `"Yian Kut-Ku"`). Tags are shown only as badges — never prepended to the name.
 
 ### Monsters list page
 
