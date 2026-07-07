@@ -71,6 +71,12 @@ export function Navbar() {
                     MASTER
                   </Badge>
                 )}
+                <Link
+                  to="/account/sessions"
+                  className="text-stone-400 hover:text-stone-50 transition-colors duration-150 text-sm"
+                >
+                  Sessions
+                </Link>
                 <Button variant="ghost" size="sm" onClick={handleLogout}>
                   Logout
                 </Button>
