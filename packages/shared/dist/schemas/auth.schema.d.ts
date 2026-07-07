@@ -77,4 +77,27 @@ export declare const ResetPasswordSchema: z.ZodObject<{
 }>;
 export type ForgotPassword = z.infer<typeof ForgotPasswordSchema>;
 export type ResetPassword = z.infer<typeof ResetPasswordSchema>;
+export declare const SessionSchema: z.ZodObject<{
+    id: z.ZodString;
+    deviceLabel: z.ZodString;
+    ipAddress: z.ZodNullable<z.ZodString>;
+    createdAt: z.ZodString;
+    lastUsedAt: z.ZodString;
+    isCurrent: z.ZodBoolean;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    createdAt: string;
+    deviceLabel: string;
+    ipAddress: string | null;
+    lastUsedAt: string;
+    isCurrent: boolean;
+}, {
+    id: string;
+    createdAt: string;
+    deviceLabel: string;
+    ipAddress: string | null;
+    lastUsedAt: string;
+    isCurrent: boolean;
+}>;
+export type Session = z.infer<typeof SessionSchema>;
 //# sourceMappingURL=auth.schema.d.ts.map

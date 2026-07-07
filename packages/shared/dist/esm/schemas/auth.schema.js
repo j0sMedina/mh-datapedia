@@ -26,4 +26,12 @@ export const ResetPasswordSchema = z.object({
     token: z.string().min(1),
     password: z.string().min(8),
 });
+export const SessionSchema = z.object({
+    id: z.string(),
+    deviceLabel: z.string(),
+    ipAddress: z.string().nullable(),
+    createdAt: z.string(),
+    lastUsedAt: z.string(),
+    isCurrent: z.boolean(),
+});
 //# sourceMappingURL=auth.schema.js.map

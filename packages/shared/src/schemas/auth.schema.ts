@@ -37,3 +37,13 @@ export const ResetPasswordSchema = z.object({
 });
 export type ForgotPassword = z.infer<typeof ForgotPasswordSchema>;
 export type ResetPassword = z.infer<typeof ResetPasswordSchema>;
+
+export const SessionSchema = z.object({
+  id: z.string(),
+  deviceLabel: z.string(),
+  ipAddress: z.string().nullable(),
+  createdAt: z.string(),
+  lastUsedAt: z.string(),
+  isCurrent: z.boolean(),
+});
+export type Session = z.infer<typeof SessionSchema>;
