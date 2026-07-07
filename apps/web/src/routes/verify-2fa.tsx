@@ -54,8 +54,10 @@ function VerifyTwoFactorPage() {
   if (!mfaPendingToken) return null;
 
   return (
-    <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-stone-900 rounded-lg p-8 border border-stone-800">
+    <div className="relative min-h-screen overflow-hidden flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-cover bg-center scale-110" style={{ backgroundImage: "url('/frontpage.jpg')", filter: 'blur(24px)' }} />
+      <div className="absolute inset-0 bg-black/50" />
+      <div className="relative z-10 max-w-md w-full bg-white/10 backdrop-blur-md rounded-lg p-8 border border-white/20 shadow-xl">
         <h1 className="text-2xl font-bold text-stone-50 mb-2">Two-Factor Authentication</h1>
         <p className="text-stone-400 text-sm mb-6">
           Enter your 6-digit authenticator code, or a 10-character backup code.
@@ -81,3 +83,4 @@ function VerifyTwoFactorPage() {
     </div>
   );
 }
+
