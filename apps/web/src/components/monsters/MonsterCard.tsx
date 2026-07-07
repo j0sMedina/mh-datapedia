@@ -1,8 +1,8 @@
 import { Link } from '@tanstack/react-router';
 import type { MonsterListItem } from '../../lib/types';
 import { Badge } from '../ui/Badge';
-import { TYPE_BADGE_CLASSES } from '../../lib/constants';
-import { cn, formatType } from '../../lib/utils';
+import { TYPE_BADGE_CLASSES, TAG_BADGE_CLASSES } from '../../lib/constants';
+import { cn, formatType, formatTag } from '../../lib/utils';
 
 interface MonsterCardProps {
   monster: MonsterListItem;
@@ -34,6 +34,11 @@ export function MonsterCard({ monster }: MonsterCardProps) {
         <Badge className={cn(TYPE_BADGE_CLASSES[monster.type] ?? 'bg-stone-700 text-stone-400')}>
           {formatType(monster.type)}
         </Badge>
+        {monster.tags.map((tag) => (
+          <Badge key={tag} className={cn(TAG_BADGE_CLASSES[tag] ?? 'bg-stone-700 text-stone-400')}>
+            {formatTag(tag)}
+          </Badge>
+        ))}
       </div>
     </Link>
   );

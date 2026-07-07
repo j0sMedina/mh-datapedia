@@ -2,8 +2,8 @@ import { MapPin, Pencil, Trash2, Heart } from 'lucide-react';
 import type { MonsterDetail } from '../../../lib/types';
 import { Badge } from '../../ui/Badge';
 import { Button } from '../../ui/Button';
-import { TYPE_BADGE_CLASSES } from '../../../lib/constants';
-import { cn, formatType } from '../../../lib/utils';
+import { TYPE_BADGE_CLASSES, TAG_BADGE_CLASSES } from '../../../lib/constants';
+import { cn, formatType, formatTag } from '../../../lib/utils';
 import { useAuth } from '../../../context/AuthContext';
 import { useFavorites } from '../../../hooks/useFavorites';
 import { useAddFavorite } from '../../../hooks/useAddFavorite';
@@ -50,6 +50,11 @@ export function MonsterHeader({ monster, onEdit, onDelete }: MonsterHeaderProps)
             <Badge className={cn(TYPE_BADGE_CLASSES[monster.type] ?? 'bg-stone-700 text-stone-400')}>
               {formatType(monster.type)}
             </Badge>
+            {monster.tags.map((tag) => (
+              <Badge key={tag} className={cn(TAG_BADGE_CLASSES[tag] ?? 'bg-stone-700 text-stone-400')}>
+                {formatTag(tag)}
+              </Badge>
+            ))}
             {monster.habitats.map((h) => (
               <span key={h} className="flex items-center gap-1 text-stone-500 text-xs">
                 <MapPin size={10} />
