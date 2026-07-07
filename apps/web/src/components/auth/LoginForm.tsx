@@ -27,6 +27,7 @@ export function LoginForm({ onSuccess, onForgotPassword }: LoginFormProps) {
     try {
       const result = await login(data.email, data.password);
       if (result?.mfaRequired) {
+        onSuccess();
         navigate({ to: '/verify-2fa' });
         return;
       }
