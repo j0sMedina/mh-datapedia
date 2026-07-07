@@ -362,6 +362,7 @@ export async function changePassword(
   userId: string,
   currentPassword: string,
   newPassword: string,
+  currentToken: string,
 ): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -372,4 +373,5 @@ export async function changePassword(
   if (!valid) throw new AppError(400, 'Invalid current password', 'INVALID_PASSWORD');
   const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
   await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  await revokeOtherSessions(userId, currentToken);
 }

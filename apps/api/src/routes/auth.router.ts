@@ -179,13 +179,16 @@ router.delete('/sessions', authenticate, async (req: Request, res: Response, nex
 router.post(
   '/change-password',
   authenticate,
+  authLimiter,
   validate(ChangePasswordSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const currentToken = req.cookies[COOKIE] as string | undefined;
       await authService.changePassword(
         req.user!.id,
         req.body.currentPassword,
         req.body.newPassword,
+        currentToken ?? '',
       );
       res.json({ message: 'Password updated.' });
     } catch (err) {
