@@ -33,10 +33,14 @@ function TwoFactorAuthPage() {
   const [disableError, setDisableError] = useState('');
 
   async function handleSetup() {
-    const data = await totpSetup.mutateAsync();
-    setSetupData(data);
-    setEnableCode('');
-    setEnableError('');
+    try {
+      const data = await totpSetup.mutateAsync();
+      setSetupData(data);
+      setEnableCode('');
+      setEnableError('');
+    } catch {
+      setEnableError('Something went wrong. Please try again.');
+    }
   }
 
   async function handleEnable() {
