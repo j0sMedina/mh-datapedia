@@ -7,6 +7,7 @@ export const UserSchema = z.object({
   username: z.string(),
   role: RoleSchema,
   emailVerified: z.boolean(),
+  totpEnabled: z.boolean(),
   createdAt: z.string(),
 });
 export type User = z.infer<typeof UserSchema>;
@@ -53,3 +54,15 @@ export const ChangePasswordSchema = z.object({
   newPassword: z.string().min(8),
 });
 export type ChangePassword = z.infer<typeof ChangePasswordSchema>;
+
+export const TotpEnableSchema = z.object({ code: z.string().length(6) });
+export type TotpEnable = z.infer<typeof TotpEnableSchema>;
+
+export const TotpDisableSchema = z.object({ password: z.string().min(1) });
+export type TotpDisable = z.infer<typeof TotpDisableSchema>;
+
+export const TotpVerifySchema = z.object({
+  mfaPendingToken: z.string().min(1),
+  code: z.string().min(1),
+});
+export type TotpVerify = z.infer<typeof TotpVerifySchema>;

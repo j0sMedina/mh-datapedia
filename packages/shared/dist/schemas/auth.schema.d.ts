@@ -5,6 +5,7 @@ export declare const UserSchema: z.ZodObject<{
     username: z.ZodString;
     role: z.ZodEnum<["USER", "HELPER", "ADMIN", "MASTER"]>;
     emailVerified: z.ZodBoolean;
+    totpEnabled: z.ZodBoolean;
     createdAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     id: string;
@@ -13,6 +14,7 @@ export declare const UserSchema: z.ZodObject<{
     username: string;
     role: "USER" | "HELPER" | "ADMIN" | "MASTER";
     emailVerified: boolean;
+    totpEnabled: boolean;
 }, {
     id: string;
     createdAt: string;
@@ -20,6 +22,7 @@ export declare const UserSchema: z.ZodObject<{
     username: string;
     role: "USER" | "HELPER" | "ADMIN" | "MASTER";
     emailVerified: boolean;
+    totpEnabled: boolean;
 }>;
 export type User = z.infer<typeof UserSchema>;
 export declare const AuthTokensSchema: z.ZodObject<{
@@ -111,4 +114,31 @@ export declare const ChangePasswordSchema: z.ZodObject<{
     newPassword: string;
 }>;
 export type ChangePassword = z.infer<typeof ChangePasswordSchema>;
+export declare const TotpEnableSchema: z.ZodObject<{
+    code: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    code: string;
+}, {
+    code: string;
+}>;
+export type TotpEnable = z.infer<typeof TotpEnableSchema>;
+export declare const TotpDisableSchema: z.ZodObject<{
+    password: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    password: string;
+}, {
+    password: string;
+}>;
+export type TotpDisable = z.infer<typeof TotpDisableSchema>;
+export declare const TotpVerifySchema: z.ZodObject<{
+    mfaPendingToken: z.ZodString;
+    code: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    code: string;
+    mfaPendingToken: string;
+}, {
+    code: string;
+    mfaPendingToken: string;
+}>;
+export type TotpVerify = z.infer<typeof TotpVerifySchema>;
 //# sourceMappingURL=auth.schema.d.ts.map

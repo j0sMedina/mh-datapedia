@@ -6,6 +6,7 @@ export const UserSchema = z.object({
     username: z.string(),
     role: RoleSchema,
     emailVerified: z.boolean(),
+    totpEnabled: z.boolean(),
     createdAt: z.string(),
 });
 export const AuthTokensSchema = z.object({
@@ -37,5 +38,11 @@ export const SessionSchema = z.object({
 export const ChangePasswordSchema = z.object({
     currentPassword: z.string().min(1),
     newPassword: z.string().min(8),
+});
+export const TotpEnableSchema = z.object({ code: z.string().length(6) });
+export const TotpDisableSchema = z.object({ password: z.string().min(1) });
+export const TotpVerifySchema = z.object({
+    mfaPendingToken: z.string().min(1),
+    code: z.string().min(1),
 });
 //# sourceMappingURL=auth.schema.js.map

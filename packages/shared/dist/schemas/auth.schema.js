@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChangePasswordSchema = exports.SessionSchema = exports.ResetPasswordSchema = exports.ForgotPasswordSchema = exports.LoginSchema = exports.RegisterSchema = exports.AuthTokensSchema = exports.UserSchema = void 0;
+exports.TotpVerifySchema = exports.TotpDisableSchema = exports.TotpEnableSchema = exports.ChangePasswordSchema = exports.SessionSchema = exports.ResetPasswordSchema = exports.ForgotPasswordSchema = exports.LoginSchema = exports.RegisterSchema = exports.AuthTokensSchema = exports.UserSchema = void 0;
 const zod_1 = require("zod");
 const enums_schema_1 = require("./enums.schema");
 exports.UserSchema = zod_1.z.object({
@@ -9,6 +9,7 @@ exports.UserSchema = zod_1.z.object({
     username: zod_1.z.string(),
     role: enums_schema_1.RoleSchema,
     emailVerified: zod_1.z.boolean(),
+    totpEnabled: zod_1.z.boolean(),
     createdAt: zod_1.z.string(),
 });
 exports.AuthTokensSchema = zod_1.z.object({
@@ -40,5 +41,11 @@ exports.SessionSchema = zod_1.z.object({
 exports.ChangePasswordSchema = zod_1.z.object({
     currentPassword: zod_1.z.string().min(1),
     newPassword: zod_1.z.string().min(8),
+});
+exports.TotpEnableSchema = zod_1.z.object({ code: zod_1.z.string().length(6) });
+exports.TotpDisableSchema = zod_1.z.object({ password: zod_1.z.string().min(1) });
+exports.TotpVerifySchema = zod_1.z.object({
+    mfaPendingToken: zod_1.z.string().min(1),
+    code: zod_1.z.string().min(1),
 });
 //# sourceMappingURL=auth.schema.js.map
