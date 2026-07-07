@@ -1,7 +1,10 @@
 import { z } from 'zod';
 export declare const MHGameSchema: z.ZodEnum<["MONSTER_HUNTER_WORLD", "MONSTER_HUNTER_WORLD_ICEBORNE", "MONSTER_HUNTER_RISE", "MONSTER_HUNTER_RISE_SUNBREAK", "MONSTER_HUNTER_WILDS"]>;
 export type MHGame = z.infer<typeof MHGameSchema>;
-export declare const MonsterTypeSchema: z.ZodEnum<["Large", "Small", "ElderDragon", "Apex", "Afflicted", "Tempered", "FlyingWyvern", "BruteWyvern", "FangedBeast", "Temnoceran", "BirdWyvern", "Construct", "DemiElderDragon", "Leviathan", "Amphibian", "Cephalopod", "Machine"]>;
+export declare const MonsterTagSchema: z.ZodEnum<["Tempered", "ArchTempered", "Apex", "Afflicted"]>;
+export type MonsterTag = z.infer<typeof MonsterTagSchema>;
+export declare function validateTagCombination(tags: string[]): boolean;
+export declare const MonsterTypeSchema: z.ZodEnum<["Small", "ElderDragon", "FlyingWyvern", "BruteWyvern", "FangedBeast", "Temnoceran", "BirdWyvern", "Construct", "DemiElderDragon", "Leviathan", "Amphibian", "Cephalopod", "Machine"]>;
 export type MonsterType = z.infer<typeof MonsterTypeSchema>;
 export declare const ElementSchema: z.ZodEnum<["Fire", "Water", "Thunder", "Ice", "Dragon", "Poison", "Sleep", "Paralysis", "Blast", "Stun"]>;
 export type Element = z.infer<typeof ElementSchema>;

@@ -6,13 +6,19 @@ export const MHGameSchema = z.enum([
     'MONSTER_HUNTER_RISE_SUNBREAK',
     'MONSTER_HUNTER_WILDS',
 ]);
+export const MonsterTagSchema = z.enum(['Tempered', 'ArchTempered', 'Apex', 'Afflicted']);
+export function validateTagCombination(tags) {
+    if (tags.includes('Afflicted') && tags.length > 1)
+        return false;
+    if (tags.includes('Tempered') && tags.includes('ArchTempered'))
+        return false;
+    if (tags.includes('ArchTempered') && !tags.includes('Apex'))
+        return false;
+    return true;
+}
 export const MonsterTypeSchema = z.enum([
-    'Large',
     'Small',
     'ElderDragon',
-    'Apex',
-    'Afflicted',
-    'Tempered',
     'FlyingWyvern',
     'BruteWyvern',
     'FangedBeast',

@@ -194,6 +194,11 @@ describe('Monster tags', () => {
     expect(res.body.data.length).toBeGreaterThan(0);
     res.body.data.forEach((m: any) => expect(m.tags).toContain('Apex'));
   });
+
+  it('rejects invalid tag value in filter → 400', async () => {
+    const res = await request(app).get('/api/monsters?tags=BadValue');
+    expect(res.status).toBe(400);
+  });
 });
 
 describe('PUT /api/monsters/:id/hitzones', () => {

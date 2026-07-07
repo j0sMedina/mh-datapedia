@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AuditActionSchema = exports.RoleSchema = exports.DropMethodSchema = exports.RankSchema = exports.DifficultySchema = exports.WeaknessRatingSchema = exports.ElementSchema = exports.MonsterTypeSchema = exports.MHGameSchema = void 0;
+exports.AuditActionSchema = exports.RoleSchema = exports.DropMethodSchema = exports.RankSchema = exports.DifficultySchema = exports.WeaknessRatingSchema = exports.ElementSchema = exports.MonsterTypeSchema = exports.MonsterTagSchema = exports.MHGameSchema = void 0;
+exports.validateTagCombination = validateTagCombination;
 const zod_1 = require("zod");
 exports.MHGameSchema = zod_1.z.enum([
     'MONSTER_HUNTER_WORLD',
@@ -9,13 +10,19 @@ exports.MHGameSchema = zod_1.z.enum([
     'MONSTER_HUNTER_RISE_SUNBREAK',
     'MONSTER_HUNTER_WILDS',
 ]);
+exports.MonsterTagSchema = zod_1.z.enum(['Tempered', 'ArchTempered', 'Apex', 'Afflicted']);
+function validateTagCombination(tags) {
+    if (tags.includes('Afflicted') && tags.length > 1)
+        return false;
+    if (tags.includes('Tempered') && tags.includes('ArchTempered'))
+        return false;
+    if (tags.includes('ArchTempered') && !tags.includes('Apex'))
+        return false;
+    return true;
+}
 exports.MonsterTypeSchema = zod_1.z.enum([
-    'Large',
     'Small',
     'ElderDragon',
-    'Apex',
-    'Afflicted',
-    'Tempered',
     'FlyingWyvern',
     'BruteWyvern',
     'FangedBeast',
