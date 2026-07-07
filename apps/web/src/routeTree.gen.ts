@@ -21,6 +21,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as MonstersIndexRouteImport } from './routes/monsters/index'
 import { Route as MonstersIdRouteImport } from './routes/monsters/$id'
 import { Route as AccountSessionsRouteImport } from './routes/account/sessions'
+import { Route as AccountTwoFactorAuthRouteImport } from './routes/account/two-factor-auth'
 
 const VerifyTwoFactorRoute = VerifyTwoFactorRouteImport.update({
   id: '/verify-2fa',
@@ -82,6 +83,11 @@ const AccountSessionsRoute = AccountSessionsRouteImport.update({
   path: '/account/sessions',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AccountTwoFactorAuthRoute = AccountTwoFactorAuthRouteImport.update({
+  id: '/account/two-factor-auth',
+  path: '/account/two-factor-auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/verify-2fa': typeof VerifyTwoFactorRoute
   '/verify-email': typeof VerifyEmailRoute
   '/account/sessions': typeof AccountSessionsRoute
+  '/account/two-factor-auth': typeof AccountTwoFactorAuthRoute
   '/monsters/$id': typeof MonstersIdRoute
   '/monsters/': typeof MonstersIndexRoute
 }
@@ -108,6 +115,7 @@ export interface FileRoutesByTo {
   '/verify-2fa': typeof VerifyTwoFactorRoute
   '/verify-email': typeof VerifyEmailRoute
   '/account/sessions': typeof AccountSessionsRoute
+  '/account/two-factor-auth': typeof AccountTwoFactorAuthRoute
   '/monsters/$id': typeof MonstersIdRoute
   '/monsters': typeof MonstersIndexRoute
 }
@@ -123,6 +131,7 @@ export interface FileRoutesById {
   '/verify-2fa': typeof VerifyTwoFactorRoute
   '/verify-email': typeof VerifyEmailRoute
   '/account/sessions': typeof AccountSessionsRoute
+  '/account/two-factor-auth': typeof AccountTwoFactorAuthRoute
   '/monsters/$id': typeof MonstersIdRoute
   '/monsters/': typeof MonstersIndexRoute
 }
@@ -139,6 +148,7 @@ export interface FileRouteTypes {
     | '/verify-2fa'
     | '/verify-email'
     | '/account/sessions'
+    | '/account/two-factor-auth'
     | '/monsters/$id'
     | '/monsters/'
   fileRoutesByTo: FileRoutesByTo
@@ -153,6 +163,7 @@ export interface FileRouteTypes {
     | '/verify-2fa'
     | '/verify-email'
     | '/account/sessions'
+    | '/account/two-factor-auth'
     | '/monsters/$id'
     | '/monsters'
   id:
@@ -167,6 +178,7 @@ export interface FileRouteTypes {
     | '/verify-2fa'
     | '/verify-email'
     | '/account/sessions'
+    | '/account/two-factor-auth'
     | '/monsters/$id'
     | '/monsters/'
   fileRoutesById: FileRoutesById
@@ -182,6 +194,7 @@ export interface RootRouteChildren {
   VerifyTwoFactorRoute: typeof VerifyTwoFactorRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   AccountSessionsRoute: typeof AccountSessionsRoute
+  AccountTwoFactorAuthRoute: typeof AccountTwoFactorAuthRoute
   MonstersIdRoute: typeof MonstersIdRoute
   MonstersIndexRoute: typeof MonstersIndexRoute
 }
@@ -272,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AccountSessionsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/account/two-factor-auth': {
+      id: '/account/two-factor-auth'
+      path: '/account/two-factor-auth'
+      fullPath: '/account/two-factor-auth'
+      preLoaderRoute: typeof AccountTwoFactorAuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -286,6 +306,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyTwoFactorRoute: VerifyTwoFactorRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   AccountSessionsRoute: AccountSessionsRoute,
+  AccountTwoFactorAuthRoute: AccountTwoFactorAuthRoute,
   MonstersIdRoute: MonstersIdRoute,
   MonstersIndexRoute: MonstersIndexRoute,
 }

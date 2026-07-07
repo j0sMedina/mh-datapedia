@@ -112,6 +112,13 @@ export function Navbar() {
                         >
                           Sessions
                         </Link>
+                        <Link
+                          to="/account/two-factor-auth"
+                          onClick={() => setDropdownOpen(false)}
+                          className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-800 hover:text-stone-50 transition-colors"
+                        >
+                          Two-Factor Auth
+                        </Link>
                         <button
                           onClick={() => {
                             setDropdownOpen(false);
