@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { MonsterTypeSchema } from './enums.schema';
+import { MonsterTypeSchema, MonsterTagSchema, validateTagCombination } from './enums.schema';
 import { ElementWeaknessSchema } from './weakness.schema';
 import { HitzoneSchema } from './hitzone.schema';
 import { StrategySchema } from './strategy.schema';
@@ -16,6 +16,7 @@ const BaseMonsterSchema = z.object({
   iconUrl: z.string().nullable(),
   isBoss: z.boolean(),
   habitats: z.array(z.string()),
+  tags: z.array(MonsterTagSchema),
   weaknesses: z.array(ElementWeaknessSchema),
   hitzones: z.array(HitzoneSchema),
   strategies: z.array(StrategySchema),
@@ -35,7 +36,17 @@ export const MonsterSchema: z.ZodType<Monster> = BaseMonsterSchema.extend({
   parentMonster: z.lazy(() => MonsterSchema.nullable()),
 });
 
-export const CreateMonsterSchema = z.object({
+const tagRefine = (data: { tags?: string[] }, ctx: z.RefinementCtx) => {
+  if (data.tags && !validateTagCombination(data.tags)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['tags'],
+      message: 'Invalid tag combination. Afflicted must be solo; ArchTempered requires Apex and cannot pair with Tempered.',
+    });
+  }
+};
+
+const CreateMonsterBaseSchema = z.object({
   name: z.string().min(1).max(200),
   title: z.string().min(1).max(200),
   description: z.string().min(1),
@@ -45,14 +56,18 @@ export const CreateMonsterSchema = z.object({
   isBoss: z.boolean().optional(),
   habitats: z.array(z.string()).optional(),
   parentId: z.string().cuid().nullable().optional(),
+  tags: z.array(MonsterTagSchema).optional(),
 });
+
+export const CreateMonsterSchema = CreateMonsterBaseSchema.superRefine(tagRefine);
 export type CreateMonster = z.infer<typeof CreateMonsterSchema>;
 
-export const UpdateMonsterSchema = CreateMonsterSchema.partial();
+export const UpdateMonsterSchema = CreateMonsterBaseSchema.partial().superRefine(tagRefine);
 export type UpdateMonster = z.infer<typeof UpdateMonsterSchema>;
 
 export const MonsterFiltersSchema = z.object({
   type: MonsterTypeSchema.optional(),
+  tags: z.string().optional(),
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),

@@ -9,13 +9,19 @@ export const MHGameSchema = z.enum([
 ]);
 export type MHGame = z.infer<typeof MHGameSchema>;
 
+export const MonsterTagSchema = z.enum(['Tempered', 'ArchTempered', 'Apex', 'Afflicted']);
+export type MonsterTag = z.infer<typeof MonsterTagSchema>;
+
+export function validateTagCombination(tags: string[]): boolean {
+  if (tags.includes('Afflicted') && tags.length > 1) return false;
+  if (tags.includes('Tempered') && tags.includes('ArchTempered')) return false;
+  if (tags.includes('ArchTempered') && !tags.includes('Apex')) return false;
+  return true;
+}
+
 export const MonsterTypeSchema = z.enum([
-  'Large',
   'Small',
   'ElderDragon',
-  'Apex',
-  'Afflicted',
-  'Tempered',
   'FlyingWyvern',
   'BruteWyvern',
   'FangedBeast',
