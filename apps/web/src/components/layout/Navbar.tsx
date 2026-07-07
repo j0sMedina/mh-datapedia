@@ -5,6 +5,7 @@ import { useLoginModal } from '../../context/LoginModalContext';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { ChangePasswordModal } from '../account/ChangePasswordModal';
+import { SessionsModal } from '../account/SessionsModal';
 
 export function Navbar() {
   const { user, logout } = useAuth();
@@ -12,6 +13,7 @@ export function Navbar() {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [sessionsOpen, setSessionsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -105,13 +107,12 @@ export function Navbar() {
                     </button>
                     {dropdownOpen && (
                       <div className="absolute right-0 mt-2 w-44 bg-stone-900 border border-stone-700 rounded-md shadow-lg z-50">
-                        <Link
-                          to="/account/sessions"
-                          onClick={() => setDropdownOpen(false)}
-                          className="block px-4 py-2 text-sm text-stone-300 hover:bg-stone-800 hover:text-stone-50 transition-colors"
+                        <button
+                          onClick={() => { setDropdownOpen(false); setSessionsOpen(true); }}
+                          className="block w-full text-left px-4 py-2 text-sm text-stone-300 hover:bg-stone-800 hover:text-stone-50 transition-colors"
                         >
                           Sessions
-                        </Link>
+                        </button>
                         <Link
                           to="/account/two-factor-auth"
                           onClick={() => setDropdownOpen(false)}
@@ -155,6 +156,10 @@ export function Navbar() {
       <ChangePasswordModal
         open={changePasswordOpen}
         onClose={() => setChangePasswordOpen(false)}
+      />
+      <SessionsModal
+        open={sessionsOpen}
+        onClose={() => setSessionsOpen(false)}
       />
     </>
   );

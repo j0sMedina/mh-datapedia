@@ -33,15 +33,16 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="fixed inset-0 bg-black/60" />
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative bg-stone-900 border border-stone-800 rounded-lg w-full max-w-lg max-h-[90vh] overflow-y-auto outline-none"
+        className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto outline-none rounded-xl border border-white/10"
+        style={{ background: 'rgba(20,18,16,0.82)', backdropFilter: 'blur(20px) saturate(1.4)', WebkitBackdropFilter: 'blur(20px) saturate(1.4)' }}
       >
-        <div className="flex items-center justify-between p-4 border-b border-stone-800">
+        <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-stone-50 font-semibold">{title}</h2>
           <button
             onClick={onClose}
