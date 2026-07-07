@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CreateMonsterSchema, MonsterTypeSchema } from '@mh-datapedia/shared';
+import { CreateMonsterSchema, MonsterTypeSchema, MonsterTagSchema, validateTagCombination } from '@mh-datapedia/shared';
 import type { CreateMonster, MonsterTag } from '@mh-datapedia/shared';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
@@ -12,7 +12,7 @@ import { TAG_BADGE_CLASSES } from '../../lib/constants';
 import { cn, formatType, formatTag } from '../../lib/utils';
 import type { MonsterDetail } from '../../lib/types';
 
-const ALL_TAGS: MonsterTag[] = ['Tempered', 'ArchTempered', 'Apex', 'Afflicted'];
+const ALL_TAGS = MonsterTagSchema.options;
 
 interface MonsterFormModalProps {
   open: boolean;
@@ -62,9 +62,9 @@ export function MonsterFormModal({ open, onClose, existing }: MonsterFormModalPr
     let next: MonsterTag[];
     if (selectedTags.includes(tag)) {
       next = selectedTags.filter((t) => t !== tag);
+      if (!validateTagCombination(next)) return;
     } else {
       next = [...selectedTags, tag];
-      // ArchTempered requires Apex — auto-add Apex
       if (tag === 'ArchTempered' && !next.includes('Apex')) {
         next = [...next, 'Apex'];
       }

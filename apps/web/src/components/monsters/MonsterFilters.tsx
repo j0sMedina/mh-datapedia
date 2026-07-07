@@ -1,8 +1,8 @@
-import { MonsterTypeSchema } from '@mh-datapedia/shared';
+import { MonsterTypeSchema, MonsterTagSchema } from '@mh-datapedia/shared';
 import { TAG_BADGE_CLASSES } from '../../lib/constants';
 import { cn, formatType, formatTag } from '../../lib/utils';
 
-const ALL_TAGS = ['Tempered', 'ArchTempered', 'Apex', 'Afflicted'] as const;
+const ALL_TAGS = MonsterTagSchema.options;
 
 interface MonsterFiltersProps {
   type: string | undefined;
