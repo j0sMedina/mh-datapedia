@@ -8,6 +8,7 @@ export const Route = createFileRoute('/$')({
 function NotFoundPage() {
   const navigate = useNavigate();
   const [fx, setFx] = useState<{ x: number; y: number; r: number; blackoutMs: number } | null>(null);
+  const [redActive, setRedActive] = useState(false);
   const fired = useRef(false);
   const btnRef = useRef<HTMLButtonElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -23,6 +24,9 @@ function NotFoundPage() {
   function handleClick() {
     if (fired.current || !btnRef.current) return;
     fired.current = true;
+
+    setRedActive(true);
+    setTimeout(() => setRedActive(false), 1800);
 
     const audio = audioRef.current;
     const blackoutMs = audio?.duration ? audio.duration * 1000 : 1150;
@@ -53,6 +57,14 @@ function NotFoundPage() {
         style={{ backgroundImage: "url('/wyveria.avif')", filter: 'blur(24px)' }}
       />
       <div className="absolute inset-0 bg-black/60" />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'rgba(160, 0, 0, 0.45)',
+          opacity: redActive ? 1 : 0,
+          transition: redActive ? 'opacity 0.5s ease-in' : 'opacity 1.4s ease-out',
+        }}
+      />
 
       <div
         className="mh-panel mh-panel--accent mh-glass relative z-10 w-full flex flex-col items-center text-center px-8 py-10 gap-6"
