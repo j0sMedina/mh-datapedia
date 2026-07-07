@@ -489,6 +489,9 @@ describe('Session management', () => {
       .post('/api/auth/login')
       .send({ email: sessionEmail, password: sessionPassword });
 
+    expect(l1.status).toBe(200);
+    expect(l2.status).toBe(200);
+
     const accessToken = l1.body.accessToken;
     const cookie = l1.headers['set-cookie'][0];
 
@@ -496,6 +499,7 @@ describe('Session management', () => {
       .get('/api/auth/sessions')
       .set('Authorization', `Bearer ${accessToken}`)
       .set('Cookie', cookie);
+    expect(before.status).toBe(200);
     expect(before.body.length).toBeGreaterThanOrEqual(2);
 
     const res = await request(app)

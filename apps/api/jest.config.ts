@@ -6,6 +6,7 @@ const config: Config = {
   rootDir: '.',
   testMatch: ['**/tests/**/*.test.ts'],
   globalSetup: './tests/globalSetup.ts',
+  maxWorkers: 1,
   transform: {
     '^.+\\.ts$': ['ts-jest', { tsconfig: { rootDir: '.' } }],
   },
