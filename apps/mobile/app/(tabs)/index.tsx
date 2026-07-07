@@ -19,11 +19,10 @@ import { useAuthSheet } from '../../src/context/AuthSheetContext';
 import type { Monster, MonsterType } from '@mh-datapedia/shared';
 
 const ROW1_TYPES: MonsterType[] = [
-  'Large', 'Small', 'Apex', 'Afflicted', 'Tempered', 'ElderDragon', 'DemiElderDragon',
+  'Small', 'ElderDragon', 'DemiElderDragon', 'FlyingWyvern', 'BruteWyvern', 'FangedBeast',
 ];
 const ROW2_TYPES: MonsterType[] = [
-  'FlyingWyvern', 'BruteWyvern', 'FangedBeast', 'Temnoceran', 'BirdWyvern',
-  'Construct', 'Leviathan', 'Amphibian', 'Cephalopod', 'Machine',
+  'Temnoceran', 'BirdWyvern', 'Construct', 'Leviathan', 'Amphibian', 'Cephalopod', 'Machine',
 ];
 
 interface ListResponse {
