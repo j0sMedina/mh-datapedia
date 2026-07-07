@@ -1,14 +1,18 @@
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateMonsterSchema, MonsterTypeSchema } from '@mh-datapedia/shared';
-import type { CreateMonster } from '@mh-datapedia/shared';
+import type { CreateMonster, MonsterTag } from '@mh-datapedia/shared';
 import { Modal } from '../ui/Modal';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
 import { useCreateMonster } from '../../hooks/useCreateMonster';
 import { useUpdateMonster } from '../../hooks/useUpdateMonster';
+import { TAG_BADGE_CLASSES } from '../../lib/constants';
+import { cn, formatType, formatTag } from '../../lib/utils';
 import type { MonsterDetail } from '../../lib/types';
+
+const ALL_TAGS: MonsterTag[] = ['Tempered', 'ArchTempered', 'Apex', 'Afflicted'];
 
 interface MonsterFormModalProps {
   open: boolean;
@@ -25,8 +29,15 @@ export function MonsterFormModal({ open, onClose, existing }: MonsterFormModalPr
     register,
     handleSubmit,
     reset,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
-  } = useForm<CreateMonster>({ resolver: zodResolver(CreateMonsterSchema) });
+  } = useForm<CreateMonster>({
+    resolver: zodResolver(CreateMonsterSchema),
+    defaultValues: { tags: [] },
+  });
+
+  const selectedTags = watch('tags') ?? [];
 
   useEffect(() => {
     if (open) {
@@ -40,11 +51,34 @@ export function MonsterFormModal({ open, onClose, existing }: MonsterFormModalPr
               isBoss:      existing.isBoss,
               habitats:    existing.habitats,
               parentId:    existing.parentId ?? null,
+              tags:        (existing.tags ?? []) as MonsterTag[],
             }
-          : undefined,
+          : { tags: [] },
       );
     }
   }, [open, existing, reset]);
+
+  const toggleTag = (tag: MonsterTag) => {
+    let next: MonsterTag[];
+    if (selectedTags.includes(tag)) {
+      next = selectedTags.filter((t) => t !== tag);
+    } else {
+      next = [...selectedTags, tag];
+      // ArchTempered requires Apex — auto-add Apex
+      if (tag === 'ArchTempered' && !next.includes('Apex')) {
+        next = [...next, 'Apex'];
+      }
+    }
+    setValue('tags', next, { shouldValidate: true });
+  };
+
+  const isTagDisabled = (tag: MonsterTag): boolean => {
+    if (tag === 'Afflicted') return selectedTags.some((t) => t !== 'Afflicted');
+    if (selectedTags.includes('Afflicted')) return true;
+    if (tag === 'Tempered' && selectedTags.includes('ArchTempered')) return true;
+    if (tag === 'ArchTempered' && selectedTags.includes('Tempered')) return true;
+    return false;
+  };
 
   const onSubmit = async (data: CreateMonster) => {
     if (isEdit) {
@@ -72,13 +106,47 @@ export function MonsterFormModal({ open, onClose, existing }: MonsterFormModalPr
         </div>
 
         <div>
-          <label className="block text-stone-300 text-sm mb-1">Type</label>
+          <label className="block text-stone-300 text-sm mb-1">Biological Type</label>
           <select
             className="w-full bg-stone-800 border border-stone-700 rounded px-3 py-2 text-stone-50 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             {...register('type')}
           >
-            {MonsterTypeSchema.options.map((t) => <option key={t} value={t}>{t}</option>)}
+            {MonsterTypeSchema.options.map((t) => (
+              <option key={t} value={t}>{formatType(t)}</option>
+            ))}
           </select>
+          {errors.type && <p className="mt-1 text-red-400 text-xs">{errors.type.message}</p>}
+        </div>
+
+        <div>
+          <label className="block text-stone-300 text-sm mb-2">Tags</label>
+          <div className="flex flex-wrap gap-2">
+            {ALL_TAGS.map((tag) => {
+              const active = selectedTags.includes(tag);
+              const disabled = !active && isTagDisabled(tag);
+              return (
+                <button
+                  key={tag}
+                  type="button"
+                  onClick={() => !disabled && toggleTag(tag)}
+                  disabled={disabled}
+                  className={cn(
+                    'px-3 py-1 rounded-full text-xs border transition-colors duration-150',
+                    active
+                      ? TAG_BADGE_CLASSES[tag]
+                      : disabled
+                        ? 'bg-stone-900 text-stone-600 border-stone-800 cursor-not-allowed'
+                        : 'bg-stone-800 text-stone-400 border-stone-700 hover:bg-stone-700',
+                  )}
+                >
+                  {formatTag(tag)}
+                </button>
+              );
+            })}
+          </div>
+          {errors.tags && (
+            <p className="mt-1 text-red-400 text-xs">{errors.tags.message as string}</p>
+          )}
         </div>
 
         <Input
