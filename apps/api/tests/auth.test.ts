@@ -340,8 +340,6 @@ describe('POST /api/auth/forgot-password + POST /api/auth/reset-password', () =>
 describe('Session management', () => {
   const sessionEmail = 'sessions@example.com';
   const sessionPassword = 'sesspass123';
-  let sessionCookie: string;
-  let secondCookie: string;
 
   beforeAll(async () => {
     await request(app)
@@ -351,16 +349,6 @@ describe('Session management', () => {
       where: { email: sessionEmail },
       data: { emailVerified: true },
     });
-
-    const login1 = await request(app)
-      .post('/api/auth/login')
-      .send({ email: sessionEmail, password: sessionPassword });
-    sessionCookie = login1.headers['set-cookie'][0];
-
-    const login2 = await request(app)
-      .post('/api/auth/login')
-      .send({ email: sessionEmail, password: sessionPassword });
-    secondCookie = login2.headers['set-cookie'][0];
   });
 
   afterAll(async () => {
@@ -401,7 +389,7 @@ describe('Session management', () => {
       .set('Cookie', cookie);
 
     const other = sessions.body.find((s: { isCurrent: boolean }) => !s.isCurrent);
-    if (!other) return; // skip if only one session
+    if (!other) throw new Error('Expected at least one non-current session');
 
     const res = await request(app)
       .delete(`/api/auth/sessions/${other.id}`)
@@ -447,6 +435,48 @@ describe('Session management', () => {
     expect(res.status).toBe(403);
 
     await prisma.user.deleteMany({ where: { email: 'sessions2@example.com' } });
+  });
+
+  it('GET /api/auth/sessions does not return expired sessions', async () => {
+    const ts = Date.now();
+    const email = `expired-sessions-${ts}@example.com`;
+    const password = 'expiredpass123';
+
+    // Register only — creates exactly one active refresh token
+    const regRes = await request(app)
+      .post('/api/auth/register')
+      .send({ email, username: `expireduser${ts}`, password });
+    const accessToken = regRes.body.accessToken;
+    const cookie = regRes.headers['set-cookie'][0];
+
+    const user = await prisma.user.findUnique({ where: { email } });
+
+    // Directly insert an expired refresh token for this user
+    const expiredToken = await prisma.refreshToken.create({
+      data: {
+        token: `expired-token-test-${ts}`,
+        userId: user!.id,
+        expiresAt: new Date(Date.now() - 60_000),
+      },
+    });
+
+    try {
+      const res = await request(app)
+        .get('/api/auth/sessions')
+        .set('Authorization', `Bearer ${accessToken}`)
+        .set('Cookie', cookie);
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      // The expired token must not appear in the active sessions list
+      const ids = res.body.map((s: { id: string }) => s.id);
+      expect(ids).not.toContain(expiredToken.id);
+      // Only the one active session (from registration) should be present
+      expect(res.body.length).toBe(1);
+    } finally {
+      await prisma.refreshToken.deleteMany({ where: { userId: user!.id } });
+      await prisma.user.deleteMany({ where: { email } });
+    }
   });
 
   it('DELETE /api/auth/sessions revokes all other sessions', async () => {
