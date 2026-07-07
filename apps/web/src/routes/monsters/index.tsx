@@ -11,6 +11,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 
 const monsterSearchSchema = z.object({
   type:   z.string().optional(),
+  tags:   z.string().optional(),
   search: z.string().optional(),
   page:   z.coerce.number().int().min(1).default(1).catch(1),
 });
@@ -23,11 +24,11 @@ export const Route = createFileRoute('/monsters/')({
 function MonstersPage() {
   const { user } = useAuth();
   const navigate = useNavigate({ from: '/monsters/' });
-  const { type, search, page } = Route.useSearch();
-  const { data, isLoading } = useMonsters({ type, search, page });
+  const { type, tags: tagsParam, search, page } = Route.useSearch();
+  const activeTags = tagsParam ? tagsParam.split(',').filter(Boolean) : [];
+  const { data, isLoading } = useMonsters({ type, tags: activeTags, search, page });
   const [showAddModal, setShowAddModal] = useState(false);
 
-  // Local search input state — debounced before updating the URL
   const [searchInput, setSearchInput] = useState(search ?? '');
   const debouncedSearch = useDebounce(searchInput, 400);
 
@@ -41,6 +42,10 @@ function MonstersPage() {
     } else {
       navigate({ search: (prev) => ({ ...prev, [key]: val, page: 1 }) });
     }
+  };
+
+  const setTags = (tags: string[]) => {
+    navigate({ search: (prev) => ({ ...prev, tags: tags.length ? tags.join(',') : undefined, page: 1 }) });
   };
 
   return (
@@ -57,8 +62,10 @@ function MonstersPage() {
       <div className="mb-6">
         <MonsterFilters
           type={type}
+          tags={activeTags}
           search={searchInput}
           onTypeChange={(t) => setFilter('type', t)}
+          onTagsChange={setTags}
           onSearchChange={(s) => setFilter('search', s)}
         />
       </div>

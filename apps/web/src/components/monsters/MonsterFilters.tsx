@@ -1,19 +1,30 @@
 import { MonsterTypeSchema } from '@mh-datapedia/shared';
-import { cn, formatType } from '../../lib/utils';
+import { TAG_BADGE_CLASSES } from '../../lib/constants';
+import { cn, formatType, formatTag } from '../../lib/utils';
+
+const ALL_TAGS = ['Tempered', 'ArchTempered', 'Apex', 'Afflicted'] as const;
 
 interface MonsterFiltersProps {
   type: string | undefined;
+  tags: string[];
   search: string | undefined;
   onTypeChange: (type: string | undefined) => void;
+  onTagsChange: (tags: string[]) => void;
   onSearchChange: (search: string | undefined) => void;
 }
 
 export function MonsterFilters({
   type,
+  tags,
   search,
   onTypeChange,
+  onTagsChange,
   onSearchChange,
 }: MonsterFiltersProps) {
+  const toggleTag = (tag: string) => {
+    onTagsChange(tags.includes(tag) ? tags.filter((t) => t !== tag) : [...tags, tag]);
+  };
+
   return (
     <div className="space-y-3">
       <input
@@ -36,6 +47,23 @@ export function MonsterFilters({
           >
             {formatType(t)}
           </Pill>
+        ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {ALL_TAGS.map((tag) => (
+          <button
+            key={tag}
+            onClick={() => toggleTag(tag)}
+            className={cn(
+              'px-3 py-1 rounded-full text-xs transition-colors duration-150 border',
+              tags.includes(tag)
+                ? TAG_BADGE_CLASSES[tag]
+                : 'bg-stone-800 text-stone-400 border-stone-700 hover:bg-stone-700',
+            )}
+          >
+            {formatTag(tag)}
+          </button>
         ))}
       </div>
     </div>
