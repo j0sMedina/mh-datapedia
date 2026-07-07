@@ -32,7 +32,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   totpSecret    String?
   totpEnabled   Boolean        @default(false)
-  backupCodes   String[]
+  backupCodes   String[]       @default([])
 }
 
 model RefreshToken {
