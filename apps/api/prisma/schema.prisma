@@ -53,6 +53,7 @@ model Monster {
   title       String
   description String            @db.Text
   type        MonsterType
+  tags        MonsterTag[]      @default([])
   imageUrl    String?
   iconUrl     String?
   isBoss      Boolean           @default(false)
@@ -184,12 +185,15 @@ enum AuditAction {
   UNBAN
 }
 
-enum MonsterType {
-  Large
-  Small
+enum MonsterTag {
+  Tempered
+  ArchTempered
   Apex
   Afflicted
-  Tempered
+}
+
+enum MonsterType {
+  Small
   ElderDragon
   FlyingWyvern
   BruteWyvern
