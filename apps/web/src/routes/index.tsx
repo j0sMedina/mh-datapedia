@@ -24,7 +24,9 @@ function HeroCTA({ children, onArrive }: { children: React.ReactNode; onArrive: 
   const handle = () => {
     if (fired.current || !btnRef.current) return;
     fired.current = true;
-    audioRef.current?.play().catch(() => {});
+    const audio = audioRef.current;
+    const duration = audio && audio.duration > 0 ? audio.duration * 1000 : 1150;
+    audio?.play().catch(() => {});
     const rect = btnRef.current.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
@@ -32,7 +34,7 @@ function HeroCTA({ children, onArrive }: { children: React.ReactNode; onArrive: 
     const dx = Math.max(x, w - x), dy = Math.max(y, h - y);
     const r = Math.ceil(Math.hypot(dx, dy) / 20) + 2;
     setFx({ x, y, r });
-    setTimeout(onArrive, 1150);
+    setTimeout(onArrive, duration);
   };
 
   return (
