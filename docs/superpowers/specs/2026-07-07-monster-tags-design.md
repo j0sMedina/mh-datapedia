@@ -138,10 +138,10 @@ Tags displayed as small colour-coded badges alongside the monster name/type:
 
 | Tag | Badge colour |
 |---|---|
-| Apex | red |
-| Tempered | orange |
-| Arch-Tempered | gold |
-| Afflicted | purple |
+| Apex | amber |
+| Tempered | purple |
+| Arch-Tempered | red |
+| Afflicted | dark purple |
 
 Display name is composed at render time: `[tags joined] [name]` (e.g., "Arch-Tempered Arkveld") — never stored in the `name` field.
 
