@@ -84,8 +84,8 @@ function TwoFactorAuthPage() {
   // One-time backup codes display after enabling
   if (backupCodes) {
     return (
-      <div className="min-h-screen bg-stone-950 p-4">
-        <div className="max-w-md mx-auto">
+      <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
           <div className="bg-stone-900 rounded-lg p-8 border border-stone-800">
             <h1 className="text-2xl font-bold text-stone-50 mb-2">Save your backup codes</h1>
             <p className="text-stone-400 text-sm mb-6">
@@ -106,8 +106,8 @@ function TwoFactorAuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-950 p-4">
-      <div className="max-w-md mx-auto">
+    <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4">
+      <div className="max-w-md w-full">
         <div className="bg-stone-900 rounded-lg p-8 border border-stone-800 space-y-6">
           <h1 className="text-2xl font-bold text-stone-50">Two-Factor Authentication</h1>
 
