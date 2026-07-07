@@ -1,7 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { AppError } from '../lib/errors';
 import type { MonsterFilters, CreateMonster, UpdateMonster, UpsertWeaknesses, UpsertHitzones } from '@mh-datapedia/shared';
-import { MHGame, MonsterTag, Rank } from '@prisma/client';
+import { MHGame, Rank } from '@prisma/client';
 
 const MONSTER_DETAIL_INCLUDE = {
   weaknesses: true,
@@ -20,10 +20,9 @@ const MONSTER_DETAIL_INCLUDE = {
 
 export async function listMonsters(filters: MonsterFilters) {
   const { type, tags, search, page, limit } = filters;
-  const parsedTags = tags ? (tags.split(',').filter(Boolean) as MonsterTag[]) : [];
   const where = {
     ...(type && { type }),
-    ...(parsedTags.length > 0 && { tags: { hasEvery: parsedTags } }),
+    ...(tags && tags.length > 0 && { tags: { hasEvery: tags } }),
     ...(search && { name: { contains: search, mode: 'insensitive' as const } }),
   };
   const [data, total] = await Promise.all([

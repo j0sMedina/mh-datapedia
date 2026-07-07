@@ -18,6 +18,7 @@ const BaseMonsterSchema = zod_1.z.object({
     iconUrl: zod_1.z.string().nullable(),
     isBoss: zod_1.z.boolean(),
     habitats: zod_1.z.array(zod_1.z.string()),
+    tags: zod_1.z.array(enums_schema_1.MonsterTagSchema),
     weaknesses: zod_1.z.array(weakness_schema_1.ElementWeaknessSchema),
     hitzones: zod_1.z.array(hitzone_schema_1.HitzoneSchema),
     strategies: zod_1.z.array(strategy_schema_1.StrategySchema),
@@ -30,7 +31,16 @@ exports.MonsterSchema = BaseMonsterSchema.extend({
     subspecies: zod_1.z.lazy(() => zod_1.z.array(exports.MonsterSchema)),
     parentMonster: zod_1.z.lazy(() => exports.MonsterSchema.nullable()),
 });
-exports.CreateMonsterSchema = zod_1.z.object({
+const tagRefine = (data, ctx) => {
+    if (data.tags && !(0, enums_schema_1.validateTagCombination)(data.tags)) {
+        ctx.addIssue({
+            code: zod_1.z.ZodIssueCode.custom,
+            path: ['tags'],
+            message: 'Invalid tag combination. Afflicted must be solo; ArchTempered requires Apex and cannot pair with Tempered.',
+        });
+    }
+};
+const CreateMonsterBaseSchema = zod_1.z.object({
     name: zod_1.z.string().min(1).max(200),
     title: zod_1.z.string().min(1).max(200),
     description: zod_1.z.string().min(1),
@@ -40,10 +50,17 @@ exports.CreateMonsterSchema = zod_1.z.object({
     isBoss: zod_1.z.boolean().optional(),
     habitats: zod_1.z.array(zod_1.z.string()).optional(),
     parentId: zod_1.z.string().cuid().nullable().optional(),
+    tags: zod_1.z.array(enums_schema_1.MonsterTagSchema).optional(),
 });
-exports.UpdateMonsterSchema = exports.CreateMonsterSchema.partial();
+exports.CreateMonsterSchema = CreateMonsterBaseSchema.superRefine(tagRefine);
+exports.UpdateMonsterSchema = CreateMonsterBaseSchema.partial().superRefine(tagRefine);
 exports.MonsterFiltersSchema = zod_1.z.object({
     type: enums_schema_1.MonsterTypeSchema.optional(),
+    tags: zod_1.z
+        .string()
+        .optional()
+        .transform((val) => (val ? val.split(',').filter(Boolean) : undefined))
+        .pipe(zod_1.z.array(enums_schema_1.MonsterTagSchema).optional()),
     search: zod_1.z.string().optional(),
     page: zod_1.z.coerce.number().int().min(1).default(1),
     limit: zod_1.z.coerce.number().int().min(1).max(100).default(20),

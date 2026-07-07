@@ -67,7 +67,11 @@ export type UpdateMonster = z.infer<typeof UpdateMonsterSchema>;
 
 export const MonsterFiltersSchema = z.object({
   type: MonsterTypeSchema.optional(),
-  tags: z.string().optional(),
+  tags: z
+    .string()
+    .optional()
+    .transform((val) => (val ? val.split(',').filter(Boolean) : undefined))
+    .pipe(z.array(MonsterTagSchema).optional()),
   search: z.string().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
