@@ -16,11 +16,14 @@ function NotFoundPage() {
       />
       <div className="absolute inset-0 bg-black/60" />
 
-      <div className="relative z-10 max-w-sm w-full bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 shadow-xl flex flex-col items-center text-center px-8 py-10 gap-6">
+      <div
+        className="mh-panel mh-panel--accent mh-glass relative z-10 w-full flex flex-col items-center text-center px-8 py-10 gap-6"
+        style={{ '--mh-cut': '18px', maxWidth: 400 } as React.CSSProperties}
+      >
         <img
           src="/arkveld.png"
           alt="Arkveld"
-          className="w-64 drop-shadow-2xl select-none"
+          className="w-80 drop-shadow-2xl select-none"
           draggable={false}
         />
         <div>
