@@ -39,6 +39,9 @@ model RefreshToken {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt DateTime
   createdAt DateTime @default(now())
+  userAgent String?
+  ipAddress String?
+  lastUsedAt DateTime @default(now())
 }
 
 model Monster {
