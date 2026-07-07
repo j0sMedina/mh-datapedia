@@ -16,7 +16,7 @@ export const Route = createFileRoute('/admin')({
   beforeLoad: ({ context }) => {
     if (!context.auth.user) throw redirect({ to: '/' });
     const role = context.auth.user.role as Role;
-    if (ROLE_RANK[role] < ROLE_RANK['HELPER']) throw redirect({ to: '/' });
+    if (ROLE_RANK[role] < ROLE_RANK['ADMIN']) throw redirect({ to: '/' });
   },
   component: AdminPage,
 });

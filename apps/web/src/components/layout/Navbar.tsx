@@ -68,7 +68,7 @@ export function Navbar() {
                   Favorites
                 </Link>
               )}
-              {user && ['HELPER', 'ADMIN', 'MASTER'].includes(user.role) && (
+              {user && ['ADMIN', 'MASTER'].includes(user.role) && (
                 <Link
                   to="/admin"
                   className="text-stone-400 hover:text-stone-50 transition-colors duration-150 text-sm pb-0.5"
