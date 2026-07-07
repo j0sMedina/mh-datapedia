@@ -14,6 +14,7 @@ function NotFoundPage() {
   function handleClick() {
     if (fired.current || !btnRef.current) return;
     fired.current = true;
+    new Audio('/arkveld-roar.mp3').play().catch(() => {});
     const rect = btnRef.current.getBoundingClientRect();
     const x = rect.left + rect.width / 2;
     const y = rect.top + rect.height / 2;
