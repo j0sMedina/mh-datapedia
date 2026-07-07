@@ -215,6 +215,7 @@ router.get('/totp/setup', authenticate, async (req: Request, res: Response, next
 router.post(
   '/totp/enable',
   authenticate,
+  authLimiter,
   validate(TotpEnableSchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -242,6 +243,7 @@ router.post(
 
 router.post(
   '/totp/verify',
+  authLimiter,
   validate(TotpVerifySchema),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
