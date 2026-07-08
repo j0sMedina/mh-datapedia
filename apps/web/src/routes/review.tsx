@@ -21,14 +21,27 @@ export const Route = createFileRoute('/review')({
 });
 
 function ReviewPage() {
-  const { data: queue, isLoading } = useReviewQueue();
+  const { data: queue, isLoading, isError } = useReviewQueue();
   const reviewStrategy = useReviewStrategy();
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [reason, setReason] = useState('');
   const [reasonError, setReasonError] = useState('');
+  const [mutationError, setMutationError] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<'approve' | 'reject' | null>(null);
 
   const handleApprove = (id: string) => {
-    reviewStrategy.mutate({ id, action: 'approve' });
+    setMutationError(null);
+    setPendingAction('approve');
+    reviewStrategy.mutate(
+      { id, action: 'approve' },
+      {
+        onSuccess: () => { setPendingAction(null); },
+        onError: () => {
+          setPendingAction(null);
+          setMutationError('Failed to approve strategy. Please try again.');
+        },
+      },
+    );
   };
 
   const handleRejectSubmit = (id: string) => {
@@ -36,13 +49,20 @@ function ReviewPage() {
       setReasonError('Reason is required');
       return;
     }
+    setMutationError(null);
+    setPendingAction('reject');
     reviewStrategy.mutate(
       { id, action: 'reject', reason: reason.trim() },
       {
         onSuccess: () => {
+          setPendingAction(null);
           setRejectingId(null);
           setReason('');
           setReasonError('');
+        },
+        onError: () => {
+          setPendingAction(null);
+          setMutationError('Failed to reject strategy. Please try again.');
         },
       },
     );
@@ -52,6 +72,14 @@ function ReviewPage() {
     return (
       <div className="flex justify-center py-16">
         <Spinner />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <p className="text-red-400 text-sm">Failed to load the review queue. Please try again.</p>
       </div>
     );
   }
@@ -104,7 +132,7 @@ function ReviewPage() {
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => { setRejectingId(null); setReason(''); setReasonError(''); }}
+                    onClick={() => { setRejectingId(null); setReason(''); setReasonError(''); setMutationError(null); }}
                   >
                     Cancel
                   </Button>
@@ -114,27 +142,29 @@ function ReviewPage() {
                     disabled={reviewStrategy.isPending}
                     onClick={() => handleRejectSubmit(s.id)}
                   >
-                    {reviewStrategy.isPending ? 'Rejecting…' : 'Confirm rejection'}
+                    {reviewStrategy.isPending && pendingAction === 'reject' ? 'Rejecting…' : 'Confirm rejection'}
                   </Button>
                 </div>
+                {mutationError && <p className="text-red-400 text-sm">{mutationError}</p>}
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap items-center">
                 <Button
                   size="sm"
                   disabled={reviewStrategy.isPending}
                   onClick={() => handleApprove(s.id)}
                 >
-                  Approve
+                  {reviewStrategy.isPending && pendingAction === 'approve' ? 'Approving…' : 'Approve'}
                 </Button>
                 <Button
                   variant="danger"
                   size="sm"
                   disabled={reviewStrategy.isPending}
-                  onClick={() => { setRejectingId(s.id); setReason(''); setReasonError(''); }}
+                  onClick={() => { setRejectingId(s.id); setReason(''); setReasonError(''); setMutationError(null); }}
                 >
                   Reject
                 </Button>
+                {mutationError && <p className="text-red-400 text-sm">{mutationError}</p>}
               </div>
             )}
           </div>
