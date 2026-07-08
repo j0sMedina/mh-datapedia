@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction, IRouter } from 'express';
 import { z } from 'zod';
+import jwt from 'jsonwebtoken';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/authenticate';
 import { authorize } from '../middleware/authorize';
@@ -14,6 +15,7 @@ import {
   UpsertHitzonesSchema,
 } from '@mh-datapedia/shared';
 import * as monsterService from '../services/monster.service';
+import { env } from '../config/env';
 
 const router: IRouter = Router();
 const IdParamSchema = z.object({ id: z.string() });
@@ -60,7 +62,15 @@ router.get(
 );
 
 router.get('/:id/strategies', validate(IdParamSchema, 'params'), wrap(async (req, res) => {
-  res.json({ data: await monsterService.getStrategies(req.params.id) });
+  let requesterId: string | undefined;
+  const auth = req.headers.authorization;
+  if (auth?.startsWith('Bearer ')) {
+    try {
+      const payload = jwt.verify(auth.slice(7), env.JWT_SECRET) as { sub: string };
+      requesterId = payload.sub;
+    } catch { /* ignore invalid/expired token — treat as anonymous */ }
+  }
+  res.json({ data: await monsterService.getStrategies(req.params.id, requesterId) });
 }));
 
 router.post(

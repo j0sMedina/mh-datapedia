@@ -7,6 +7,7 @@ const MONSTER_DETAIL_INCLUDE = {
   weaknesses: true,
   hitzones: true,
   strategies: {
+    where: { status: 'APPROVED' as const },
     include: { author: { select: { id: true, username: true } } },
     orderBy: { createdAt: 'desc' as const },
   },
@@ -77,10 +78,25 @@ export async function getDrops(monsterId: string, game?: string, rank?: string) 
   });
 }
 
-export async function getStrategies(monsterId: string) {
+export async function getStrategies(monsterId: string, requesterId?: string) {
   await assertExists(monsterId);
+
+  // Lazy cleanup: delete REJECTED strategies older than 3 days
+  const cutoff = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+  await prisma.strategy.deleteMany({
+    where: { monsterId, status: 'REJECTED', rejectedAt: { lt: cutoff } },
+  });
+
   return prisma.strategy.findMany({
-    where: { monsterId },
+    where: {
+      monsterId,
+      OR: [
+        { status: 'APPROVED' },
+        ...(requesterId
+          ? [{ authorId: requesterId, status: { in: ['PENDING' as const, 'REJECTED' as const] } }]
+          : []),
+      ],
+    },
     include: { author: { select: { id: true, username: true } } },
     orderBy: { createdAt: 'desc' },
   });

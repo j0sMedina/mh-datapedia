@@ -51,3 +51,40 @@ export async function deleteStrategy(id: string, userId: string, role: Role) {
   }
   await prisma.strategy.delete({ where: { id } });
 }
+
+export async function reviewStrategy(
+  id: string,
+  action: 'approve' | 'reject',
+  reason?: string,
+) {
+  const strategy = await prisma.strategy.findUnique({
+    where: { id },
+    select: { id: true, status: true },
+  });
+  if (!strategy) throw new AppError(404, 'Strategy not found', 'NOT_FOUND');
+  if (strategy.status !== 'PENDING') {
+    throw new AppError(409, 'Strategy is not pending review', 'CONFLICT');
+  }
+
+  const data =
+    action === 'approve'
+      ? { status: 'APPROVED' as const, rejectionReason: null, rejectedAt: null }
+      : { status: 'REJECTED' as const, rejectionReason: reason!, rejectedAt: new Date() };
+
+  return prisma.strategy.update({
+    where: { id },
+    data,
+    include: { author: { select: { id: true, username: true } } },
+  });
+}
+
+export async function getPendingStrategies() {
+  return prisma.strategy.findMany({
+    where: { status: 'PENDING' },
+    include: {
+      author: { select: { id: true, username: true } },
+      monster: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+}
