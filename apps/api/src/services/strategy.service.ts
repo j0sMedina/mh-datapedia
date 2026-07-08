@@ -27,15 +27,22 @@ export async function updateStrategy(
 ) {
   const strategy = await prisma.strategy.findUnique({
     where: { id },
-    select: { id: true, authorId: true },
+    select: { id: true, authorId: true, status: true },
   });
   if (!strategy) throw new AppError(404, 'Strategy not found', 'NOT_FOUND');
   if (!CAN_EDIT_ANY.includes(role) && strategy.authorId !== userId) {
     throw new AppError(403, 'Insufficient permissions', 'FORBIDDEN');
   }
+
+  const isElevated = (CAN_EDIT_ANY as string[]).includes(role);
+  const resetToReview = !isElevated && strategy.status === 'APPROVED';
+
   return prisma.strategy.update({
     where: { id },
-    data,
+    data: {
+      ...data,
+      ...(resetToReview ? { status: 'PENDING', rejectionReason: null, rejectedAt: null } : {}),
+    },
     include: { author: { select: { id: true, username: true } } },
   });
 }

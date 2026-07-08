@@ -3,6 +3,7 @@ import { apiPost, apiGet, setAccessToken, setRefreshCallback, ApiError } from '.
 import type { User } from '@mh-datapedia/shared';
 import type { BanDetails } from '../lib/types';
 import { BannedModal } from '../components/ui/BannedModal';
+import { queryClient } from '../lib/queryClient';
 
 export interface AuthState {
   user: User | null;
@@ -96,6 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setToken(data.accessToken!);
       setUser(data.user!);
+      queryClient.clear();
     } catch (e) {
       if (e instanceof ApiError && e.status === 403) {
         const details = extractBanDetails(e.body);
@@ -127,6 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(null);
     setUser(null);
     setAccessToken(null);
+    queryClient.clear();
   }
 
   function clearBannedDetails() {
