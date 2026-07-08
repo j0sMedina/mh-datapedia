@@ -1,0 +1,1348 @@
+# Email Verification Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Require every new account to verify their email before they can write data; unverified users can read all content but cannot submit strategies or add/remove favorites.
+
+**Architecture:** A random 64-char hex token is stored on the User row at registration; the Resend SDK sends a verification link; a GET endpoint validates the token; a `requireVerified` middleware guards all write routes. The email service is a no-op in test mode so existing tests are not disrupted.
+
+**Tech Stack:** Express, Prisma 5, Resend SDK, Jest/supertest (API tests), TanStack Router (web), Expo Router (mobile), `@mh-datapedia/shared` Zod schemas.
+
+## Global Constraints
+
+- Resend SDK package name: `resend`
+- From address: `onboarding@resend.dev`
+- Verification link: `https://mh-datapedia-web.fly.dev/verify-email?token=<token>`
+- Token length: `randomBytes(32).toString('hex')` — 64-char hex string
+- Token expiry: 24 hours
+- Resend rate limit: 3 per hour per authenticated user ID
+- `RESEND_API_KEY` set via `fly secrets set`, never committed to git
+- Email service is a no-op when `NODE_ENV === 'test'`
+- `emailVerified` added to `UserSchema` in `packages/shared/src/schemas/auth.schema.ts`
+- All login, register, and `GET /api/auth/me` responses include `emailVerified`
+- Existing test helper `registerUser` must auto-verify the created user so existing tests keep passing
+- DB wipe truncates: `_UserFavorites`, `Strategy`, `AdminAction`, `RevokedToken`, `RefreshToken`, `User`, `LoginAttempt` — monster data is preserved
+- After wipe: `silverkx@mh.com` must re-register and be promoted to MASTER via Fly SSH
+
+---
+
+### Task 1: Install Resend + email service + env config
+
+**Files:**
+- Modify: `apps/api/src/config/env.ts`
+- Create: `apps/api/src/services/email.service.ts`
+- Modify: `apps/api/tests/helpers.ts` — NOT in this task, handled in Task 4
+
+**Interfaces:**
+- Produces: `sendVerificationEmail(to: string, token: string): Promise<void>` — used in Task 3
+
+- [ ] **Step 1: Install the Resend SDK**
+
+Run from the monorepo root:
+```bash
+pnpm add resend --filter @mh-datapedia/api
+```
+
+Expected: `resend` appears in `apps/api/package.json` dependencies.
+
+- [ ] **Step 2: Add RESEND_API_KEY to env config**
+
+Open `apps/api/src/config/env.ts`. Replace the entire file with:
+
+```typescript
+import { z } from 'zod';
+
+const EnvSchema = z.object({
+  DATABASE_URL: z.string().url(),
+  JWT_SECRET: z.string().min(32),
+  JWT_REFRESH_SECRET: z.string().min(32),
+  PORT: z.coerce.number().int().default(3001),
+  NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
+  CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  RESEND_API_KEY: z.string().default(''),
+});
+
+const parsed = EnvSchema.safeParse(process.env);
+if (!parsed.success) {
+  console.error('❌ Invalid environment variables:', parsed.error.flatten().fieldErrors);
+  process.exit(1);
+}
+
+export const env = parsed.data;
+```
+
+- [ ] **Step 3: Create the email service**
+
+Create `apps/api/src/services/email.service.ts`:
+
+```typescript
+import { Resend } from 'resend';
+import { env } from '../config/env';
+
+const resend = new Resend(env.RESEND_API_KEY);
+const isTest = env.NODE_ENV === 'test';
+
+export async function sendVerificationEmail(to: string, token: string): Promise<void> {
+  if (isTest) return;
+
+  const link = `https://mh-datapedia-web.fly.dev/verify-email?token=${token}`;
+
+  await resend.emails.send({
+    from: 'onboarding@resend.dev',
+    to,
+    subject: 'Verify your MH Datapedia account',
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:0 auto;padding:32px;background:#0c0a09;color:#fafaf9;border-radius:8px;">
+        <h1 style="color:#2f9e8f;font-size:20px;margin-bottom:16px;">MH Datapedia</h1>
+        <p style="margin-bottom:24px;">Click the button below to verify your email address. This link expires in 24 hours.</p>
+        <a href="${link}" style="display:inline-block;background:#2f9e8f;color:#fafaf9;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;">Verify Email</a>
+        <p style="margin-top:24px;font-size:12px;color:#78716c;">If you didn't create an account, ignore this email.</p>
+      </div>
+    `,
+  });
+}
+```
+
+- [ ] **Step 4: Verify TypeScript compiles**
+
+```bash
+pnpm --filter @mh-datapedia/api typecheck
+```
+
+Expected: no errors.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add apps/api/src/config/env.ts apps/api/src/services/email.service.ts apps/api/package.json pnpm-lock.yaml
+git commit -m "feat(api): add Resend email service and RESEND_API_KEY env var"
+```
+
+---
+
+### Task 2: Prisma schema + migration + production DB wipe
+
+**Files:**
+- Modify: `apps/api/prisma/schema.prisma`
+- New: migration file (auto-generated by Prisma)
+
+**Interfaces:**
+- Produces: `User.emailVerified: Boolean`, `User.verifyEmailToken: String?`, `User.verifyEmailTokenExpiry: DateTime?` — used by all subsequent tasks
+
+- [ ] **Step 1: Add fields to User model in schema.prisma**
+
+Open `apps/api/prisma/schema.prisma`. Find the `model User` block and add three lines after `updatedAt`:
+
+```prisma
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  username      String         @unique
+  passwordHash  String
+  role          Role           @default(USER)
+  banned        Boolean        @default(false)
+  bannedReason  String?
+  bannedAt      DateTime?
+  bannedUntil   DateTime?
+  emailVerified          Boolean   @default(false)
+  verifyEmailToken       String?   @unique
+  verifyEmailTokenExpiry DateTime?
+  favorites     Monster[]      @relation("UserFavorites")
+  strategies    Strategy[]
+  refreshTokens RefreshToken[]
+  actorActions  AdminAction[]  @relation("ActorActions")
+  targetActions AdminAction[]  @relation("TargetActions")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+```
+
+- [ ] **Step 2: Generate and apply the migration locally**
+
+```bash
+pnpm --filter @mh-datapedia/api exec prisma migrate dev --name add_email_verification
+```
+
+Expected output includes: `✔ Generated Prisma Client` and a new migration folder under `apps/api/prisma/migrations/`.
+
+- [ ] **Step 3: Regenerate Prisma client**
+
+```bash
+pnpm --filter @mh-datapedia/api exec prisma generate
+```
+
+- [ ] **Step 4: Wipe user data from the production DB via Fly SSH**
+
+This deletes all user accounts, strategies, favorites, audit logs, and tokens from production. Monster data is preserved. Run:
+
+```bash
+flyctl ssh console -a mh-datapedia-api --command "node -e \"
+const {PrismaClient} = require('.prisma/client');
+const p = new PrismaClient();
+p.\$transaction([
+  p.\$executeRaw\`TRUNCATE TABLE \\\"_UserFavorites\\\" CASCADE\`,
+  p.\$executeRaw\`TRUNCATE TABLE \\\"Strategy\\\" CASCADE\`,
+  p.\$executeRaw\`TRUNCATE TABLE \\\"AdminAction\\\" CASCADE\`,
+  p.\$executeRaw\`TRUNCATE TABLE \\\"RevokedToken\\\" CASCADE\`,
+  p.\$executeRaw\`TRUNCATE TABLE \\\"RefreshToken\\\" CASCADE\`,
+  p.\$executeRaw\`TRUNCATE TABLE \\\"LoginAttempt\\\" CASCADE\`,
+  p.\$executeRaw\`TRUNCATE TABLE \\\"User\\\" CASCADE\`,
+]).then(() => console.log('OK: user data wiped')).catch(console.error).finally(() => p.\$disconnect())
+\""
+```
+
+Expected: `OK: user data wiped`
+
+- [ ] **Step 5: Apply the migration to production**
+
+The migration runs automatically on next deploy via the Fly.io `release_command` in `fly.api.toml`. Push the schema changes and they will apply on the next CI deploy. No manual step needed here beyond committing.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add apps/api/prisma/schema.prisma apps/api/prisma/migrations/
+git commit -m "feat(api): add emailVerified fields to User schema"
+```
+
+---
+
+### Task 3: Shared types + auth service + new API endpoints
+
+**Files:**
+- Modify: `packages/shared/src/schemas/auth.schema.ts`
+- Modify: `apps/api/src/services/auth.service.ts`
+- Modify: `apps/api/src/middleware/rateLimiter.ts`
+- Modify: `apps/api/src/routes/auth.router.ts`
+- Modify: `apps/api/tests/auth.test.ts`
+
+**Interfaces:**
+- Consumes: `sendVerificationEmail(to, token)` from Task 1; `User.emailVerified` from Task 2
+- Produces:
+  - `GET /api/auth/verify-email?token=<token>` → `200 { message }` or `400 { code }`
+  - `POST /api/auth/resend-verification` (auth required) → `200 { message }` or `400 { code }`
+  - All auth responses now include `emailVerified: boolean` in the user object
+
+- [ ] **Step 1: Write a failing test for the verify-email endpoint**
+
+Open `apps/api/tests/auth.test.ts`. Add at the bottom:
+
+```typescript
+describe('GET /api/auth/verify-email', () => {
+  it('returns 400 for missing token', async () => {
+    const res = await request(app).get('/api/auth/verify-email');
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_TOKEN');
+  });
+
+  it('returns 400 for unknown token', async () => {
+    const res = await request(app).get('/api/auth/verify-email?token=doesnotexist');
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('INVALID_TOKEN');
+  });
+
+  it('verifies a valid token and marks emailVerified true', async () => {
+    // Register a user (unverified)
+    const regRes = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'verify@example.com', username: 'verifyuser', password: 'password123' });
+    expect(regRes.body.user.emailVerified).toBe(false);
+
+    // Read the token directly from the DB
+    const dbUser = await prisma.user.findUnique({
+      where: { email: 'verify@example.com' },
+      select: { verifyEmailToken: true },
+    });
+    expect(dbUser?.verifyEmailToken).toBeTruthy();
+
+    // Verify
+    const res = await request(app).get(`/api/auth/verify-email?token=${dbUser!.verifyEmailToken}`);
+    expect(res.status).toBe(200);
+    expect(res.body.message).toBe('Email verified');
+
+    // Check DB
+    const updated = await prisma.user.findUnique({ where: { email: 'verify@example.com' } });
+    expect(updated?.emailVerified).toBe(true);
+    expect(updated?.verifyEmailToken).toBeNull();
+  });
+
+  it('returns 400 ALREADY_VERIFIED if used twice', async () => {
+    const dbUser = await prisma.user.findUnique({
+      where: { email: 'verify@example.com' },
+      select: { emailVerified: true },
+    });
+    // Already verified from previous test — token is null, so lookup fails
+    const res = await request(app).get('/api/auth/verify-email?token=someoldtoken');
+    expect(res.status).toBe(400);
+  });
+});
+
+describe('POST /api/auth/resend-verification', () => {
+  it('returns 401 without auth', async () => {
+    const res = await request(app).post('/api/auth/resend-verification');
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 400 if already verified', async () => {
+    // Use the now-verified user from above
+    const loginRes = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'verify@example.com', password: 'password123' });
+    const token = loginRes.body.accessToken;
+
+    const res = await request(app)
+      .post('/api/auth/resend-verification')
+      .set('Authorization', `Bearer ${token}`);
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('ALREADY_VERIFIED');
+  });
+});
+```
+
+- [ ] **Step 2: Run tests to confirm they fail**
+
+```bash
+pnpm --filter @mh-datapedia/api test -- --testPathPattern=auth.test
+```
+
+Expected: new tests fail with "Cannot GET /api/auth/verify-email" or similar.
+
+- [ ] **Step 3: Add emailVerified to shared UserSchema**
+
+Open `packages/shared/src/schemas/auth.schema.ts`. Replace the `UserSchema` definition:
+
+```typescript
+import { z } from 'zod';
+import { RoleSchema } from './enums.schema';
+
+export const UserSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+  username: z.string(),
+  role: RoleSchema,
+  emailVerified: z.boolean(),
+  createdAt: z.string(),
+});
+export type User = z.infer<typeof UserSchema>;
+
+export const AuthTokensSchema = z.object({
+  accessToken: z.string(),
+  expiresIn: z.number(),
+});
+export type AuthTokens = z.infer<typeof AuthTokensSchema>;
+
+export const RegisterSchema = z.object({
+  email: z.string().email(),
+  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_-]+$/),
+  password: z.string().min(8),
+});
+export type Register = z.infer<typeof RegisterSchema>;
+
+export const LoginSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
+export type Login = z.infer<typeof LoginSchema>;
+```
+
+- [ ] **Step 4: Rebuild the shared package**
+
+```bash
+pnpm --filter @mh-datapedia/shared build
+```
+
+Expected: no errors.
+
+- [ ] **Step 5: Update auth.service.ts**
+
+Replace the entire `apps/api/src/services/auth.service.ts` with:
+
+```typescript
+import { randomBytes } from 'crypto';
+import { createHash } from 'crypto';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import { prisma } from '../lib/prisma';
+import { env } from '../config/env';
+import { AppError } from '../lib/errors';
+import { sendVerificationEmail } from './email.service';
+import type { Register, Login } from '@mh-datapedia/shared';
+
+const SALT_ROUNDS = 12;
+export const ACCESS_TOKEN_TTL_S = 15 * 60;
+const REFRESH_TOKEN_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const LOCKOUT_WINDOW_MS = 15 * 60 * 1000;
+const MAX_LOGIN_ATTEMPTS = 5;
+const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+
+type Role = 'USER' | 'HELPER' | 'ADMIN' | 'MASTER';
+
+const USER_SELECT = {
+  id: true,
+  email: true,
+  username: true,
+  role: true,
+  emailVerified: true,
+  createdAt: true,
+} as const;
+
+export function signAccessToken(userId: string, role: Role) {
+  return jwt.sign({ sub: userId, role }, env.JWT_SECRET, {
+    expiresIn: ACCESS_TOKEN_TTL_S,
+  });
+}
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+async function createRefreshToken(userId: string) {
+  const token = randomBytes(64).toString('hex');
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
+  await prisma.refreshToken.create({ data: { token, userId, expiresAt } });
+  return token;
+}
+
+function generateVerifyToken() {
+  return randomBytes(32).toString('hex');
+}
+
+export async function register(data: Register) {
+  const passwordHash = await bcrypt.hash(data.password, SALT_ROUNDS);
+  const verifyEmailToken = generateVerifyToken();
+  const verifyEmailTokenExpiry = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
+
+  const user = await prisma.user.create({
+    data: {
+      email: data.email,
+      username: data.username,
+      passwordHash,
+      verifyEmailToken,
+      verifyEmailTokenExpiry,
+    },
+    select: USER_SELECT,
+  });
+
+  await sendVerificationEmail(data.email, verifyEmailToken);
+
+  const accessToken = signAccessToken(user.id, user.role);
+  const refreshToken = await createRefreshToken(user.id);
+  return { user, accessToken, refreshToken, expiresIn: ACCESS_TOKEN_TTL_S };
+}
+
+export async function login(data: Login) {
+  const windowStart = new Date(Date.now() - LOCKOUT_WINDOW_MS);
+  const attemptCount = await prisma.loginAttempt.count({
+    where: { email: data.email, createdAt: { gte: windowStart } },
+  });
+  if (attemptCount >= MAX_LOGIN_ATTEMPTS) {
+    const oldest = await prisma.loginAttempt.findFirst({
+      where: { email: data.email, createdAt: { gte: windowStart } },
+      orderBy: { createdAt: 'asc' },
+    });
+    const lockedUntil = new Date(oldest!.createdAt.getTime() + LOCKOUT_WINDOW_MS);
+    throw new AppError(429, 'Account temporarily locked', 'RATE_LIMITED', {
+      lockedUntil: lockedUntil.toISOString(),
+    });
+  }
+
+  const user = await prisma.user.findUnique({ where: { email: data.email } });
+  if (!user) {
+    await prisma.loginAttempt.create({ data: { email: data.email } });
+    throw new AppError(401, 'Invalid credentials', 'INVALID_CREDENTIALS');
+  }
+
+  const valid = await bcrypt.compare(data.password, user.passwordHash);
+  if (!valid) {
+    await prisma.loginAttempt.create({ data: { email: data.email } });
+    throw new AppError(401, 'Invalid credentials', 'INVALID_CREDENTIALS');
+  }
+
+  if (user.banned && user.bannedUntil && user.bannedUntil < new Date()) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { banned: false, bannedReason: null, bannedAt: null, bannedUntil: null },
+    });
+    user.banned = false;
+  }
+
+  if (user.banned) {
+    throw new AppError(403, 'Account is banned', 'BANNED', {
+      bannedReason: user.bannedReason,
+      bannedAt: user.bannedAt?.toISOString() ?? null,
+      bannedUntil: user.bannedUntil?.toISOString() ?? null,
+    });
+  }
+
+  await prisma.loginAttempt.deleteMany({ where: { email: data.email } });
+
+  const accessToken = signAccessToken(user.id, user.role);
+  const refreshToken = await createRefreshToken(user.id);
+  return {
+    user: {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt,
+    },
+    accessToken,
+    refreshToken,
+    expiresIn: ACCESS_TOKEN_TTL_S,
+  };
+}
+
+export async function refresh(token: string) {
+  const stored = await prisma.refreshToken.findUnique({
+    where: { token },
+    include: { user: true },
+  });
+
+  if (!stored) {
+    const tokenHash = hashToken(token);
+    const revoked = await prisma.revokedToken.findUnique({ where: { tokenHash } });
+    if (revoked) {
+      await prisma.refreshToken.deleteMany({ where: { userId: revoked.userId } });
+      throw new AppError(401, 'Token reuse detected', 'TOKEN_REUSE_DETECTED');
+    }
+    throw new AppError(401, 'Invalid or expired refresh token', 'UNAUTHORIZED');
+  }
+
+  if (stored.expiresAt < new Date()) {
+    await prisma.refreshToken.delete({ where: { token } });
+    throw new AppError(401, 'Invalid or expired refresh token', 'UNAUTHORIZED');
+  }
+
+  let currentUser = stored.user;
+  if (currentUser.banned) {
+    if (currentUser.bannedUntil && currentUser.bannedUntil < new Date()) {
+      currentUser = await prisma.user.update({
+        where: { id: stored.userId },
+        data: { banned: false, bannedReason: null, bannedAt: null, bannedUntil: null },
+      });
+    } else {
+      const bannedTokenHash = hashToken(stored.token);
+      await prisma.$transaction([
+        prisma.refreshToken.deleteMany({ where: { userId: stored.userId } }),
+        prisma.revokedToken.create({
+          data: { tokenHash: bannedTokenHash, userId: stored.userId, expiresAt: stored.expiresAt },
+        }),
+      ]);
+      throw new AppError(403, 'Account is banned', 'BANNED', {
+        bannedReason: currentUser.bannedReason,
+        bannedAt: currentUser.bannedAt?.toISOString() ?? null,
+        bannedUntil: currentUser.bannedUntil?.toISOString() ?? null,
+      });
+    }
+  }
+
+  const tokenHash = hashToken(stored.token);
+  await prisma.$transaction([
+    prisma.refreshToken.delete({ where: { token } }),
+    prisma.revokedToken.create({
+      data: { tokenHash, userId: stored.userId, expiresAt: stored.expiresAt },
+    }),
+  ]);
+
+  const newRefreshToken = await createRefreshToken(stored.userId);
+  const accessToken = signAccessToken(stored.userId, currentUser.role);
+  return { accessToken, refreshToken: newRefreshToken, expiresIn: ACCESS_TOKEN_TTL_S };
+}
+
+export async function logout(token: string) {
+  await prisma.refreshToken.deleteMany({ where: { token } });
+}
+
+export async function getMe(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: USER_SELECT,
+  });
+  if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
+  return user;
+}
+
+export async function verifyEmail(token: string) {
+  if (!token) throw new AppError(400, 'Invalid or expired token', 'INVALID_TOKEN');
+
+  const user = await prisma.user.findUnique({
+    where: { verifyEmailToken: token },
+    select: { id: true, emailVerified: true, verifyEmailTokenExpiry: true },
+  });
+
+  if (!user) throw new AppError(400, 'Invalid or expired token', 'INVALID_TOKEN');
+  if (user.emailVerified) throw new AppError(400, 'Email already verified', 'ALREADY_VERIFIED');
+  if (user.verifyEmailTokenExpiry && user.verifyEmailTokenExpiry < new Date()) {
+    throw new AppError(400, 'Invalid or expired token', 'INVALID_TOKEN');
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { emailVerified: true, verifyEmailToken: null, verifyEmailTokenExpiry: null },
+  });
+}
+
+export async function resendVerification(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, emailVerified: true },
+  });
+  if (!user) throw new AppError(404, 'User not found', 'NOT_FOUND');
+  if (user.emailVerified) throw new AppError(400, 'Email already verified', 'ALREADY_VERIFIED');
+
+  const verifyEmailToken = generateVerifyToken();
+  const verifyEmailTokenExpiry = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { verifyEmailToken, verifyEmailTokenExpiry },
+  });
+
+  await sendVerificationEmail(user.email, verifyEmailToken);
+}
+```
+
+- [ ] **Step 6: Add resendLimiter to rateLimiter.ts**
+
+Open `apps/api/src/middleware/rateLimiter.ts`. Add at the bottom:
+
+```typescript
+export const resendLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => (req as { user?: { id: string } }).user?.id ?? req.ip ?? 'unknown',
+  message: { error: 'Too many resend requests', code: 'RATE_LIMITED' },
+  skip: () => isTest,
+});
+```
+
+- [ ] **Step 7: Add new routes to auth.router.ts**
+
+Open `apps/api/src/routes/auth.router.ts`. Add at the top of imports:
+
+```typescript
+import { resendLimiter } from '../middleware/rateLimiter';
+import * as authService from '../services/auth.service';
+```
+
+Then add these two routes before `export default router`:
+
+```typescript
+router.get('/verify-email', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = typeof req.query.token === 'string' ? req.query.token : '';
+    await authService.verifyEmail(token);
+    res.json({ message: 'Email verified' });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post(
+  '/resend-verification',
+  authenticate,
+  resendLimiter,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      await authService.resendVerification(req.user!.id);
+      res.json({ message: 'Verification email sent' });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+```
+
+- [ ] **Step 8: Run the auth tests**
+
+```bash
+pnpm --filter @mh-datapedia/api test -- --testPathPattern=auth.test
+```
+
+Expected: all tests pass including the new verify-email and resend-verification tests.
+
+- [ ] **Step 9: Run the full test suite**
+
+```bash
+pnpm test
+```
+
+Expected: all tests pass. If any test fails due to a missing `emailVerified` field in fixtures, note it — it will be fixed in Task 4.
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add packages/shared/src/schemas/auth.schema.ts \
+        apps/api/src/services/auth.service.ts \
+        apps/api/src/middleware/rateLimiter.ts \
+        apps/api/src/routes/auth.router.ts \
+        apps/api/tests/auth.test.ts
+git commit -m "feat(api): add email verification endpoints and token generation on register"
+```
+
+---
+
+### Task 4: requireVerified middleware + apply to write routes + fix test helpers
+
+**Files:**
+- Create: `apps/api/src/middleware/requireVerified.ts`
+- Modify: `apps/api/src/routes/strategies.router.ts`
+- Modify: `apps/api/src/routes/users.router.ts`
+- Modify: `apps/api/tests/helpers.ts`
+- Modify: `apps/api/tests/favorites.test.ts`
+
+**Interfaces:**
+- Consumes: `User.emailVerified` from Task 2; `authenticate` middleware (already exists)
+- Produces: `requireVerified` RequestHandler — used in strategies and users routers
+
+- [ ] **Step 1: Write a failing test for requireVerified on favorites**
+
+Open `apps/api/tests/favorites.test.ts`. Add before the existing `describe` blocks:
+
+```typescript
+describe('POST /api/users/me/favorites/:monsterId — email verification gate', () => {
+  it('returns 403 EMAIL_NOT_VERIFIED for unverified user', async () => {
+    // Register without auto-verifying
+    const regRes = await request(app)
+      .post('/api/auth/register')
+      .send({ email: 'unverified@example.com', username: 'unverified', password: 'password123' });
+    const unverifiedToken = regRes.body.accessToken;
+
+    const res = await request(app)
+      .post(`/api/users/me/favorites/${monsterId}`)
+      .set('Authorization', `Bearer ${unverifiedToken}`);
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('EMAIL_NOT_VERIFIED');
+
+    // Cleanup
+    await prisma.user.deleteMany({ where: { email: 'unverified@example.com' } });
+  });
+});
+```
+
+- [ ] **Step 2: Run to confirm it fails**
+
+```bash
+pnpm --filter @mh-datapedia/api test -- --testPathPattern=favorites.test
+```
+
+Expected: new test fails — favorites endpoint does not yet check email verification.
+
+- [ ] **Step 3: Create requireVerified middleware**
+
+Create `apps/api/src/middleware/requireVerified.ts`:
+
+```typescript
+import { RequestHandler } from 'express';
+import { prisma } from '../lib/prisma';
+import { AppError } from '../lib/errors';
+
+export const requireVerified: RequestHandler = async (req, _res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user!.id },
+      select: { emailVerified: true },
+    });
+    if (!user?.emailVerified) {
+      return next(new AppError(403, 'Email not verified', 'EMAIL_NOT_VERIFIED'));
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+};
+```
+
+- [ ] **Step 4: Apply requireVerified to strategies router**
+
+Open `apps/api/src/routes/strategies.router.ts`. Add to the imports:
+
+```typescript
+import { requireVerified } from '../middleware/requireVerified';
+```
+
+Find every route that mutates data (POST, PATCH, DELETE) and add `requireVerified` after `authenticate`:
+
+```typescript
+// Example — POST create strategy:
+router.post('/', authenticate, requireVerified, ...)
+
+// Example — PATCH update:
+router.patch('/:id', authenticate, requireVerified, ...)
+
+// Example — DELETE:
+router.delete('/:id', authenticate, requireVerified, ...)
+```
+
+Read-only routes (`GET`) do NOT get `requireVerified`.
+
+- [ ] **Step 5: Apply requireVerified to users router (favorites)**
+
+Open `apps/api/src/routes/users.router.ts`. Add to imports:
+
+```typescript
+import { requireVerified } from '../middleware/requireVerified';
+```
+
+Find the POST and DELETE favorites routes and add `requireVerified` after `authenticate`:
+
+```typescript
+// POST /me/favorites/:monsterId
+router.post('/me/favorites/:monsterId', authenticate, requireVerified, ...)
+
+// DELETE /me/favorites/:monsterId
+router.delete('/me/favorites/:monsterId', authenticate, requireVerified, ...)
+```
+
+The GET `/me/favorites` route does NOT get `requireVerified`.
+
+- [ ] **Step 6: Update test helpers to auto-verify users**
+
+Open `apps/api/tests/helpers.ts`. Update `registerUser` to auto-verify after creating the account:
+
+```typescript
+import request from 'supertest';
+import { PrismaClient } from '@prisma/client';
+import { createApp } from '../src/app';
+
+export const app = createApp();
+export const prisma = new PrismaClient();
+
+export async function registerUser(
+  email: string,
+  username: string,
+  password = 'password123',
+) {
+  const res = await request(app)
+    .post('/api/auth/register')
+    .send({ email, username, password });
+  // Auto-verify so write routes work in tests
+  await prisma.user.update({
+    where: { email },
+    data: { emailVerified: true, verifyEmailToken: null, verifyEmailTokenExpiry: null },
+  });
+  return res.body.accessToken as string;
+}
+
+export async function registerAndPromoteAdmin(
+  email = 'admin@example.com',
+  username = 'adminuser',
+  password = 'adminpass123',
+) {
+  await request(app).post('/api/auth/register').send({ email, username, password });
+  await prisma.user.update({
+    where: { email },
+    data: { role: 'ADMIN', emailVerified: true, verifyEmailToken: null, verifyEmailTokenExpiry: null },
+  });
+  const res = await request(app).post('/api/auth/login').send({ email, password });
+  return res.body.accessToken as string;
+}
+
+export async function registerAndPromoteHelper(
+  email = 'helper@example.com',
+  username = 'helperuser',
+  password = 'helperpass123',
+) {
+  await request(app).post('/api/auth/register').send({ email, username, password });
+  await prisma.user.update({
+    where: { email },
+    data: { role: 'HELPER', emailVerified: true, verifyEmailToken: null, verifyEmailTokenExpiry: null },
+  });
+  const res = await request(app).post('/api/auth/login').send({ email, password });
+  return res.body.accessToken as string;
+}
+```
+
+- [ ] **Step 7: Run the full test suite**
+
+```bash
+pnpm test
+```
+
+Expected: all tests pass.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add apps/api/src/middleware/requireVerified.ts \
+        apps/api/src/routes/strategies.router.ts \
+        apps/api/src/routes/users.router.ts \
+        apps/api/tests/helpers.ts \
+        apps/api/tests/favorites.test.ts
+git commit -m "feat(api): add requireVerified middleware to write routes"
+```
+
+---
+
+### Task 5: Web — /verify-email page
+
+**Files:**
+- Create: `apps/web/src/routes/verify-email.tsx`
+
+**Interfaces:**
+- Consumes: `GET /api/auth/verify-email?token=<token>` from Task 3
+- Produces: `/verify-email` page — linked from the verification email
+
+- [ ] **Step 1: Create the verify-email route**
+
+Create `apps/web/src/routes/verify-email.tsx`:
+
+```tsx
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { apiGet } from '../lib/api';
+
+export const Route = createFileRoute('/verify-email')({
+  component: VerifyEmailPage,
+});
+
+type Status = 'loading' | 'success' | 'error';
+
+function VerifyEmailPage() {
+  const { token } = Route.useSearch<{ token?: string }>();
+  const [status, setStatus] = useState<Status>('loading');
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (!token) {
+      setStatus('error');
+      setMessage('Invalid verification link. No token provided.');
+      return;
+    }
+
+    apiGet(`/api/auth/verify-email?token=${encodeURIComponent(token)}`)
+      .then(() => {
+        setStatus('success');
+        setMessage('Email verified! You can now submit strategies and add favorites.');
+      })
+      .catch((err: unknown) => {
+        setStatus('error');
+        const code = (err as { body?: { code?: string } })?.body?.code;
+        if (code === 'ALREADY_VERIFIED') {
+          setMessage('This email is already verified.');
+        } else {
+          setMessage('This link has expired or is invalid. Request a new one from the app.');
+        }
+      });
+  }, [token]);
+
+  return (
+    <div className="min-h-screen bg-stone-950 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-stone-900 rounded-lg p-8 text-center border border-stone-800">
+        <h1 className="text-2xl font-bold text-stone-50 mb-4">
+          {status === 'loading' && 'Verifying…'}
+          {status === 'success' && 'Email Verified'}
+          {status === 'error' && 'Verification Failed'}
+        </h1>
+
+        {status === 'loading' && (
+          <div className="w-8 h-8 border-2 border-teal-500 border-t-transparent rounded-full animate-spin mx-auto" />
+        )}
+
+        {status !== 'loading' && (
+          <>
+            <p className="text-stone-400 mb-6">{message}</p>
+            <Link
+              to="/"
+              className="inline-block bg-teal-700 hover:bg-teal-600 text-stone-50 px-6 py-2 rounded font-medium transition-colors"
+            >
+              Go to Home
+            </Link>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Verify TypeScript compiles**
+
+```bash
+pnpm --filter @mh-datapedia/web typecheck 2>/dev/null || pnpm typecheck
+```
+
+Expected: no errors on the new file.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add apps/web/src/routes/verify-email.tsx
+git commit -m "feat(web): add /verify-email page"
+```
+
+---
+
+### Task 6: Web — VerificationBanner
+
+**Files:**
+- Create: `apps/web/src/components/ui/VerificationBanner.tsx`
+- Modify: `apps/web/src/routes/__root.tsx`
+
+**Interfaces:**
+- Consumes: `user.emailVerified` from `useAuth()` (User type now includes this field from Task 3)
+- Produces: amber banner shown on all pages when `emailVerified === false`
+
+- [ ] **Step 1: Create VerificationBanner component**
+
+Create `apps/web/src/components/ui/VerificationBanner.tsx`:
+
+```tsx
+import { useState } from 'react';
+import { apiPost, ApiError } from '../../lib/api';
+
+interface Props {
+  onResent: () => void;
+}
+
+export function VerificationBanner({ onResent }: Props) {
+  const [sending, setSending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleResend() {
+    setSending(true);
+    setError('');
+    try {
+      await apiPost('/api/auth/resend-verification');
+      setSent(true);
+      onResent();
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 400) {
+        setError('Already verified — try refreshing the page.');
+      } else if (e instanceof ApiError && e.status === 429) {
+        setError('Too many requests. Wait an hour before trying again.');
+      } else {
+        setError('Failed to send. Try again later.');
+      }
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="bg-amber-900/60 border-b border-amber-700 px-4 py-2 flex items-center justify-between gap-4 text-sm">
+      <span className="text-amber-200">
+        {sent
+          ? 'Verification email sent — check your inbox.'
+          : 'Please verify your email to unlock all features. Check your inbox for a link from onboarding@resend.dev.'}
+      </span>
+      {!sent && (
+        <button
+          onClick={handleResend}
+          disabled={sending}
+          className="shrink-0 text-amber-100 underline hover:text-white disabled:opacity-50"
+        >
+          {sending ? 'Sending…' : 'Resend email'}
+        </button>
+      )}
+      {error && <span className="text-red-400 shrink-0">{error}</span>}
+    </div>
+  );
+}
+```
+
+- [ ] **Step 2: Add VerificationBanner to the root layout**
+
+Open `apps/web/src/routes/__root.tsx`. Add the import and the banner after the `<Navbar />`:
+
+```tsx
+import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
+import { TanStackRouterDevtools } from '@tanstack/router-devtools';
+import { useAuth } from '../context/AuthContext';
+import type { AuthState } from '../context/AuthContext';
+import { LoginModalProvider } from '../context/LoginModalContext';
+import { Navbar } from '../components/layout/Navbar';
+import { LoginModal } from '../components/auth/LoginModal';
+import { Spinner } from '../components/ui/Spinner';
+import { VerificationBanner } from '../components/ui/VerificationBanner';
+
+export const Route = createRootRouteWithContext<{ auth: AuthState }>()({
+  component: RootLayout,
+});
+
+function RootLayout() {
+  const auth = useAuth();
+
+  if (auth.isLoading) {
+    return (
+      <div className="min-h-screen bg-stone-950 flex items-center justify-center">
+        <Spinner size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <LoginModalProvider>
+      <div className="min-h-screen bg-stone-950 text-stone-50 flex flex-col">
+        <Navbar />
+        {auth.user && !auth.user.emailVerified && (
+          <VerificationBanner onResent={() => {}} />
+        )}
+        <main className="flex-1">
+          <Outlet />
+        </main>
+        {import.meta.env.DEV && <TanStackRouterDevtools />}
+      </div>
+      <LoginModal />
+    </LoginModalProvider>
+  );
+}
+```
+
+- [ ] **Step 3: Typecheck**
+
+```bash
+pnpm typecheck
+```
+
+Expected: no errors.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add apps/web/src/components/ui/VerificationBanner.tsx apps/web/src/routes/__root.tsx
+git commit -m "feat(web): add VerificationBanner for unverified accounts"
+```
+
+---
+
+### Task 7: Mobile — VerificationBanner + EMAIL_NOT_VERIFIED error handling
+
+**Files:**
+- Create: `apps/mobile/src/components/ui/VerificationBanner.tsx`
+- Modify: `apps/mobile/app/(tabs)/_layout.tsx`
+- Modify: `apps/mobile/src/hooks/useFavorites.ts`
+
+**Interfaces:**
+- Consumes: `user.emailVerified` from `useAuth()` (shared User type updated in Task 3)
+- Produces: amber banner on all tab screens; graceful error on favorites toggle
+
+- [ ] **Step 1: Create mobile VerificationBanner**
+
+Create `apps/mobile/src/components/ui/VerificationBanner.tsx`:
+
+```tsx
+import { View, Text, TouchableOpacity, Linking, StyleSheet } from 'react-native';
+
+interface Props {
+  email?: string;
+}
+
+export function VerificationBanner({ email }: Props) {
+  function openMail() {
+    Linking.openURL('mailto:').catch(() => {});
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.text}>
+        Verify your email to unlock all features.
+      </Text>
+      <TouchableOpacity onPress={openMail}>
+        <Text style={styles.link}>Open mail app</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#78350f',
+    borderBottomWidth: 1,
+    borderBottomColor: '#92400e',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  text: {
+    color: '#fde68a',
+    fontSize: 12,
+    flex: 1,
+  },
+  link: {
+    color: '#fef3c7',
+    fontSize: 12,
+    textDecorationLine: 'underline',
+    flexShrink: 0,
+  },
+});
+```
+
+- [ ] **Step 2: Add banner to the tab layout**
+
+Open `apps/mobile/app/(tabs)/_layout.tsx`. Add the import and wrap the `<Tabs>` component in a `<View>` that includes the banner:
+
+```tsx
+import { View } from 'react-native';
+import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { AppTitle, HeaderRight } from '../../src/components/ui/AppHeader';
+import { useAuth } from '../../src/context/AuthContext';
+import { VerificationBanner } from '../../src/components/ui/VerificationBanner';
+
+export default function TabLayout() {
+  const { user } = useAuth();
+
+  return (
+    <View style={{ flex: 1 }}>
+      {user && !user.emailVerified && <VerificationBanner email={user.email} />}
+      <Tabs
+        screenOptions={{
+          headerStyle: { backgroundColor: '#0c0a09' },
+          headerTintColor: '#fafaf9',
+          headerShadowVisible: false,
+          headerRightContainerStyle: { paddingRight: 16 },
+          tabBarStyle: {
+            backgroundColor: '#1c1917',
+            borderTopColor: '#292524',
+            borderTopWidth: 1,
+          },
+          tabBarActiveTintColor: '#2f9e8f',
+          tabBarInactiveTintColor: '#57534e',
+        }}
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Monsters',
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="list" color={color} size={size} />
+            ),
+            headerTitle: () => <AppTitle label="Monsters" />,
+            headerRight: () => <HeaderRight />,
+          }}
+        />
+        <Tabs.Screen
+          name="favorites"
+          options={{
+            title: 'Favorites',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'heart' : 'heart-outline'}
+                color={color}
+                size={size}
+              />
+            ),
+            headerTitle: () => <AppTitle label="Favorites" />,
+            headerRight: () => <HeaderRight />,
+          }}
+        />
+        <Tabs.Screen
+          name="admin"
+          options={{
+            title: 'Admin',
+            href: (user?.role === 'ADMIN' || user?.role === 'MASTER') ? undefined : null,
+            tabBarIcon: ({ color, size }) => (
+              <MaterialCommunityIcons name="crown" color={color} size={size} />
+            ),
+            headerTitle: () => <AppTitle label="Admin" />,
+            headerRight: () => <HeaderRight />,
+          }}
+        />
+      </Tabs>
+    </View>
+  );
+}
+```
+
+- [ ] **Step 3: Handle EMAIL_NOT_VERIFIED in useFavorites**
+
+Open `apps/mobile/src/hooks/useFavorites.ts`. Find the mutation functions (addFavorite / removeFavorite). In the `onError` callback of each mutation, add handling for the `EMAIL_NOT_VERIFIED` code:
+
+```typescript
+onError: (err: unknown) => {
+  const code = (err as { body?: { code?: string } })?.body?.code;
+  if (code === 'EMAIL_NOT_VERIFIED') {
+    Alert.alert('Email not verified', 'Check your inbox and verify your email to save favorites.');
+    return;
+  }
+  // existing error handling...
+},
+```
+
+Make sure `Alert` is imported from `react-native` at the top of the file.
+
+- [ ] **Step 4: Typecheck**
+
+```bash
+pnpm --filter @mh-datapedia/mobile typecheck 2>/dev/null || pnpm typecheck
+```
+
+Expected: no errors.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add apps/mobile/src/components/ui/VerificationBanner.tsx \
+        apps/mobile/app/'(tabs)'/_layout.tsx \
+        apps/mobile/src/hooks/useFavorites.ts
+git commit -m "feat(mobile): add verification banner and EMAIL_NOT_VERIFIED error handling"
+```
+
+---
+
+### Task 8: Wire up Resend API key + push to production
+
+**Files:** none (Fly.io secrets + CI)
+
+- [ ] **Step 1: Get a Resend API key**
+
+1. Go to `https://resend.com` and create a free account.
+2. In the dashboard, go to **API Keys** → **Create API Key**.
+3. Name it `mh-datapedia-production`, permissions: **Sending access**.
+4. Copy the key (shown only once).
+
+- [ ] **Step 2: Set the secret on Fly.io**
+
+```bash
+fly secrets set RESEND_API_KEY=re_your_key_here -a mh-datapedia-api
+```
+
+Expected: `Updating existing machines in 'mh-datapedia-api'...` — the machine restarts with the new secret.
+
+- [ ] **Step 3: Add RESEND_API_KEY to the CI test env file**
+
+Open `.github/workflows/deploy.yml`. Find the `Create test env file` step and add one line:
+
+```yaml
+- name: Create test env file
+  env:
+    JWT_SECRET: ${{ secrets.JWT_SECRET }}
+    JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+  run: |
+    printf 'DATABASE_URL=postgresql://postgres:postgres@localhost:5432/mh_datapedia_test\n' > apps/api/.env.test
+    printf 'JWT_SECRET=%s\n' "$JWT_SECRET" >> apps/api/.env.test
+    printf 'JWT_REFRESH_SECRET=%s\n' "$JWT_REFRESH_SECRET" >> apps/api/.env.test
+    printf 'NODE_ENV=test\n' >> apps/api/.env.test
+    printf 'PORT=3002\n' >> apps/api/.env.test
+    printf 'CORS_ORIGIN=http://localhost:5173\n' >> apps/api/.env.test
+    printf 'RESEND_API_KEY=\n' >> apps/api/.env.test
+```
+
+- [ ] **Step 4: Push all commits**
+
+```bash
+git add .github/workflows/deploy.yml
+git commit -m "ci: add RESEND_API_KEY empty value to test env"
+git push
+```
+
+Expected: CI runs, tests pass, API and web deploy to Fly.io.
+
+- [ ] **Step 5: Smoke test on production**
+
+1. Open `https://mh-datapedia-web.fly.dev` in an incognito window.
+2. Register a new account with a real email address you control.
+3. Confirm the amber banner appears immediately after registration.
+4. Check your inbox for an email from `onboarding@resend.dev`.
+5. Click the verification link — should redirect to `/verify-email` and show "Email Verified".
+6. Refresh the app — banner should be gone.
+7. Try adding a favorite or submitting a strategy — should work.
+8. Try the same with an unverified account — should see a clear error.

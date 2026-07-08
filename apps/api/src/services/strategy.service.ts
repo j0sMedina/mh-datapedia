@@ -66,10 +66,13 @@ export async function reviewStrategy(
     throw new AppError(409, 'Strategy is not pending review', 'CONFLICT');
   }
 
-  const data =
-    action === 'approve'
-      ? { status: 'APPROVED' as const, rejectionReason: null, rejectedAt: null }
-      : { status: 'REJECTED' as const, rejectionReason: reason!, rejectedAt: new Date() };
+  let data: { status: 'APPROVED' | 'REJECTED'; rejectionReason?: string | null; rejectedAt?: Date | null };
+  if (action === 'approve') {
+    data = { status: 'APPROVED', rejectionReason: null, rejectedAt: null };
+  } else {
+    if (!reason) throw new AppError(400, 'Rejection reason is required', 'VALIDATION_ERROR');
+    data = { status: 'REJECTED', rejectionReason: reason, rejectedAt: new Date() };
+  }
 
   return prisma.strategy.update({
     where: { id },
