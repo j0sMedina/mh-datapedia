@@ -32,12 +32,16 @@ export interface MonsterDrop {
 
 export interface Strategy {
   id: string;
+  monsterId: string;
   title: string;
   content: string;
   difficulty: string;
   game: string;
   authorId: string;
   author: { id: string; username: string };
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  rejectionReason: string | null;
+  rejectedAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

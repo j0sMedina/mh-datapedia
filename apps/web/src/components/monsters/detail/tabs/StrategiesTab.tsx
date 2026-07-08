@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CreateStrategySchema } from '@mh-datapedia/shared';
 import type { CreateStrategy } from '@mh-datapedia/shared';
+import { Crown } from 'lucide-react';
 import { useStrategies } from '../../../../hooks/useStrategies';
 import { useCreateStrategy } from '../../../../hooks/useCreateStrategy';
 import { useUpdateStrategy } from '../../../../hooks/useUpdateStrategy';
@@ -94,13 +95,20 @@ export function StrategiesTab({ monsterId }: { monsterId: string }) {
 
   if (isLoading) return <div className="flex justify-center py-8"><Spinner /></div>;
 
-  const canManage = (s: Strategy) =>
+  const isOwn = (s: Strategy) => !!user && user.id === s.authorId;
+  const canEdit = (s: Strategy) =>
+    s.status === 'APPROVED' &&
+    user &&
+    (['ADMIN', 'MASTER'].includes(user.role) || user.id === s.authorId);
+  const canDelete = (s: Strategy) =>
     user && (['ADMIN', 'MASTER'].includes(user.role) || user.id === s.authorId);
+
+  const approvedCount = strategies?.filter((s) => s.status === 'APPROVED').length ?? 0;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-stone-400 text-sm">{strategies?.length ?? 0} strategies</h3>
+        <h3 className="text-stone-400 text-sm">{approvedCount} strategies</h3>
         {user && !writing && (
           <button
             onClick={() => setWriting(true)}
@@ -140,32 +148,65 @@ export function StrategiesTab({ monsterId }: { monsterId: string }) {
             onCancel={() => setEditingId(null)}
           />
         ) : (
-          <div key={s.id} className="bg-stone-900 border border-stone-800 rounded p-4 space-y-2">
+          <div
+            key={s.id}
+            className={cn(
+              'bg-stone-900 border rounded p-4 space-y-2',
+              s.status === 'PENDING' ? 'border-amber-800/50' : s.status === 'REJECTED' ? 'border-red-900/50' : 'border-stone-800',
+            )}
+          >
             <div className="flex items-start justify-between gap-2">
-              <h4 className="font-medium text-stone-50">{s.title}</h4>
+              <div className="flex items-center gap-2 min-w-0">
+                {isOwn(s) && (
+                  <Crown size={13} className="text-yellow-500 shrink-0" />
+                )}
+                <h4 className="font-medium text-stone-50 truncate">{s.title}</h4>
+              </div>
               <div className="flex items-center gap-2 shrink-0">
-                <Badge className={cn(DIFFICULTY_CLASSES[s.difficulty] ?? 'bg-stone-700 text-stone-400')}>
-                  {s.difficulty}
-                </Badge>
-                {canManage(s) && (
-                  <>
-                    <button
-                      onClick={() => setEditingId(s.id)}
-                      className="text-stone-500 hover:text-stone-300 transition-colors"
-                    >
-                      <Pencil size={13} />
-                    </button>
-                    <button
-                      onClick={() => setDeletingId(s.id)}
-                      className="text-stone-500 hover:text-red-400 transition-colors"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </>
+                {s.status === 'PENDING' && (
+                  <Badge className="bg-amber-500/10 text-amber-400 border border-amber-800/50 text-[10px]">
+                    Pending review
+                  </Badge>
+                )}
+                {s.status === 'REJECTED' && (
+                  <Badge className="bg-red-500/10 text-red-400 border border-red-900/50 text-[10px]">
+                    Rejected
+                  </Badge>
+                )}
+                {s.status === 'APPROVED' && (
+                  <Badge className={cn(DIFFICULTY_CLASSES[s.difficulty] ?? 'bg-stone-700 text-stone-400')}>
+                    {s.difficulty}
+                  </Badge>
+                )}
+                {canEdit(s) && (
+                  <button
+                    onClick={() => setEditingId(s.id)}
+                    className="text-stone-500 hover:text-stone-300 transition-colors"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                )}
+                {canDelete(s) && (
+                  <button
+                    onClick={() => setDeletingId(s.id)}
+                    className="text-stone-500 hover:text-red-400 transition-colors"
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 )}
               </div>
             </div>
-            <p className="text-stone-400 text-sm leading-relaxed">{s.content}</p>
+
+            {s.status === 'REJECTED' && s.rejectionReason && (
+              <p className="text-red-400 text-xs bg-red-950/30 border border-red-900/30 rounded px-3 py-2">
+                {s.rejectionReason}
+              </p>
+            )}
+
+            {s.status !== 'REJECTED' && (
+              <p className="text-stone-400 text-sm leading-relaxed">{s.content}</p>
+            )}
+
             <div className="flex items-center gap-2 text-xs text-stone-600">
               <span>by {s.author.username}</span>
               <span>·</span>
