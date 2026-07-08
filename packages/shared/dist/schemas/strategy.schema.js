@@ -1,8 +1,9 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateStrategySchema = exports.CreateStrategySchema = exports.StrategySchema = void 0;
+exports.ReviewStrategySchema = exports.UpdateStrategySchema = exports.CreateStrategySchema = exports.StrategySchema = exports.StrategyStatusSchema = void 0;
 const zod_1 = require("zod");
 const enums_schema_1 = require("./enums.schema");
+exports.StrategyStatusSchema = zod_1.z.enum(['PENDING', 'APPROVED', 'REJECTED']);
 exports.StrategySchema = zod_1.z.object({
     id: zod_1.z.string(),
     monsterId: zod_1.z.string(),
@@ -11,6 +12,10 @@ exports.StrategySchema = zod_1.z.object({
     difficulty: enums_schema_1.DifficultySchema,
     game: enums_schema_1.MHGameSchema,
     authorId: zod_1.z.string(),
+    author: zod_1.z.object({ id: zod_1.z.string(), username: zod_1.z.string() }),
+    status: exports.StrategyStatusSchema,
+    rejectionReason: zod_1.z.string().nullable(),
+    rejectedAt: zod_1.z.string().nullable(),
     createdAt: zod_1.z.string(),
     updatedAt: zod_1.z.string(),
 });
@@ -22,4 +27,8 @@ exports.CreateStrategySchema = zod_1.z.object({
     game: enums_schema_1.MHGameSchema,
 });
 exports.UpdateStrategySchema = exports.CreateStrategySchema.partial().omit({ monsterId: true });
+exports.ReviewStrategySchema = zod_1.z.object({
+    action: zod_1.z.enum(['approve', 'reject']),
+    reason: zod_1.z.string().min(1).optional(),
+}).refine((data) => data.action !== 'reject' || !!data.reason, { message: 'Rejection reason is required', path: ['reason'] });
 //# sourceMappingURL=strategy.schema.js.map

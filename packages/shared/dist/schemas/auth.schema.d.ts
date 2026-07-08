@@ -9,17 +9,17 @@ export declare const UserSchema: z.ZodObject<{
     createdAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     id: string;
+    username: string;
     createdAt: string;
     email: string;
-    username: string;
     role: "USER" | "HELPER" | "ADMIN" | "MASTER";
     emailVerified: boolean;
     totpEnabled: boolean;
 }, {
     id: string;
+    username: string;
     createdAt: string;
     email: string;
-    username: string;
     role: "USER" | "HELPER" | "ADMIN" | "MASTER";
     emailVerified: boolean;
     totpEnabled: boolean;
@@ -41,12 +41,12 @@ export declare const RegisterSchema: z.ZodObject<{
     username: z.ZodString;
     password: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    email: string;
     username: string;
+    email: string;
     password: string;
 }, {
-    email: string;
     username: string;
+    email: string;
     password: string;
 }>;
 export type Register = z.infer<typeof RegisterSchema>;
