@@ -12,10 +12,11 @@ beforeAll(async () => {
   adminToken = await registerAndPromoteAdmin('admin-scope@example.com', 'adminscope', 'adminpass123');
   helperToken = await registerAndPromoteHelper('helper-scope@example.com', 'helperscope', 'helperpass123');
 
-  // Create a plain user
-  const userRes = await request(app).post('/api/auth/register').send({
+  // Create a plain user (verified so it can be promoted)
+  await request(app).post('/api/auth/register').send({
     email: 'target-user@example.com', username: 'targetuser', password: 'password123',
   });
+  await prisma.user.update({ where: { email: 'target-user@example.com' }, data: { emailVerified: true } });
   const user = await prisma.user.findUnique({ where: { email: 'target-user@example.com' }, select: { id: true } });
   userId = user!.id;
 
@@ -93,6 +94,20 @@ describe('setRole scope', () => {
     expect(res.status).toBe(200);
     expect(res.body.user.role).toBe('ADMIN');
     await prisma.user.update({ where: { id: userId }, data: { role: 'USER' } });
+  });
+
+  it('returns 400 EMAIL_NOT_VERIFIED when promoting an unverified account', async () => {
+    await request(app).post('/api/auth/register').send({
+      email: 'unverified-promote@example.com', username: 'unverifiedpromote', password: 'password123',
+    });
+    const unverified = await prisma.user.findUnique({ where: { email: 'unverified-promote@example.com' }, select: { id: true } });
+    const res = await request(app)
+      .patch(`/api/admin/users/${unverified!.id}/role`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ role: 'HELPER' });
+    expect(res.status).toBe(400);
+    expect(res.body.code).toBe('EMAIL_NOT_VERIFIED');
+    await prisma.user.deleteMany({ where: { email: 'unverified-promote@example.com' } });
   });
 });
 

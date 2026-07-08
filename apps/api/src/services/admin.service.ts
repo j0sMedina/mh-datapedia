@@ -52,8 +52,12 @@ export async function setRole(
 ) {
   if (id === requesterId) throw new AppError(400, 'Cannot change your own role', 'SELF_ACTION');
 
-  const target = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true } });
+  const target = await prisma.user.findUnique({ where: { id }, select: { id: true, role: true, emailVerified: true } });
   if (!target) throw new AppError(404, 'User not found', 'NOT_FOUND');
+
+  if (newRole !== 'USER' && !target.emailVerified) {
+    throw new AppError(400, 'Cannot promote an unverified account', 'EMAIL_NOT_VERIFIED');
+  }
 
   if (requesterRole === 'ADMIN') {
     if (!ADMIN_MANAGEABLE_ROLES.includes(target.role as Role)) {
