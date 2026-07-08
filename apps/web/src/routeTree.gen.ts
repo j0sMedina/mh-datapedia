@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as Verify2faRouteImport } from './routes/verify-2fa'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
@@ -32,6 +33,11 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
 const Verify2faRoute = Verify2faRouteImport.update({
   id: '/verify-2fa',
   path: '/verify-2fa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/review': typeof ReviewRoute
   '/verify-2fa': typeof Verify2faRoute
   '/verify-email': typeof VerifyEmailRoute
   '/account/sessions': typeof AccountSessionsRoute
@@ -120,6 +127,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/review': typeof ReviewRoute
   '/verify-2fa': typeof Verify2faRoute
   '/verify-email': typeof VerifyEmailRoute
   '/account/sessions': typeof AccountSessionsRoute
@@ -137,6 +145,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/review': typeof ReviewRoute
   '/verify-2fa': typeof Verify2faRoute
   '/verify-email': typeof VerifyEmailRoute
   '/account/sessions': typeof AccountSessionsRoute
@@ -155,6 +164,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/review'
     | '/verify-2fa'
     | '/verify-email'
     | '/account/sessions'
@@ -171,6 +181,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/review'
     | '/verify-2fa'
     | '/verify-email'
     | '/account/sessions'
@@ -187,6 +198,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/reset-password'
+    | '/review'
     | '/verify-2fa'
     | '/verify-email'
     | '/account/sessions'
@@ -204,6 +216,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ReviewRoute: typeof ReviewRoute
   Verify2faRoute: typeof Verify2faRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   AccountSessionsRoute: typeof AccountSessionsRoute
@@ -226,6 +239,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-2fa'
       fullPath: '/verify-2fa'
       preLoaderRoute: typeof Verify2faRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -324,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ReviewRoute: ReviewRoute,
   Verify2faRoute: Verify2faRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   AccountSessionsRoute: AccountSessionsRoute,

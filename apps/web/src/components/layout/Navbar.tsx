@@ -77,6 +77,15 @@ export function Navbar() {
                   Admin
                 </Link>
               )}
+              {user && ['HELPER', 'ADMIN', 'MASTER'].includes(user.role) && (
+                <Link
+                  to="/review"
+                  className="text-stone-400 hover:text-stone-50 transition-colors duration-150 text-sm pb-0.5"
+                  activeProps={{ className: 'text-stone-50 border-b border-accent pb-0.5' }}
+                >
+                  Review
+                </Link>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
